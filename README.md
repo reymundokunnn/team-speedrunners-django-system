@@ -20,8 +20,8 @@ Follow these steps to get the project running locally:
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
-cd main_site
+git clone https://github.com/rikkatakanashiii/presenta.git
+cd presenta
 ```
 
 ### 2. Create a Virtual Environment
