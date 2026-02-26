@@ -8,3 +8,4 @@ venv/
 media/profile_pics/
 profile_pics/
 main_site/settings.py
+staticfiles/
