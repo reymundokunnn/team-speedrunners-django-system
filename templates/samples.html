@@ -3,7 +3,18 @@
 {% block content %}
 <!-- paste main content here. -->
 <section class="samples-section">
-	<h1>Samples</h1>
-	<p>Sample works will go here.</p>
+	<h1 class="samples-h1">EXAMPLES OF <div class="samples-highlight">SAMPLES</div>
+	</h1>
+
+	<div class="samples-parent">
+		<div class="samples-div-item"><img src="{% static 'img/samples/1.jpg' %}" alt="Sample 1" class="samples-img">
+			<p class="samples-text.hidden">This is an example.</p>
+		</div>
+		<div class="samples-div-item"><img src="{% static 'img/samples/2.jpg' %}" alt="Sample 2" class="samples-img"></div>
+		<div class="samples-div-item"><img src="{% static 'img/samples/3.jpg' %}" alt="Sample 3" class="samples-img"></div>
+		<div class="samples-div-item"><img src="{% static 'img/samples/4.jpg' %}" alt="Sample 4" class="samples-img"></div>
+		<div class="samples-div-item"><img src="{% static 'img/samples/5.jpg' %}" alt="Sample 5" class="samples-img"></div>
+		<div class="samples-div-item"><img src="{% static 'img/samples/6.jpg' %}" alt="Sample 6" class="samples-img"></div>
+	</div>
 </section>
 {% endblock %}

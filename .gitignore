@@ -5,7 +5,7 @@ db.sqlite3
 venv/
 .env/
 *.log
-media/profile_pics/
+media/
 profile_pics/
 main_site/settings.py
 staticfiles/
