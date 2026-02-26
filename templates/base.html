@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/screens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cropper.css' %}">
+    <link rel="shortcut icon" href="{% static 'img/favicon.png' %}" type="image/x-icon">
+    <title>{% block title %}Presenta - Ideas in, impact out.{% endblock %}</title>
+</head>
+
+
+<body>
+    {% block header %}
+    {% include "partials/header.html" %}
+    {% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{% static 'js/cropper.js' %}"></script>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+{% if user.is_authenticated %}
+<section class="dashboard-section">
+    <div class="dashboard-container">
+        {% include "partials/sidebar_user.html" %}
+        <div class="main">
+            <h1>Good day, <span class="orange">{{user.first_name}}</span>!</h1>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="number pending">0</div>
+                    <span>Pending review</span>
+                    <img src="{% static 'img/dashboard/pending.png' %}" alt="Pending review">
+                </div>
+                <div class="stat-card">
+                    <div class="number wip">0</div>
+                    <span>In progress</span>
+                    <img src="{% static 'img/dashboard/wip.png' %}" alt="In progress">
+                </div>
+                <div class="stat-card">
+                    <div class="number payment">0</div>
+                    <span>For payment</span>
+                    <img src="{% static 'img/dashboard/payment.png' %}" alt="For payment">
+                </div>
+                <div class="stat-card">
+                    <div class="number done">0</div>
+                    <span>Completed</span>
+                    <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
+                </div>
+            </div>
+            <div class="designs">
+                <div class="tip">
+                    <h3>Tip of the day</h3>
+                    <p>Upload finalized content to avoid delays!</p>
+                </div>
+                <div class="attention">
+                    <h3>Actions needing attention</h3>
+                    <span>Nothing in here right now. 🎉</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% else %}
+<img src="{% static 'img/home/image0.png' %}" alt="background overlay" class="section-0-bg-overlay">
+<section class="section-0">
+    <div class="text-container">
+        <h1>Helping students present better</h1>
+        <h2>without the design stress.</h2>
+        <p><strong>Presenta™</strong> is a student-focused web platform where you can request clean and
+            professional visuals for your school work.</p>
+    </div>
+    <img src="{% static 'img/home/home-0.png' %}" alt="hero image">
+</section>
+<section class="section-1">
+    <div class="text-container-b1l">
+        <h3><i>What is</i></h3>
+        <h1>Presenta?</h1>
+        <img src="{% static 'img/home/question.png' %}" alt="Question decoration">
+    </div>
+    <div class="text-container-b1r">
+        <p>Presenta™ helps students turn their content into well-designed slides, infographics, and posters.</p>
+        <p><b>You provide the content, and the design work is handled for you.</b></p>
+    </div>
+</section>
+<section class="section-2">
+    <h2>What can we design for you?</h2>
+    <div class="section-2-cards">
+        <div class="card">
+            <img src="{% static 'img/home/sec-2-0.png' %}" alt="Slides icon">
+            <div class="descriptions">
+                <h1>Presentations</h1>
+                <p>Professional presentation slides tailored to your content and academic needs.</p>
+            </div>
+        </div>
+        <div class="card">
+            <img src="{% static 'img/home/sec-2-2.png' %}" alt="Infographics icon">
+            <div class="descriptions">
+                <h1>Infographics</h1>
+                <p>Visual representations of data and information to make complex topics easy to understand.</p>
+            </div>
+        </div>
+        <div class="card">
+            <img src="{% static 'img/home/sec-2-1.png' %}" alt="Poster icon">
+            <div class="descriptions">
+                <h1>Posters</h1>
+                <p>High-quality posters perfect for research presentations and academic conferences.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section-3">
+    <div class="diagram-container">
+        <div class="diagram-card">
+            <div class="circled-number">1</div>
+            <div class="process-item-container">
+                <h3>Submit Your Content</h3>
+                <p>Provide your content and design preferences through our user-friendly submission form.</p>
+            </div>
+        </div>
+        <div class="diagram-card">
+            <div class="circled-number">2</div>
+            <div class="process-item-container">
+                <h3>Approval & Design</h3>
+                <p>Our team reviews your submission, approves it, and starts the design process based on your
+                    specifications.</p>
+            </div>
+        </div>
+        <div class="diagram-card">
+            <div class="circled-number">3</div>
+            <div class="process-item-container">
+                <h3>Receive Your Design</h3>
+                <p>Get your professionally designed slides, infographics, or posters delivered to you within the
+                    agreed timeframe.</p>
+            </div>
+        </div>
+        <div class="diagram-card">
+            <div class="circled-number">4</div>
+            <div class="process-item-container">
+                <h3>Proceed to Payment</h3>
+                <p>Complete your payment securely through our platform to finalize your order and receive your
+                    design files.</p>
+            </div>
+        </div>
+        <div class="diagram-card">
+            <div class="circled-number">5</div>
+            <div class="process-item-container">
+                <h3>Enjoy Your Design</h3>
+                <p>Use your professionally designed materials to impress your audience and achieve academic
+                    success.</p>
+            </div>
+        </div>
+</section>
+{% endif %}
+{% endblock %}

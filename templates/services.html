@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="svc-0-header">
+    <div class="text-wrapper">
+        <h1>Our Design Services</h1>
+        <span>Clean, academic-ready visuals designed around your content.</span>
+    </div>
+    <div class="display-image">
+        <img src="{% static 'img/services/b.png' %}" alt="">
+    </div>
+    <img src="{% static 'img/services/a.png' %}" alt="Services Header Image" class="svc-0-header-image">
+</div>
+<p class="services-intro"><strong>Presenta™</strong> offers student-focused digital design services for academic work.
+    You provide the content, we transform it into clear, structured, and visually polished materials.</p>
+<br>
+<div class="offered-1">
+    <div class="skewed-background"></div>
+    <div class="text-wrapper">
+        <h1>Presentations</h1>
+        <p><i>Professionally designed PowerPoint slides tailored to your subject and presentation style.</i></p>
+        <div class="round-hl hl0">Files available in *.pptx and *.pdf format</div>
+        <ul class="whats-included">
+            <li>Clean and consistent slide layout</li>
+            <li>Structured content organization</li>
+            <li>Academic-appropriate typography and color palette</li>
+        </ul>
+    </div>
+    <div class="svc-1a">
+        <img src="{% static 'img/services/0.png' %}" alt="Presentation Image">
+    </div>
+</div>
+<div class="offered-2">
+    <div class="skewed-background"></div>
+    <div class="text-wrapper">
+        <h1>Infographics</h1>
+        <p><i>One-page visual summaries that simplify complex information.</i></p>
+        <div class="round-hl hl1">Files available in PDF or high-res image format</div>
+        <ul class="whats-included">
+            <li>Clean layout with strong readability</li>
+            <li>Clear hierarchy and flow</li>
+        </ul>
+    </div>
+    <div class="svc-2a">
+        <img src="{% static 'img/services/1.png' %}" alt="Infographic Image">
+    </div>
+</div>
+<div class="offered-3">
+    <div class="skewed-background"></div>
+    <div class="text-wrapper">
+        <h1>Posters</h1>
+        <p><i>Academic and research posters designed for clarity and impact.</i></p>
+        <div class="round-hl hl2">Files available in *.pdf format (print-ready)</div>
+        <ul class="whats-included">
+            <li>Proper section division (Introduction, Method, Results, etc.)</li>
+            <li>Clear presentation of research data</li>
+            <li>Clear visual flow</li>
+        </ul>
+    </div>
+    <div class="svc-3a">
+        <img src="{% static 'img/services/2.png' %}" alt="Academic Poster Image">
+    </div>
+</div>
+<div class="svc-notes">
+    <h1>Important things to remember</h1>
+    <ul>
+        <li>Our services are designed to enhance the visual presentation of your content. We do not create or modify
+            the underlying content itself.</li>
+        <li>We do not provide content creation, editing, or proofreading services. Please ensure your content is
+            finalized before submitting it to us for design.</li>
+        <li>Our designers will work with the content you provide to create visually appealing and well-structured
+            materials, but we cannot guarantee the accuracy or quality of the content itself.</li>
+        <li>We recommend reviewing your content for clarity, coherence, and correctness before submitting it for design. This will help ensure that the final product effectively communicates your ideas.</li>
+    </ul>
+</div>
+{% endblock %}

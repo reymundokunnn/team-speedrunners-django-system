@@ -1,0 +1,41 @@
+{% load static %}
+<div class="side-panel">
+    <div class="side-item-wrapper">
+        <div class="side-item active" data-section="dashboard">
+            <img src="{% static 'img/dashboard/side-0.png' %}" class="dashboard-sidebar-icon">
+            <a href="javascript:void(0)">Dashboard</a>
+        </div>
+        <div class="side-item" data-section="requests">
+            <img src="{% static 'img/dashboard/side-2.png' %}" class="dashboard-sidebar-icon">
+            <a href="javascript:void(0)">Requests</a>
+        </div>
+        <div class="side-item" data-section="assignments">
+            <img src="{% static 'img/dashboard/side-8.png' %}" class="dashboard-sidebar-icon">
+            <a href="javascript:void(0)">Assignments</a>
+        </div>
+        <div class="side-item" data-section="earnings">
+            <img src="{% static 'img/dashboard/side-4.png' %}" class="dashboard-sidebar-icon">
+            <a href="javascript:void(0)">Earnings</a>
+        </div>
+        <div class="side-item side-item-link" data-href="{% url 'edit_profile' %}">
+            <img src="{% static 'img/dashboard/side-5.png' %}" class="dashboard-sidebar-icon">
+            <a href="{% url 'edit_profile' %}">Edit Profile</a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle external navigation links (like Edit Profile)
+    var linkItems = document.querySelectorAll('.side-item[data-href]');
+    linkItems.forEach(function(item) {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function(e) {
+            var href = this.getAttribute('data-href');
+            if (href) {
+                window.location.href = href;
+            }
+        });
+    });
+});
+</script>

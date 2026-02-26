@@ -1,0 +1,74 @@
+{% load static %}
+
+<header>
+    <div class="left">
+        {% if user.is_authenticated %}
+        <img src="{% static 'img/menu.png' %}" class="side-menu-icon">
+        {% if user.is_superuser or user.profile.user_role == 'admin' %}
+        <a href="{% url 'admin_dashboard' %}">
+            <img src="{% static 'img/logo-no-wm.png' %}" alt="Logo" class="logo-light logo-header-small">
+            <img src="{% static 'img/logo-no-wm-dark.png' %}" alt="Logo (dark)" class="logo-dark logo-header-small">
+        </a>
+        {% elif user.profile.user_role == 'designer' %}
+        <a href="{% url 'designer_dashboard' %}">
+            <img src="{% static 'img/logo-no-wm.png' %}" alt="Logo" class="logo-light logo-header-small">
+            <img src="{% static 'img/logo-no-wm-dark.png' %}" alt="Logo (dark)" class="logo-dark logo-header-small">
+        </a>
+        {% else %}
+        <a href="{% url 'user_dashboard' %}">
+            <img src="{% static 'img/logo-no-wm.png' %}" alt="Logo" class="logo-light logo-header-small">
+            <img src="{% static 'img/logo-no-wm-dark.png' %}" alt="Logo (dark)" class="logo-dark logo-header-small">
+        </a>
+        {% endif %}
+        {% else %}
+        <a href="{% url 'index' %}">
+            <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-light">
+            <img src="{% static 'img/logo1.png' %}" alt="Logo (dark)" class="logo-dark">
+        </a>
+        {% endif %}
+    </div>
+    <nav class="right">
+        {% if user.is_authenticated %}
+        <div class="user-info">
+            <div class="user-meta">
+                <span class="user-name"><b>{{ display_name }}</b></span><br>
+                <span class="user-username">@{{ user.username }}</span>
+            </div>
+            {% if profile_picture_url %}
+            <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
+            {% else %}
+            <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
+            {% endif %}
+        </div>
+        <a href="{% url 'presenta_logout' %}" class="sign-out">Sign out</a>
+        {% else %}
+        <div class="menu-btn">
+            <img src="{% static 'img/menu.png' %}" class="menu-icon" height="15">
+            <span>Menu</span>
+        </div>
+        <a href="{% url 'services' %}">Services</a>
+        <a href="{% url 'pricing' %}">Pricing</a>
+        <a href="{% url 'samples' %}">Samples</a>
+        <a href="{% url 'contact' %}">Contact</a>
+        <a href="{% url 'signin' %}" class="sign-in">Sign in</a>
+        {% endif %}
+    </nav>
+    <div class="dark-toggle-switcher">
+        <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+        </label>
+    </div>
+    <img src="{% static 'img/moon.svg' %}" class="dark-mode-icon">
+    <div class="mobile-dropdown-hidden">
+        <a href="{% url 'services' %}">Services</a>
+        <a href="{% url 'pricing' %}">Pricing</a>
+        <a href="{% url 'samples' %}">Samples</a>
+        <a href="{% url 'contact' %}">Contact</a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'presenta_logout' %}">Sign out</a>
+        {% else %}
+        <a href="{% url 'signin' %}" class="sign-in">Sign in</a>
+        {% endif %}
+    </div>
+</header>

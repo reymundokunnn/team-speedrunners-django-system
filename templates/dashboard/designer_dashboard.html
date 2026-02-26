@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
+{% load static %}
+{% block content %}
+<section class="dashboard-section">
+    <div class="dashboard-container">
+        {% include "partials/sidebar_designer.html" %}
+        <div class="main">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="dashboard-section-content active">
+                <h1 id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</h1>
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="number pending">{{ total_assigned }}</div>
+                        <span>Assigned Projects</span>
+                        <img src="{% static 'img/dashboard/assign.png' %}" alt="Assigned">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number pending">{{ pending }}</div>
+                        <span>Pending</span>
+                        <img src="{% static 'img/dashboard/pending.png' %}" alt="Pending">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number wip">{{ in_progress }}</div>
+                        <span>In Progress</span>
+                        <img src="{% static 'img/dashboard/wip.png' %}" alt="In progress">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number payment">{{ for_payment }}</div>
+                        <span>For Payment</span>
+                        <img src="{% static 'img/dashboard/payment.png' %}" alt="For payment">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number done">{{ completed }}</div>
+                        <span>Completed</span>
+                        <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
+                    </div>
+                </div>
+                
+                <!-- Dashboard Widgets - Improved UX Layout -->
+                <div class="dashboard-widgets">
+                    <!-- Top Row: Quick Actions (Most Important) -->
+                    <div class="widget-row quick-actions-row">
+                        <div class="widget-card quick-actions-card">
+                            <div class="widget-header">
+                                <h3>Quick Actions</h3>
+                            </div>
+                            <div class="widget-content quick-actions-grid">
+                                <button class="quick-action-btn primary" onclick="showDashboardSection('requests')">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    </div>
+                                    <span class="action-label">Find Work</span>
+                                    <span class="action-desc">Browse available requests</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="showDashboardSection('assignments')">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    </div>
+                                    <span class="action-label">My Projects</span>
+                                    <span class="action-desc">View your assignments</span>
+                                </button>
+                                <a href="{% url 'edit_profile' %}" class="quick-action-btn">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    </div>
+                                    <span class="action-label">Edit Profile</span>
+                                    <span class="action-desc">Update your portfolio</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: Attention + Activity Side by Side -->
+                    <div class="widget-row two-column">
+                        <!-- Attention Section (Left - Actionable) -->
+                        <div class="widget-column">
+                            <div class="widget-card attention-card">
+                                <div class="widget-header">
+                                    <h3>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                        Needs Attention
+                                    </h3>
+                                    {% if pending > 0 or in_progress > 0 or for_payment > 0 %}
+                                    <span class="badge">{{ pending|add:in_progress|add:for_payment }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="widget-content">
+                                    {% if pending > 0 %}
+                                        <div class="attention-item urgent" onclick="showDashboardSection('requests')" style="cursor: pointer;">
+                                            <div class="attention-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                            </div>
+                                            <div class="attention-content">
+                                                <span class="attention-title">{{ pending }} pending to review</span>
+                                                <span class="attention-desc">Click to browse requests</span>
+                                            </div>
+                                            <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        </div>
+                                    {% endif %}
+                                    {% if in_progress > 0 %}
+                                        <div class="attention-item info" onclick="showDashboardSection('assignments')" style="cursor: pointer;">
+                                            <div class="attention-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                            </div>
+                                            <div class="attention-content">
+                                                <span class="attention-title">{{ in_progress }} in progress</span>
+                                                <span class="attention-desc">Projects you're working on</span>
+                                            </div>
+                                            <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        </div>
+                                    {% endif %}
+                                    {% if for_payment > 0 %}
+                                        <div class="attention-item warning">
+                                            <div class="attention-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                            </div>
+                                            <div class="attention-content">
+                                                <span class="attention-title">{{ for_payment }} ready for payment</span>
+                                                <span class="attention-desc">Awaiting client payment</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if pending == 0 and in_progress == 0 and for_payment == 0 %}
+                                        <div class="all-caught-up">
+                                            <div class="success-icon">✓</div>
+                                            <span class="caught-up-title">All caught up!</span>
+                                            <span class="caught-up-desc">No projects need attention</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity (Right - Informational) -->
+                        <div class="widget-column">
+                            <div class="widget-card activity-card">
+                                <div class="widget-header">
+                                    <h3>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                        Recent Activity
+                                    </h3>
+                                    {% if activities %}
+                                    <form method="post" action="{% url 'clear_activities' %}" class="clear-all-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-clear-all" title="Clear all activities">Clear</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                <div class="widget-content activity-content">
+                                    {% if activities %}
+                                        <ul class="activity-list compact">
+                                            {% for activity in activities|slice:":5" %}
+                                            <li class="activity-item">
+                                                <div class="activity-icon status-{{ activity.activity_type }}">
+                                                    {% if activity.activity_type == 'request_submitted' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                    {% elif activity.activity_type == 'status_changed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon><line x1="3" y1="22" x2="21" y2="22"></line></svg>
+                                                    {% elif activity.activity_type == 'assigned' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                                    {% elif activity.activity_type == 'completed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    {% elif activity.activity_type == 'payment_received' or activity.activity_type == 'payment_confirmed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                                    {% elif activity.activity_type == 'revision_requested' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                    {% elif activity.activity_type == 'request_rejected' or activity.activity_type == 'request_cancelled' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                                    {% elif activity.activity_type == 'login' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                                                    {% elif activity.activity_type == 'logout' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                                    {% elif activity.activity_type == 'profile_updated' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                    {% elif activity.activity_type == 'file_uploaded' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                                    {% elif activity.activity_type == 'password_changed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                    {% else %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="activity-details">
+                                                    <p class="activity-text">{{ activity.message }}</p>
+                                                    <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                                                </div>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if activities|length > 5 %}
+                                        <div class="view-more">
+                                            <button class="btn-view-more" onclick="showDashboardSection('activity')">View all activity →</button>
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="empty-activity">
+                                            <span>No recent activity</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Requests Section -->
+            <div id="requests-section" class="dashboard-section-content">
+                <h1 id="greeting-requests">Available <span class="orange">Requests</span></h1>
+                <div class="available-requests-full">
+                    {% if available_requests %}
+                        <div class="request-cards">
+                            {% for request in available_requests %}
+                            <div class="request-card">
+                                <div class="request-header">
+                                    <h4>{{ request.title }}</h4>
+                                    <span class="budget">
+                                        {% if request.budget %}
+                                            ${{ request.budget }}
+                                        {% else %}
+                                            No budget
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <p class="description">{{ request.description|truncatewords:30 }}</p>
+                                <div class="request-meta">
+                                    <span>👤 {% if request.requester %}{{ request.requester.first_name }} {{ request.requester.last_name }}{% else %}User{% endif %}</span>
+                                    {% if request.deadline %}
+                                        <span>📅 {{ request.deadline|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="request-actions action-combos">
+                                    <div class="action-combo">
+                                        <form method="post" action="{% url 'accept_design_request' request.id %}" class="form-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-icon btn-accept" title="Accept Request">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                            <span class="action-text">Accept</span>
+                                        </form>
+                                    </div>
+                                    <div class="action-combo">
+                                        <button class="btn-icon btn-details" data-id="{{ request.id }}" onclick="openAvailableRequestModal(this)" title="View Details">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <span class="action-text">View</span>
+                                    </div>
+                                    <div class="action-combo">
+                                        <form method="post" action="{% url 'reject_design_request' request.id %}" class="form-inline" onsubmit="return confirm('Are you sure you want to reject this request?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-icon btn-reject" title="Reject Request">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            </button>
+                                            <span class="action-text">Reject</span>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <span>No available requests at the moment. 🎉</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Assignments Section -->
+            <div id="assignments-section" class="dashboard-section-content">
+                <h1 id="greeting-assignments">Your <span class="orange">Assignments</span></h1>
+                <div class="your-assignments-full">
+                    {% if assigned_designs %}
+                        <table class="recent-designs-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Requester</th>
+                                    <th>Deadline</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for design in assigned_designs %}
+                                <tr>
+                                    <td>
+                                        <div class="title-with-icon">
+                                            {% if design.design_type == 'presentation' %}
+                                            <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                                            {% elif design.design_type == 'infographic' %}
+                                            <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                            {% elif design.design_type == 'poster' %}
+                                            <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                            {% endif %}
+                                            <a href="#" class="project-link" data-id="{{ design.id }}" data-title="{{ design.title|escapejs }}" data-description="{{ design.description|escapejs }}" data-status="{{ design.status }}" data-requester="{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name|escapejs }}{% else %}User{% endif %}" data-deadline="{% if design.deadline %}{{ design.deadline|date:'M d, Y' }}{% else %}No deadline{% endif %}" data-budget="{% if design.budget %}${{ design.budget }}{% else %}No budget{% endif %}" data-completed-at="{% if design.completed_at %}{{ design.completed_at|date:'M d, Y' }}{% else %}Not completed{% endif %}">
+                                                {{ design.title }}
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ design.status }}">
+                                            {{ design.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name }}{% else %}User{% endif %}</td>
+                                    <td>
+                                        {% if design.deadline %}
+                                            {{ design.deadline|date:"M d, Y" }}
+                                        {% else %}
+                                            No deadline
+                                        {% endif %}
+                                    </td>
+                                    <td class="actions-cell">
+                                        <div class="action-buttons">
+                                            <button class="btn-icon btn-view" title="View Details" data-design-id="{{ design.id }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                            {% if design.status != 'completed' %}
+                                            <button class="btn-icon btn-edit" title="Update Status" data-design-id="{{ design.id }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <span>No assignments yet. Accept requests to get started!</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Earnings Section -->
+            <div id="earnings-section" class="dashboard-section-content">
+                <h1 id="greeting-earnings">Your <span class="orange">Earnings</span></h1>
+                <div class="earnings-placeholder">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        <span>Earnings tracking coming soon!</span>
+                        <p>Track your payments and project earnings here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Project Details Modal -->
+<div class="project-modal" id="projectModal">
+    <div class="modal-overlay" onclick="closeProjectModal()"></div>
+    <div class="modal-container">
+        <button class="modal-close" onclick="closeProjectModal()" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="modal-header">
+            <h2 id="modalProjectTitle">Project Title</h2>
+            <span class="status-badge" id="modalProjectStatus">Status</span>
+        </div>
+        <div class="modal-body">
+            <div class="project-info">
+                <div class="info-row">
+                    <span class="info-label">Requester:</span>
+                    <span class="info-value" id="modalRequester">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Deadline:</span>
+                    <span class="info-value" id="modalDeadline">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Budget:</span>
+                    <span class="info-value" id="modalBudget">-</span>
+                </div>
+            </div>
+            <div class="project-description">
+                <h4>Description</h4>
+                <p id="modalDescription">-</p>
+            </div>
+            <div class="modal-files-section" id="modalFilesSection" style="display: block;">
+                <h4>Reference Files</h4>
+                <ul id="modalReferenceFilesList" class="file-list-modal">
+                    <li class="loading-files">Loading reference files...</li>
+                </ul>
+            </div>
+            
+            <!-- Finished Files Section (shown when completed) -->
+            <div class="modal-files-section" id="modalFinishedFilesSection" style="display: none;">
+                <h4>Finished Files</h4>
+                <ul id="modalFinishedFilesList" class="file-list-modal">
+                    <li class="loading-files">Loading finished files...</li>
+                </ul>
+            </div>
+            
+            <!-- Completion Info (shown when completed) -->
+            <div class="completion-info" id="completionInfoSection" style="display: none;">
+                <div class="info-row">
+                    <span class="info-label">Completed on:</span>
+                    <span class="info-value" id="modalCompletedDate">-</span>
+                </div>
+            </div>
+            
+            <!-- Status Update Form (hidden when completed) -->
+            <form method="post" action="#" class="status-update-form" id="statusUpdateForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="design_id" id="modalDesignId">
+                <div class="form-group" id="statusSelectGroup">
+                    <label for="status_select">Update Status</label>
+                    <select name="status" id="status_select" onchange="handleStatusChange(this.value)">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="for_payment">For Payment</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group file-upload-group" id="fileUploadGroup" style="display: none;">
+                    <label for="finished_file">Upload Finished File</label>
+                    <div class="file-upload-area" id="modalFileUploadArea">
+                        <input type="file" id="finished_file" name="finished_file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.ai,.psd,.svg" style="display: none;">
+                        <p>Drag and drop files here or <span class="file-upload-link">click to browse</span></p>
+                        <div id="modalFileList" class="file-list"></div>
+                    </div>
+                </div>
+                <div class="modal-actions" id="modalActions">
+                    <button type="button" class="btn btn-danger" onclick="openCancelConfirmModal()">Cancel Project</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+            
+            <!-- Read-only message for completed projects -->
+            <div class="completed-message" id="completedMessage" style="display: none;">
+                <p class="success-note">✓ This project has been completed. No further changes can be made.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="confirm-modal" id="confirmModal">
+    <div class="modal-overlay" onclick="closeConfirmModal()"></div>
+    <div class="modal-container confirm-dialog">
+        <div class="confirm-icon">⚠️</div>
+        <h3>Confirm Completion</h3>
+        <p>Are you sure you want to mark this project as <strong>Completed</strong>?</p>
+        <p class="confirm-note">This action cannot be undone. Once marked as completed, you won't be able to make changes.</p>
+        <div class="confirm-actions">
+            <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmCompletion()">Yes, Complete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Project Confirmation Modal -->
+<div class="confirm-modal" id="cancelConfirmModal">
+    <div class="modal-overlay" onclick="closeCancelConfirmModal()"></div>
+    <div class="modal-container confirm-dialog">
+        <div class="confirm-icon">❌</div>
+        <h3>Cancel Project</h3>
+        <p>Are you sure you want to <strong>cancel</strong> this project?</p>
+        <p class="confirm-note">This will unassign you from the project and mark it as cancelled.</p>
+        <form id="cancelProjectForm" method="post" action="">
+            {% csrf_token %}
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCancelConfirmModal()">Keep Project</button>
+                <button type="submit" class="btn btn-danger">Yes, Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for view and edit buttons
+    document.querySelectorAll('.btn-view, .btn-edit').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var designId = this.getAttribute('data-design-id');
+            if (designId && typeof openProjectModal === 'function') {
+                openProjectModal(parseInt(designId));
+            }
+        });
+    });
+});
+
+// Store current design ID for cancel action
+var currentCancelDesignId = null;
+
+function openCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.add('active');
+    // Get the current design ID from the modal
+    currentCancelDesignId = document.getElementById('modalDesignId').value;
+    // Update the form action URL
+    var cancelForm = document.getElementById('cancelProjectForm');
+    if (currentCancelDesignId) {
+        cancelForm.action = '/design-request/' + currentCancelDesignId + '/cancel/';
+    }
+}
+
+function closeCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.remove('active');
+    currentCancelDesignId = null;
+}
+</script>
+{% endblock %}

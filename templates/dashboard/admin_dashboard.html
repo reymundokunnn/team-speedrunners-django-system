@@ -1,0 +1,1269 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
+{% block content %}
+<style>
+/* Dashboard Section Visibility - Critical Fix */
+.dashboard-section-content {
+    display: none !important;
+}
+.dashboard-section-content.active {
+    display: block !important;
+}
+</style>
+
+<section class="dashboard-section">
+    <div class="dashboard-container">
+        {% include "partials/sidebar_admin.html" %}
+        <div class="main">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="dashboard-section-content active">
+                <h1 id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</h1>
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="number pending">{{ total_users }}</div>
+                        <span>Total Users</span>
+                        <img src="{% static 'img/dashboard/user.png' %}" alt="Users">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number pending">{{ total_requests }}</div>
+                        <span>Total Requests</span>
+                        <img src="{% static 'img/dashboard/assign.png' %}" alt="Requests">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number wip">{{ in_progress }}</div>
+                        <span>In Progress</span>
+                        <img src="{% static 'img/dashboard/wip.png' %}" alt="In progress">
+                    </div>
+                    <div class="stat-card">
+                        <div class="number done">{{ completed }}</div>
+                        <span>Completed</span>
+                        <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
+                    </div>
+                </div>
+                
+                <!-- Dashboard Widgets - Improved UX Layout -->
+                <div class="dashboard-widgets">
+                    <!-- Top Row: Quick Actions (Most Important) -->
+                    <div class="widget-row quick-actions-row">
+                        <div class="widget-card quick-actions-card">
+                            <div class="widget-header">
+                                <h3>Quick Actions</h3>
+                            </div>
+                            <div class="widget-content quick-actions-grid">
+                                <button class="quick-action-btn primary" onclick="openAddUserModal()">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                    </div>
+                                    <span class="action-label">Add User</span>
+                                    <span class="action-desc">Create new account</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="showDashboardSection('requests')">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    </div>
+                                    <span class="action-label">All Requests</span>
+                                    <span class="action-desc">View platform requests</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="showDashboardSection('users')">
+                                    <div class="action-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                    </div>
+                                    <span class="action-label">Manage Users</span>
+                                    <span class="action-desc">User administration</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: Attention + Activity Side by Side -->
+                    <div class="widget-row two-column">
+                        <!-- Attention Section (Left - Actionable) -->
+                        <div class="widget-column">
+                            <div class="widget-card attention-card">
+                                <div class="widget-header">
+                                    <h3>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                        Needs Attention
+                                    </h3>
+                                    {% if pending_requests > 0 or in_progress > 0 %}
+                                    <span class="badge">{{ pending_requests|add:in_progress }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="widget-content">
+                                    {% if pending_requests > 0 %}
+                                        <div class="attention-item urgent" onclick="showDashboardSection('requests')" style="cursor: pointer;">
+                                            <div class="attention-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                            </div>
+                                            <div class="attention-content">
+                                                <span class="attention-title">{{ pending_requests }} pending request{{ pending_requests|pluralize }}</span>
+                                                <span class="attention-desc">Click to view all requests</span>
+                                            </div>
+                                            <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        </div>
+                                    {% endif %}
+                                    {% if in_progress > 0 %}
+                                        <div class="attention-item info" onclick="showDashboardSection('requests')" style="cursor: pointer;">
+                                            <div class="attention-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                            </div>
+                                            <div class="attention-content">
+                                                <span class="attention-title">{{ in_progress }} in progress</span>
+                                                <span class="attention-desc">Active design projects</span>
+                                            </div>
+                                            <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        </div>
+                                    {% endif %}
+                                    {% if pending_requests == 0 and in_progress == 0 %}
+                                        <div class="all-caught-up">
+                                            <div class="success-icon">✓</div>
+                                            <span class="caught-up-title">All caught up!</span>
+                                            <span class="caught-up-desc">No items need attention</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity (Right - Informational) -->
+                        <div class="widget-column">
+                            <div class="widget-card activity-card">
+                                <div class="widget-header">
+                                    <h3>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                        Recent Activity
+                                    </h3>
+                                    {% if activities %}
+                                    <form method="post" action="{% url 'clear_activities' %}" class="clear-all-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-clear-all" title="Clear all activities">Clear</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                <div class="widget-content activity-content">
+                                    {% if activities %}
+                                        <ul class="activity-list compact">
+                                            {% for activity in activities|slice:":5" %}
+                                            <li class="activity-item">
+                                                <div class="activity-icon status-{{ activity.activity_type }}">
+                                                    {% if activity.activity_type == 'request_submitted' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                                    {% elif activity.activity_type == 'status_changed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon><line x1="3" y1="22" x2="21" y2="22"></line></svg>
+                                                    {% elif activity.activity_type == 'assigned' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                                    {% elif activity.activity_type == 'completed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    {% elif activity.activity_type == 'payment_received' or activity.activity_type == 'payment_confirmed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                                    {% elif activity.activity_type == 'revision_requested' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                    {% elif activity.activity_type == 'request_rejected' or activity.activity_type == 'request_cancelled' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                                    {% elif activity.activity_type == 'login' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                                                    {% elif activity.activity_type == 'logout' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                                    {% elif activity.activity_type == 'profile_updated' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                    {% elif activity.activity_type == 'file_uploaded' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                                    {% elif activity.activity_type == 'password_changed' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                    {% elif activity.activity_type == 'user_created' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                                    {% elif activity.activity_type == 'user_updated' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                    {% elif activity.activity_type == 'user_deleted' %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                    {% else %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="activity-details">
+                                                    <p class="activity-text">{{ activity.message }}</p>
+                                                    <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                                                </div>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if activities|length > 5 %}
+                                        <div class="view-more">
+                                            <button class="btn-view-more" onclick="showDashboardSection('activity')">View all activity →</button>
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="empty-activity">
+                                            <span>No recent activity</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests Section -->
+            <div id="requests-section" class="dashboard-section-content">
+                <div class="admin-header-flex">
+                    <div class="left">
+                        <h1 id="greeting-requests">All <span class="orange">Requests</span></h1>
+                        <span class="count-badge">{{ all_requests|length }} requests pending</span>
+                    </div>
+                </div>
+                <div class="admin-section-full">
+                    {% if all_requests %}
+                    <div class="table-container">
+                        <table class="admin-table design-requests-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Requester</th>
+                                    <th>Designer</th>
+                                    <th>Budget</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in all_requests %}
+                                <tr>
+                                    <td class="title-cell">{{ request.title }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ request.status }}">
+                                            {{ request.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{% if request.requester %}{{ request.requester.first_name }} {{ request.requester.last_name }}{% else %}User{% endif %}</td>
+                                    <td>{% if request.designer %}{{ request.designer.first_name }} {{request.designer.last_name }} {% else %} <span class="unassigned">Unassigned</span>{% endif %}</td>
+                                    <td class="budget-cell">
+                                        {% if request.budget %}
+                                        <span class="budget-amount">${{ request.budget }}</span>
+                                        {% else %}
+                                        <span class="no-budget">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="date-cell">{{ request.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <span>No design requests yet</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users-section" class="dashboard-section-content">
+                <div class="admin-header-flex">
+                    <div class="left">
+                        <h1 id="greeting-users">Users <span class="orange">Management</span></h1>
+                        <span class="count-badge">{{ all_users|length }} total users in this site</span>
+                    </div>
+                    <div class="right">
+                        <div class="filter-dropdown-container">
+                            <button class="btn btn-secondary" onclick="toggleFilterDropdown()" title="Filter users">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                </svg>
+                                Filter
+                            </button>
+                            <div class="filter-dropdown" id="filterDropdown">
+                                <div class="filter-section">
+                                    <h4>Role</h4>
+                                    <label class="filter-option"><input type="checkbox" value="admin" onchange="applyFilters()"> Administrator</label>
+                                    <label class="filter-option"><input type="checkbox" value="designer" onchange="applyFilters()"> Designer</label>
+                                    <label class="filter-option"><input type="checkbox" value="user" onchange="applyFilters()"> Client</label>
+                                </div>
+                                <div class="filter-section">
+                                    <h4>Status</h4>
+                                    <label class="filter-option"><input type="checkbox" value="active" onchange="applyFilters()"> Active</label>
+                                    <label class="filter-option"><input type="checkbox" value="inactive" onchange="applyFilters()"> Inactive</label>
+                                </div>
+                                <div class="filter-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="clearFilters()">Clear All</button>
+                                    <button class="btn btn-sm btn-primary" onclick="toggleFilterDropdown()">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openAddUserModal()" title="Add a new user to the site.">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add a user
+                        </button>
+                    </div>
+                </div>
+                <div class="admin-section-full">
+                    {% if all_users %}
+                    <div class="table-container">
+                        <div class="bulk-actions-bar">
+                            <span id="selectedCount">0 users selected</span>
+                            <button class="btn btn-danger" onclick="bulkDeleteUsers()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
+                        <table class="admin-table users-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" id="selectAllUsers" onclick="toggleSelectAllUsers()" title="Select all users">
+                                    </th>
+                                    <th>User</th>
+                                    <th>Contact Info</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in all_users %}
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="user-checkbox" value="{{ user.id }}" onchange="updateBulkActions()">
+                                    </td>
+                                    <td class="user-cell">
+                                        <div class="user-info">
+                                            <div class="user-avatar">
+                                                {% if user.profile_picture %}
+                                                <img src="{{ user.profile_picture.url }}" alt="{{ user.first_name }}">
+                                                {% else %}
+                                                <div class="avatar-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="user-details">
+                                                <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                                                <span class="user-username">@{{ user.username }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="contact-cell">
+                                        <div class="contact-info">
+                                            <span class="email">{{ user.email }}</span>
+                                            {% if user.phone_number %}
+                                            <span class="phone">{{ user.phone_number }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge role-{{ user.user_role }}">
+                                            {{ user.get_user_role_display }}
+                                        </span>
+                                    </td>
+                                    <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>
+                                    <td class="actions-cell">
+                                        <div class="action-buttons">
+                                            <button class="btn-icon btn-view" title="View User"
+                                                data-user-id="{{ user.id }}" data-action="view">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon btn-edit" title="Edit User"
+                                                data-user-id="{{ user.id }}" data-action="edit">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path
+                                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
+                                                    </path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon btn-delete" title="Delete User"
+                                                data-user-id="{{ user.id }}" data-action="delete">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path
+                                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr id="emptyStateRow">
+                                    <td colspan="7" class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                        </svg>
+                                        <span>No users found</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>No users found</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function getCSRFToken() {
+        var csrfInput = document.getElementById('csrfToken');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        // Fallback: try to get from cookie
+        var name = 'csrftoken';
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue || '';
+    }
+
+    function showDashboardSection(sectionId) {
+        // Hide all sections
+        var sections = document.querySelectorAll('.dashboard-section-content');
+        sections.forEach(function(section) {
+            section.classList.remove('active');
+        });
+        
+        // Show the target section
+        var targetSection = document.getElementById(sectionId + '-section');
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+        
+        // Update sidebar active state
+        var sidebarItems = document.querySelectorAll('.side-item');
+        sidebarItems.forEach(function(item) {
+            item.classList.remove('active');
+            if (item.getAttribute('data-section') === sectionId) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    function openAddUserModal() {
+        // Clear the form
+        document.getElementById('addUserForm').reset();
+        document.getElementById('addUserId').value = '';
+        openModal('addUserModal');
+    }
+
+    function saveNewUser() {
+        var firstName = document.getElementById('addFirstName').value.trim();
+        var lastName = document.getElementById('addLastName').value.trim();
+        
+        // Client-side validation
+        if (!firstName || !lastName) {
+            showMessageModal('Error', 'First name and last name are required.', 'error');
+            return;
+        }
+
+        var formData = new FormData();
+
+        formData.append('username', document.getElementById('addUsername').value);
+        formData.append('email', document.getElementById('addEmail').value);
+        formData.append('password', document.getElementById('addPassword').value);
+        formData.append('first_name', firstName);
+        formData.append('last_name', lastName);
+        formData.append('user_role', document.getElementById('addUserRole').value);
+        formData.append('gender', document.getElementById('addGender').value);
+        formData.append('phone_number', document.getElementById('addPhone').value);
+        formData.append('company', document.getElementById('addCompany').value);
+        formData.append('location', document.getElementById('addLocation').value);
+
+        fetch('/manage/user/create/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: formData
+        })
+            .then(function (response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    closeModal('addUserModal');
+                    showMessageModal('Success', 'User created successfully!', 'success');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessageModal('Error', result.data.error || 'Unknown error occurred.', 'error');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error creating user:', error);
+                showMessageModal('Error', 'Error creating user. Please try again.', 'error');
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Handle user action buttons
+        document.querySelectorAll('.action-buttons button').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var userId = this.getAttribute('data-user-id');
+                var action = this.getAttribute('data-action');
+
+                if (action === 'view') {
+                    viewUser(userId);
+                } else if (action === 'edit') {
+                    editUser(userId);
+                } else if (action === 'delete') {
+                    deleteUser(userId);
+                }
+            });
+        });
+    });
+
+    function viewUser(userId) {
+        // Fetch user details and show in modal
+        fetch('/manage/user/' + userId + '/view/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        alert('Access denied. You must be an admin to view user details.');
+                        return;
+                    }
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                // Populate view modal with user data
+                document.getElementById('viewUserName').textContent = (data.first_name + ' ' + data.last_name).trim() || data.username || 'Unknown';
+                document.getElementById('viewUserUsername').textContent = '@' + (data.username || 'N/A');
+                document.getElementById('viewUserEmail').textContent = data.email || 'Not provided';
+                document.getElementById('viewUserRole').textContent = data.user_role_display || data.user_role || 'User';
+                document.getElementById('viewUserRole').className = 'role-badge role-' + (data.user_role || 'user');
+                document.getElementById('viewUserCompany').textContent = data.company || 'Not provided';
+                document.getElementById('viewUserLocation').textContent = data.location || 'Not provided';
+                document.getElementById('viewUserJoined').textContent = data.joined_date || 'Not available';
+                document.getElementById('viewUserRequests').textContent = data.design_requests_count || 0;
+
+                // Profile picture
+                var profilePic = document.getElementById('viewUserProfilePic');
+                var placeholder = document.getElementById('viewUserAvatarPlaceholder');
+                if (data.profile_picture) {
+                    profilePic.src = data.profile_picture;
+                    profilePic.style.display = 'block';
+                    if (placeholder) placeholder.style.display = 'none';
+                } else {
+                    profilePic.style.display = 'none';
+                    if (placeholder) {
+                        placeholder.textContent = (data.first_name ? data.first_name[0] : (data.username ? data.username[0] : '?')).toUpperCase();
+                        placeholder.style.display = 'flex';
+                    }
+                }
+
+                // Show modal
+                openModal('viewUserModal');
+            })
+            .catch(function (error) {
+                console.error('Error fetching user:', error);
+                alert('Error loading user details. Please try again. Error: ' + error.message);
+            });
+    }
+
+    function editUser(userId) {
+        // Fetch user data first
+        fetch('/manage/user/' + userId + '/edit/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        alert('Access denied. You must be an admin to edit users.');
+                        return;
+                    }
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                // Populate edit form
+                document.getElementById('editUserId').value = data.id;
+                document.getElementById('editFirstName').value = data.first_name || '';
+                document.getElementById('editLastName').value = data.last_name || '';
+                document.getElementById('editEmail').value = data.email || '';
+                document.getElementById('editUsername').value = data.username || '';
+                document.getElementById('editUserRole').value = data.user_role || 'user';
+                document.getElementById('editGender').value = data.gender || '';
+                document.getElementById('editPhone').value = data.phone_number || '';
+                document.getElementById('editDOB').value = data.date_of_birth || '';
+                document.getElementById('editCompany').value = data.company || '';
+                document.getElementById('editLocation').value = data.location || '';
+                document.getElementById('editBio').value = data.bio || '';
+
+                // Show modal
+                openModal('editUserModal');
+            })
+            .catch(function (error) {
+                console.error('Error fetching user:', error);
+                alert('Error loading user data. Please try again. Error: ' + error.message);
+            });
+    }
+
+    function saveUser() {
+        var userId = document.getElementById('editUserId').value;
+        var formData = new FormData();
+
+        formData.append('first_name', document.getElementById('editFirstName').value);
+        formData.append('last_name', document.getElementById('editLastName').value);
+        formData.append('email', document.getElementById('editEmail').value);
+        formData.append('user_role', document.getElementById('editUserRole').value);
+        formData.append('gender', document.getElementById('editGender').value);
+        formData.append('phone_number', document.getElementById('editPhone').value);
+        formData.append('date_of_birth', document.getElementById('editDOB').value);
+        formData.append('company', document.getElementById('editCompany').value);
+        formData.append('location', document.getElementById('editLocation').value);
+        formData.append('bio', document.getElementById('editBio').value);
+
+        fetch('/manage/user/' + userId + '/edit/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: formData
+        })
+            .then(function (response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    closeModal('editUserModal');
+                    showMessageModal('Success', 'User updated successfully!', 'success');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error saving user:', error);
+                showMessageModal('Error', 'Error saving user. Please try again.', 'error');
+            });
+    }
+
+    function deleteUser(userId) {
+        // Get username for confirmation
+        fetch('/manage/user/' + userId + '/view/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        alert('Access denied. You must be an admin to delete users.');
+                        return;
+                    }
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                // Set user info in delete modal
+                document.getElementById('deleteUserId').value = userId;
+                document.getElementById('deleteUserName').textContent = (data.first_name + ' ' + data.last_name).trim() || data.username || 'Unknown';
+
+                // Show confirmation modal
+                openModal('deleteUserModal');
+            })
+            .catch(function (error) {
+                console.error('Error fetching user:', error);
+                alert('Error loading user data. Please try again. Error: ' + error.message);
+            });
+    }
+
+    function confirmDeleteUser() {
+        var userId = document.getElementById('deleteUserId').value;
+
+        fetch('/manage/user/' + userId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+            .then(function (response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    closeModal('deleteUserModal');
+                    showMessageModal('Success', 'User deleted successfully!', 'success');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error deleting user:', error);
+                showMessageModal('Error', 'Error deleting user. Please try again.', 'error');
+            });
+    }
+
+    // Message Modal Function
+    function showMessageModal(title, message, type, callback) {
+        // Create modal if it doesn't exist
+        var modalId = 'messageModal';
+        var modal = document.getElementById(modalId);
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'add-new-design-modal';
+            modal.innerHTML = `
+                <div class="modal-content message-modal-content">
+                    <button class="close-btn" onclick="closeMessageModal()" aria-label="Close modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="message-modal-icon" id="messageModalIcon"></div>
+                    <h2 id="messageModalTitle"></h2>
+                    <p id="messageModalText" class="message-modal-text"></p>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-primary" onclick="closeMessageModal(true)">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Set content
+        document.getElementById('messageModalTitle').textContent = title;
+        document.getElementById('messageModalText').textContent = message;
+        
+        // Set icon based on type
+        var iconContainer = document.getElementById('messageModalIcon');
+        if (type === 'success') {
+            iconContainer.innerHTML = '✓';
+            iconContainer.className = 'message-modal-icon success';
+        } else if (type === 'error') {
+            iconContainer.innerHTML = '✕';
+            iconContainer.className = 'message-modal-icon error';
+        } else {
+            iconContainer.innerHTML = 'ℹ';
+            iconContainer.className = 'message-modal-icon info';
+        }
+        
+        // Store callback
+        modal.callback = callback;
+        
+        // Show modal
+        modal.classList.add('show');
+    }
+
+    function closeMessageModal(triggerCallback) {
+        var modal = document.getElementById('messageModal');
+        if (modal) {
+            modal.classList.remove('show');
+            if (triggerCallback && modal.callback) {
+                modal.callback();
+            }
+        }
+    }
+
+    // Bulk delete functionality
+    function toggleSelectAllUsers() {
+        var selectAllCheckbox = document.getElementById('selectAllUsers');
+        var userCheckboxes = document.querySelectorAll('.user-checkbox');
+        userCheckboxes.forEach(function(checkbox) {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        var bulkActionsBar = document.querySelector('.bulk-actions-bar');
+        var selectedCount = document.getElementById('selectedCount');
+        
+        if (checkedBoxes.length > 0) {
+            bulkActionsBar.classList.add('show');
+            selectedCount.textContent = checkedBoxes.length + ' user' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
+        } else {
+            bulkActionsBar.classList.remove('show');
+        }
+        
+        // Update select all checkbox state
+        var allCheckboxes = document.querySelectorAll('.user-checkbox');
+        var selectAllCheckbox = document.getElementById('selectAllUsers');
+        if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.checked = false;
+        }
+    }
+
+    // Filter dropdown functions
+    function toggleFilterDropdown() {
+        var dropdown = document.getElementById('filterDropdown');
+        dropdown.classList.toggle('show');
+    }
+
+    function applyFilters() {
+        // Get selected roles
+        var roleCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:first-child input:checked');
+        var selectedRoles = Array.from(roleCheckboxes).map(function(cb) { return cb.value; });
+        
+        // Get selected statuses
+        var statusCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:nth-child(2) input:checked');
+        var selectedStatuses = Array.from(statusCheckboxes).map(function(cb) { return cb.value; });
+        
+        console.log('Selected roles:', selectedRoles);
+        console.log('Selected statuses:', selectedStatuses);
+        
+        // Filter table rows
+        var tableBody = document.querySelector('.users-table tbody');
+        if (!tableBody) {
+            console.error('Table body not found');
+            return;
+        }
+        
+        var rows = tableBody.querySelectorAll('tr');
+        console.log('Total rows found:', rows.length);
+        
+        var visibleRowCount = 0;
+        var emptyStateRow = document.getElementById('emptyStateRow');
+        
+        rows.forEach(function(row, index) {
+            // Skip empty state row - handle it separately
+            if (row.id === 'emptyStateRow') {
+                row.style.display = 'none';
+                return;
+            }
+            
+            var roleBadge = row.querySelector('.role-badge');
+            var roleClass = roleBadge ? roleBadge.className : '';
+            // Extract role from class like "role-badge role-admin"
+            // Match specific role values: user, designer, admin
+            var roleMatch = roleClass.match(/role-(user|designer|admin)\b/);
+            var roleValue = roleMatch ? roleMatch[1] : '';
+            
+            console.log('Row', index, 'role class:', roleClass, 'extracted role:', roleValue);
+            
+            // Show row if no filters selected OR if role matches
+            var showByRole = selectedRoles.length === 0 || selectedRoles.indexOf(roleValue) !== -1;
+            // Status filter not implemented yet, so show all
+            var showByStatus = true;
+            
+            if (showByRole && showByStatus) {
+                row.style.display = '';
+                visibleRowCount++;
+                console.log('Row', index, 'VISIBLE');
+            } else {
+                row.style.display = 'none';
+                console.log('Row', index, 'HIDDEN (role:', roleValue, 'not in selected:', selectedRoles, ')');
+            }
+        });
+        
+        console.log('Visible rows:', visibleRowCount);
+        
+        // Show empty state if no rows are visible and we have filters applied
+        if (emptyStateRow) {
+            if (visibleRowCount === 0 && selectedRoles.length > 0) {
+                emptyStateRow.style.display = '';
+                var emptyStateSpan = emptyStateRow.querySelector('td.empty-state span');
+                if (emptyStateSpan) {
+                    emptyStateSpan.textContent = 'No users match the selected filters';
+                }
+            } else if (visibleRowCount === 0 && selectedRoles.length === 0) {
+                // No data at all - show default empty message
+                emptyStateRow.style.display = '';
+                var emptyStateSpan = emptyStateRow.querySelector('td.empty-state span');
+                if (emptyStateSpan) {
+                    emptyStateSpan.textContent = 'No users found';
+                }
+            }
+        }
+    }
+
+    function clearFilters() {
+        var checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
+        checkboxes.forEach(function(cb) { cb.checked = false; });
+        applyFilters();
+    }
+
+    // Close filter dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        var container = document.querySelector('.filter-dropdown-container');
+        var dropdown = document.getElementById('filterDropdown');
+        if (container && !container.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    function bulkDeleteUsers() {
+        var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        var userIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+        
+        if (userIds.length === 0) {
+            showMessageModal('Error', 'No users selected.', 'error');
+            return;
+        }
+        
+        // Show confirmation modal
+        document.getElementById('bulkDeleteUserIds').value = userIds.join(',');
+        document.getElementById('bulkDeleteCount').textContent = userIds.length;
+        openModal('bulkDeleteUserModal');
+    }
+
+    function confirmBulkDeleteUsers() {
+        var userIds = document.getElementById('bulkDeleteUserIds').value.split(',');
+        var csrfToken = getCSRFToken();
+        var deletePromises = userIds.map(function(userId) {
+            return fetch('/manage/user/' + userId + '/delete/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+        });
+        
+        Promise.all(deletePromises)
+            .then(function() {
+                closeModal('bulkDeleteUserModal');
+                showMessageModal('Success', userIds.length + ' users deleted successfully!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            })
+            .catch(function(error) {
+                console.error('Error deleting users:', error);
+                showMessageModal('Error', 'Error deleting some users. Please try again.', 'error');
+            });
+    }
+</script>
+
+<!-- View User Modal -->
+<div class="add-new-design-modal" id="viewUserModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('viewUserModal')" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>User Details</h2>
+        <div class="user-profile-header">
+            <div class="user-avatar-large">
+                <img id="viewUserProfilePic" src="" alt="Profile Picture" style="display: none;">
+                <div class="avatar-placeholder" id="viewUserAvatarPlaceholder"></div>
+            </div>
+            <div class="user-basic-info">
+                <h4 id="viewUserName"></h4>
+                <span id="viewUserUsername" class="username"></span>
+                <span id="viewUserRole" class="role-badge"></span>
+            </div>
+        </div>
+        <div class="user-details-grid">
+            <div class="detail-item">
+                <label>Email</label>
+                <span id="viewUserEmail"></span>
+            </div>
+            <div class="detail-item">
+                <label>Company</label>
+                <span id="viewUserCompany"></span>
+            </div>
+            <div class="detail-item">
+                <label>Location</label>
+                <span id="viewUserLocation"></span>
+            </div>
+            <div class="detail-item">
+                <label>Joined Date</label>
+                <span id="viewUserJoined"></span>
+            </div>
+            <div class="detail-item">
+                <label>Design Requests</label>
+                <span id="viewUserRequests">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="add-new-design-modal" id="editUserModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('editUserModal')" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Edit User</h2>
+        <form id="editUserForm" onsubmit="event.preventDefault(); saveUser();">
+            <input type="hidden" id="editUserId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editUsername">Username</label>
+                    <input type="text" id="editUsername" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editFirstName">First Name</label>
+                    <input type="text" id="editFirstName" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="editLastName">Last Name</label>
+                    <input type="text" id="editLastName" class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editUserRole">Role</label>
+                    <select id="editUserRole" class="form-control">
+                        <option value="user">Client</option>
+                        <option value="designer">Designer</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editGender">Gender</label>
+                    <select id="editGender" class="form-control">
+                        <option value="">-- Select Gender --</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                        <option value="P">Prefer not to say</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editPhone">Phone Number</label>
+                    <input type="text" id="editPhone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="editDOB">Date of Birth</label>
+                    <input type="date" id="editDOB" class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editCompany">Company</label>
+                    <input type="text" id="editCompany" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="editLocation">Location</label>
+                    <input type="text" id="editLocation" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="editBio">Bio</label>
+                <textarea id="editBio" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+                <button type="button" class="btn" onclick="saveUser()">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete User Confirmation Modal -->
+<div class="add-new-design-modal" id="deleteUserModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('deleteUserModal')" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Delete User</h2>
+        <input type="hidden" id="deleteUserId">
+        <p>Are you sure you want to delete this user?</p>
+        <p class="user-to-delete"><strong id="deleteUserName"></strong></p>
+        <p class="warning-text">This action cannot be undone. All user data will be permanently deleted.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteUserModal')">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="confirmDeleteUser()">Delete User</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="add-new-design-modal" id="bulkDeleteUserModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('bulkDeleteUserModal')" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Delete Multiple Users</h2>
+        <input type="hidden" id="bulkDeleteUserIds">
+        <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> users?</p>
+        <p class="warning-text">This action cannot be undone. All selected user data will be permanently deleted.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('bulkDeleteUserModal')">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="confirmBulkDeleteUsers()">Delete Users</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="add-new-design-modal" id="addUserModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('addUserModal')" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Add New User</h2>
+        <form id="addUserForm" onsubmit="event.preventDefault(); saveNewUser();">
+            <input type="hidden" id="addUserId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="addUsername">Username *</label>
+                    <input type="text" id="addUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="addEmail">Email *</label>
+                    <input type="email" id="addEmail" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="addPassword">Password *</label>
+                    <input type="password" id="addPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="addUserRole">Role *</label>
+                    <select id="addUserRole" class="form-control" required>
+                        <option value="user">Client</option>
+                        <option value="designer">Designer</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="addFirstName">First Name *</label>
+                    <input type="text" id="addFirstName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="addLastName">Last Name *</label>
+                    <input type="text" id="addLastName" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="addGender">Gender</label>
+                    <select id="addGender" class="form-control">
+                        <option value="">-- Select Gender --</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                        <option value="P">Prefer not to say</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="addPhone">Phone Number</label>
+                    <input type="text" id="addPhone" class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="addCompany">Company</label>
+                    <input type="text" id="addCompany" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="addLocation">Location</label>
+                    <input type="text" id="addLocation" class="form-control">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
