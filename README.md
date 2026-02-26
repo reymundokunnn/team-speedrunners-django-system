@@ -71,8 +71,8 @@ main_site/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd main_site
+   git clone https://github.com/rikkatakanashiii/presenta
+   cd presenta
    ```
 
 2. **Create and activate virtual environment**
