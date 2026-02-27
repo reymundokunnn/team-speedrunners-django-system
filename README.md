@@ -137,20 +137,6 @@ SECRET_KEY = 'your-secure-random-key-here'
 ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com']
 ```
 
-#### Generating a Secret Key
-
-To create a secure secret key, run this command in your terminal:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(50))"
-```
-
-Copy the output and paste it as your `SECRET_KEY` in `settings.py`:
-
-```python
-SECRET_KEY = 'paste-your-generated-key-here'
-```
-
 **Important**: Never commit your production secret key to version control. Use environment variables instead:
 
 ```python
