@@ -1283,7 +1283,6 @@ function openAvailableRequestModal(button) {
 
 // Initialize dashboard-specific handlers
 document.addEventListener('DOMContentLoaded', function () {
-    // User Dashboard - Edit modal file upload - accumulate files
     var editFileUploadArea = document.getElementById('editFileUploadArea');
     var editFileInput = document.getElementById('edit_reference_files');
     var editFileList = document.getElementById('editFileList');
