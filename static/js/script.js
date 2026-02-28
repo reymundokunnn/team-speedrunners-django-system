@@ -187,12 +187,15 @@ function updatePasswordStrength() {
         strengthFill.style.width = '0';
         strengthText.textContent = '';
     } else if (strength <= 2) {
+        strengthFill.style.width = '33%';
         strengthFill.classList.add('weak');
         strengthText.textContent = 'Weak password';
     } else if (strength <= 3) {
+        strengthFill.style.width = '66%';
         strengthFill.classList.add('medium');
         strengthText.textContent = 'Medium password';
     } else {
+        strengthFill.style.width = '100%';
         strengthFill.classList.add('strong');
         strengthText.textContent = 'Strong password';
     }
@@ -432,12 +435,15 @@ function updateResetPasswordStrength() {
         strengthFill.style.width = '0';
         strengthText.textContent = '';
     } else if (strength <= 2) {
+        strengthFill.style.width = '33%';
         strengthFill.classList.add('weak');
         strengthText.textContent = 'Weak password';
     } else if (strength <= 3) {
+        strengthFill.style.width = '66%';
         strengthFill.classList.add('medium');
         strengthText.textContent = 'Medium password';
     } else {
+        strengthFill.style.width = '100%';
         strengthFill.classList.add('strong');
         strengthText.textContent = 'Strong password';
     }
