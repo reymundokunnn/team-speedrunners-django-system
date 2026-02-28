@@ -5658,7 +5658,6 @@ body.dark-mode .widget-row.quick-actions-row .widget-card {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
-    padding: 20px;
 }
 
 .quick-action-btn {
@@ -5714,8 +5713,9 @@ body.dark-mode .widget-row.quick-actions-row .widget-card {
 }
 
 .action-label {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 600;
+    margin-bottom: -10px;
 }
 
 .action-desc {
