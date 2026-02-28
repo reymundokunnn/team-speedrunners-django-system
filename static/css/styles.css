@@ -6342,7 +6342,7 @@ body.dark-mode .widget-card {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
-body.dark-mode .quick-actions-card {
+body.dark-mode .quick-actions-card, body .quick-actions-card {
     background: transparent;
     box-shadow: 0 0 0px;
     margin: 0;
