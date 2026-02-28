@@ -5662,7 +5662,7 @@ body.dark-mode .widget-row.quick-actions-row .widget-card {
 
 .quick-action-btn {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -5703,8 +5703,8 @@ body.dark-mode .widget-row.quick-actions-row .widget-card {
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: rgba(232, 127, 20, 0.1);
     color: #e87f14;
+    margin-right: 10px;
 }
 
 .quick-action-btn.primary .action-icon {
@@ -5712,10 +5712,17 @@ body.dark-mode .widget-row.quick-actions-row .widget-card {
     color: white;
 }
 
-.action-label {
+.action-label-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+    text-align: left;
+}
+
+.action-label-wrapper .action-label {
     font-size: 1.2rem;
     font-weight: 600;
-    margin-bottom: -10px;
 }
 
 .action-desc {
@@ -6317,8 +6324,8 @@ body.dark-mode .activity-text {
 .quick-action-btn svg {
     flex-shrink: 0;
     color: #e87f14;
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
 }
 
 /* Empty Widget State */
