@@ -1,6 +1,10 @@
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
 from .models import User as PresentaUser
+import pytz
+
+# Get timezone choices
+TIMEZONE_CHOICES = [(tz, tz) for tz in pytz.common_timezones]
 
 
 class EditProfileForm(forms.ModelForm):
@@ -163,15 +167,30 @@ class UserSettingsForm(forms.Form):
         choices=[('light', 'Light Mode'), ('dark', 'Dark Mode'), ('auto', 'Auto')],
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
     )
-    timezone = forms.CharField(
+    timezone = forms.ChoiceField(
         label='Timezone',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., UTC, America/New_York'}),
+        choices=TIMEZONE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         required=False
     )
     language = forms.CharField(
         label='Language',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., en, es, fr'}),
         initial='en',
+        required=False
+    )
+    currency_preference = forms.ChoiceField(
+        label='Currency Preference',
+        choices=[
+            ('USD', 'US Dollar ($)'),
+            ('EUR', 'Euro (€)'),
+            ('GBP', 'British Pound (£)'),
+            ('PHP', 'Philippine Peso (₱)'),
+            ('JPY', 'Japanese Yen (¥)'),
+            ('AUD', 'Australian Dollar (A$)'),
+            ('CAD', 'Canadian Dollar (C$)'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'}),
         required=False
     )
     
@@ -243,6 +262,31 @@ class DesignerSettingsForm(forms.Form):
         label='Accept New Project Requests',
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         required=False
+    )
+    portfolio_url = forms.URLField(
+        label='Portfolio URL',
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://example.com/portfolio'}),
+        required=False,
+        help_text='Link to your portfolio or website'
+    )
+    max_concurrent_projects = forms.IntegerField(
+        label='Max Concurrent Projects',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '5', 'min': '1'}),
+        required=False,
+        help_text='Maximum number of projects you can work on simultaneously'
+    )
+    revision_limit = forms.IntegerField(
+        label='Revision Limit Per Project',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '3', 'min': '1'}),
+        required=False,
+        help_text='Maximum number of revisions you include per project'
+    )
+    minimum_project_budget = forms.DecimalField(
+        label='Minimum Project Budget ($)',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'}),
+        required=False,
+        decimal_places=2,
+        help_text='Minimum budget you accept for projects'
     )
 
 

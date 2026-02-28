@@ -1344,6 +1344,7 @@ def account_settings(request):
             user_settings.theme_preference = form.cleaned_data.get('theme_preference', user_settings.theme_preference)
             user_settings.timezone = form.cleaned_data.get('timezone', user_settings.timezone)
             user_settings.language = form.cleaned_data.get('language', user_settings.language)
+            user_settings.currency_preference = form.cleaned_data.get('currency_preference', user_settings.currency_preference)
             user_settings.email_notifications_enabled = form.cleaned_data.get('email_notifications_enabled', False)
             user_settings.order_updates_email = form.cleaned_data.get('order_updates_email', False)
             user_settings.marketing_emails = form.cleaned_data.get('marketing_emails', False)
@@ -1360,6 +1361,7 @@ def account_settings(request):
             'theme_preference': user_settings.theme_preference,
             'timezone': user_settings.timezone,
             'language': user_settings.language,
+            'currency_preference': user_settings.currency_preference,
             'email_notifications_enabled': user_settings.email_notifications_enabled,
             'order_updates_email': user_settings.order_updates_email,
             'marketing_emails': user_settings.marketing_emails,
@@ -1402,6 +1404,10 @@ def designer_settings(request):
             user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
             user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
             user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
+            user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
+            user_settings.max_concurrent_projects = designer_form.cleaned_data.get('max_concurrent_projects') or user_settings.max_concurrent_projects
+            user_settings.revision_limit = designer_form.cleaned_data.get('revision_limit') or user_settings.revision_limit
+            user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
             user_settings.save()
             
             messages.success(request, 'Designer settings updated successfully.')
@@ -1413,6 +1419,10 @@ def designer_settings(request):
             'designer_rate': user_settings.designer_rate,
             'designer_specializations': user_settings.designer_specializations,
             'accept_project_requests': user_settings.accept_project_requests,
+            'portfolio_url': user_settings.portfolio_url,
+            'max_concurrent_projects': user_settings.max_concurrent_projects,
+            'revision_limit': user_settings.revision_limit,
+            'minimum_project_budget': user_settings.minimum_project_budget,
         }
         designer_form = DesignerSettingsForm(initial=initial_data)
     

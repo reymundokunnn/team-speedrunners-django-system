@@ -204,6 +204,16 @@ class UserSettings(models.Model):
         ('never', 'Never'),
     ]
     
+    CURRENCY_CHOICES = [
+        ('USD', 'US Dollar ($)'),
+        ('EUR', 'Euro (€)'),
+        ('GBP', 'British Pound (£)'),
+        ('PHP', 'Philippine Peso (₱)'),
+        ('JPY', 'Japanese Yen (¥)'),
+        ('AUD', 'Australian Dollar (A$)'),
+        ('CAD', 'Canadian Dollar (C$)'),
+    ]
+    
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_settings')
     
     # Display & Theme Settings
@@ -221,11 +231,19 @@ class UserSettings(models.Model):
     profile_visibility = models.CharField(max_length=20, choices=[('public', 'Public'), ('private', 'Private')], default='public')
     show_online_status = models.BooleanField(default=True)
     
+    # User/Client-specific settings
+    currency_preference = models.CharField(max_length=10, choices=CURRENCY_CHOICES, default='USD', blank=True)
+    preferred_design_types = models.TextField(blank=True, help_text='Comma-separated preferred design types')
+    
     # Designer-specific settings
     designer_availability = models.CharField(max_length=20, choices=[('available', 'Available'), ('unavailable', 'Unavailable')], default='available')
     designer_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     designer_specializations = models.TextField(blank=True, help_text='Comma-separated list of specializations')
     accept_project_requests = models.BooleanField(default=True)
+    portfolio_url = models.URLField(blank=True, null=True)
+    max_concurrent_projects = models.IntegerField(default=5, blank=True)
+    revision_limit = models.IntegerField(default=3, blank=True, help_text='Maximum revisions per project')
+    minimum_project_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     # Admin settings
     maintenance_mode = models.BooleanField(default=False)
