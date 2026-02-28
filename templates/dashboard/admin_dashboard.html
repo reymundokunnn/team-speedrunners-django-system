@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load file_filters %}
 {% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
 {% block content %}
 <style>
@@ -180,7 +181,7 @@
                                                 </div>
                                                 <div class="activity-details">
                                                     <p class="activity-text">{{ activity.message }}</p>
-                                                    <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                                                    <span class="activity-time">{{ activity.created_at|friendly_timesince }}</span>
                                                 </div>
                                             </li>
                                             {% endfor %}

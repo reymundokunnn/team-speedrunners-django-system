@@ -1490,6 +1490,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (cropperImage && cropperModal) {
                         // Show modal immediately
                         cropperModal.classList.add('show');
+                        document.documentElement.classList.add('cropper-modal-open');
+                        document.body.classList.add('cropper-modal-open');
 
                         // Destroy existing cropper
                         if (cropper) {
@@ -1552,6 +1554,78 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cancelCropBtn) {
         cancelCropBtn.addEventListener('click', function () {
             closeCropperModal();
+        });
+    }
+
+    // Zoom In
+    var zoomInBtn = document.getElementById('zoomInBtn');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.zoom(0.1);
+            }
+        });
+    }
+
+    // Zoom Out
+    var zoomOutBtn = document.getElementById('zoomOutBtn');
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.zoom(-0.1);
+            }
+        });
+    }
+
+    // Rotate Left
+    var rotateLeftBtn = document.getElementById('rotateLeftBtn');
+    if (rotateLeftBtn) {
+        rotateLeftBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(-45);
+            }
+        });
+    }
+
+    // Rotate Right
+    var rotateRightBtn = document.getElementById('rotateRightBtn');
+    if (rotateRightBtn) {
+        rotateRightBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(45);
+            }
+        });
+    }
+
+    // Flip Horizontal
+    var flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
+    if (flipHorizontalBtn) {
+        flipHorizontalBtn.addEventListener('click', function () {
+            if (cropper) {
+                var scaleX = cropper.getData().scaleX || 1;
+                cropper.scaleX(-scaleX);
+            }
+        });
+    }
+
+    // Flip Vertical
+    var flipVerticalBtn = document.getElementById('flipVerticalBtn');
+    if (flipVerticalBtn) {
+        flipVerticalBtn.addEventListener('click', function () {
+            if (cropper) {
+                var scaleY = cropper.getData().scaleY || 1;
+                cropper.scaleY(-scaleY);
+            }
+        });
+    }
+
+    // Reset Crop
+    var resetCropBtn = document.getElementById('resetCropBtn');
+    if (resetCropBtn) {
+        resetCropBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.reset();
+            }
         });
     }
 
@@ -1629,6 +1703,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cropperModal) {
             cropperModal.classList.remove('show');
         }
+
+        document.documentElement.classList.remove('cropper-modal-open');
+        document.body.classList.remove('cropper-modal-open');
 
         if (cropper) {
             cropper.destroy();

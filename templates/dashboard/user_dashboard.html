@@ -174,7 +174,7 @@
                                                 </div>
                                                 <div class="activity-details">
                                                     <p class="activity-text">{{ activity.message }}</p>
-                                                    <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                                                    <span class="activity-time">{{ activity.created_at|friendly_timesince }}</span>
                                                 </div>
                                             </li>
                                             {% endfor %}
