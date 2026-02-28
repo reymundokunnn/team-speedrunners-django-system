@@ -1,30 +1,24 @@
-# Role-Based Activity Logging Implementation
+# Settings Pages Beautification TODO
 
-## Tasks
+## Task
+Beautify the site settings page design for:
+- main_site/templates/settings/account_settings.html
+- main_site/templates/settings/designer_settings.html  
+- main_site/templates/settings/admin_settings.html
 
-### 1. Enhance Activity Model ✅
-- [x] Add new activity types: `login`, `logout`, `profile_updated`, `file_uploaded`, `user_created`, `user_updated`, `user_deleted`
-- [x] Add `target_user` field to track activities performed on other users
-- [x] Create migration for model changes
+## Plan
+- [ ] Add enhanced CSS styling to styles.css
+  - [ ] Modern sidebar with better hover/active states and icons
+  - [ ] Enhanced section cards with shadows and gradients
+  - [ ] Better form input styling with focus states
+  - [ ] Improved radio/checkbox groups with custom styling
+  - [ ] Better info boxes and alerts
+  - [ ] Enhanced action buttons with animations
+  - [ ] Better visual hierarchy with icons for each section
 
-### 2. Update Dashboard Views ✅
-- [x] Update `user_dashboard` view to show user's activities + activities on their design requests
-- [x] Update `designer_dashboard` view to show designer's activities + activities on assigned projects
-- [x] Update `admin_dashboard` view to show all platform activities (system-wide)
+- [ ] Update account_settings.html with enhanced structure
+- [ ] Update designer_settings.html with enhanced structure
+- [ ] Update admin_settings.html with enhanced structure
+- [ ] Test and verify all three pages render correctly
 
-### 3. Add Activity Logging ✅
-- [x] Log login activity in `login_view`
-- [x] Log logout activity in `logout_view`
-- [x] Log profile update activity in `edit_profile`
-- [x] Log file upload activities
-- [x] Log user management activities (create, update, delete)
-
-### 4. Update Templates ✅
-- [x] Add new activity type icons in `user_dashboard.html`
-- [x] Add new activity type icons in `designer_dashboard.html`
-- [x] Add new activity type icons in `admin_dashboard.html`
-
-### 5. Testing
-- [ ] Test user dashboard shows correct activities
-- [ ] Test designer dashboard shows correct activities
-- [ ] Test admin dashboard shows all activities
+## Status: In Progress

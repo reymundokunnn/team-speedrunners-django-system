@@ -187,3 +187,59 @@ class Activity(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.activity_type} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+class UserSettings(models.Model):
+    """Model for storing user-specific settings and preferences."""
+    
+    THEME_CHOICES = [
+        ('light', 'Light Mode'),
+        ('dark', 'Dark Mode'),
+        ('auto', 'Auto'),
+    ]
+    
+    NOTIFICATION_FREQUENCY_CHOICES = [
+        ('immediate', 'Immediate'),
+        ('daily', 'Daily Digest'),
+        ('weekly', 'Weekly Digest'),
+        ('never', 'Never'),
+    ]
+    
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_settings')
+    
+    # Display & Theme Settings
+    theme_preference = models.CharField(max_length=10, choices=THEME_CHOICES, default='auto')
+    timezone = models.CharField(max_length=50, default='UTC', blank=True)
+    language = models.CharField(max_length=10, default='en', blank=True)
+    
+    # Notification Settings
+    email_notifications_enabled = models.BooleanField(default=True)
+    order_updates_email = models.BooleanField(default=True)
+    marketing_emails = models.BooleanField(default=True)
+    notification_frequency = models.CharField(max_length=20, choices=NOTIFICATION_FREQUENCY_CHOICES, default='immediate')
+    
+    # Privacy Settings
+    profile_visibility = models.CharField(max_length=20, choices=[('public', 'Public'), ('private', 'Private')], default='public')
+    show_online_status = models.BooleanField(default=True)
+    
+    # Designer-specific settings
+    designer_availability = models.CharField(max_length=20, choices=[('available', 'Available'), ('unavailable', 'Unavailable')], default='available')
+    designer_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    designer_specializations = models.TextField(blank=True, help_text='Comma-separated list of specializations')
+    accept_project_requests = models.BooleanField(default=True)
+    
+    # Admin settings
+    maintenance_mode = models.BooleanField(default=False)
+    
+    # Two-factor authentication
+    two_fa_enabled = models.BooleanField(default=False)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Settings for {self.user.username}"
+    
+    class Meta:
+        verbose_name = 'User Settings'
+        verbose_name_plural = 'User Settings'

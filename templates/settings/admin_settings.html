@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Settings - Presenta{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>Admin Settings</h1>
+        <p>Configure system-wide settings and maintenance options</p>
+    </div>
+
+    <div class="settings-content">
+        <!-- Settings Sidebar Navigation -->
+        <aside class="settings-sidebar">
+            <nav class="settings-nav">
+                <a href="{% url 'account_settings' %}" class="settings-nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Account & Notifications</span>
+                </a>
+                {% if user.profile.user_role == 'designer' %}
+                <a href="{% url 'designer_settings' %}" class="settings-nav-item">
+                    <span class="nav-icon">🎨</span>
+                    <span class="nav-label">Designer Settings</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'admin_settings' %}" class="settings-nav-item active">
+                    <span class="nav-icon">👑</span>
+                    <span class="nav-label">Admin Settings</span>
+                </a>
+                <a href="{% url 'edit_profile' %}" class="settings-nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Edit Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Admin Settings Form -->
+        <main class="settings-main">
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button type="button" class="alert-close">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="settings-form">
+                {% csrf_token %}
+
+                <!-- Admin Settings Section - Compact -->
+                <section class="settings-section">
+                    <div class="section-header">
+                        <h2>Admin Settings</h2>
+                        <p class="section-description">Configure system-wide settings and maintenance options</p>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">System Status</h3>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label warning">
+                                {{ admin_form.maintenance_mode }}
+                                <span class="checkbox-text">{{ admin_form.maintenance_mode.label }}</span>
+                            </label>
+                        </div>
+                        <div class="info-box warning">
+                            ⚠️ <strong>Maintenance Mode:</strong> {{ admin_form.maintenance_mode.help_text }}
+                        </div>
+                    </div>
+
+                    <!-- Site Information -->
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Site Information</h3>
+                        <div class="form-group">
+                            <label for="id_site_name">{{ admin_form.site_name.label }}</label>
+                            {{ admin_form.site_name }}
+                            {% if admin_form.site_name.errors %}
+                            <span class="error-message">{{ admin_form.site_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_site_description">{{ admin_form.site_description.label }}</label>
+                            {{ admin_form.site_description }}
+                            {% if admin_form.site_description.errors %}
+                            <span class="error-message">{{ admin_form.site_description.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Support & Contact -->
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Support & Contact</h3>
+                        <div class="form-group">
+                            <label for="id_support_email">{{ admin_form.support_email.label }}</label>
+                            {{ admin_form.support_email }}
+                            {% if admin_form.support_email.errors %}
+                            <span class="error-message">{{ admin_form.support_email.errors.0 }}</span>
+                            {% endif %}
+                            <small class="form-help">This email will be displayed in support forms and contact pages</small>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Advanced Settings</h3>
+                        <div class="info-box">
+                            <p>Advanced configuration options such as:</p>
+                            <ul>
+                                <li>Email SMTP settings</li>
+                                <li>API key management</li>
+                                <li>Backup & data export</li>
+                                <li>Third-party integrations</li>
+                            </ul>
+                            <p class="mt-3"><em>Contact your system administrator for access to these settings.</em></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Form Actions -->
+                <div class="settings-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'admin_settings' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Close alert messages on click
+    const closeButtons = document.querySelectorAll('.alert-close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.parentElement.style.display = 'none';
+        });
+    });
+});
+</script>
+
+{% endblock %}

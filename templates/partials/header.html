@@ -29,18 +29,46 @@
     </div>
     <nav class="right">
         {% if user.is_authenticated %}
-        <div class="user-info">
-            <div class="user-meta">
-                <span class="user-name"><b>{{ display_name }}</b></span><br>
-                <span class="user-username">@{{ user.username }}</span>
+        <div class="user-info-wrapper">
+            <div class="user-info" id="user-profile-toggle">
+                <div class="user-meta">
+                    <span class="user-name"><b>{{ display_name }}</b></span><br>
+                    <span class="user-username">@{{ user.username }}</span>
+                </div>
+                {% if profile_picture_url %}
+                <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
+                {% else %}
+                <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
+                {% endif %}
             </div>
-            {% if profile_picture_url %}
-            <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
-            {% else %}
-            <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
-            {% endif %}
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="{% url 'settings' %}" class="dropdown-item">
+                    <img src="{% static 'img/user-icon.svg' %}" alt="Settings" class="dropdown-icon">
+                    <span>Settings</span>
+                </a>
+                {% if user.is_superuser or user.profile.user_role == 'admin' %}
+                <a href="{% url 'admin_dashboard' %}" class="dropdown-item">
+                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <span>Dashboard</span>
+                </a>
+                {% elif user.profile.user_role == 'designer' %}
+                <a href="{% url 'designer_dashboard' %}" class="dropdown-item">
+                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <span>Dashboard</span>
+                </a>
+                {% else %}
+                <a href="{% url 'user_dashboard' %}" class="dropdown-item">
+                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+                <hr class="dropdown-divider">
+                <a href="{% url 'presenta_logout' %}" class="dropdown-item logout">
+                    <img src="{% static 'img/logout-icon.svg' %}" alt="Logout" class="dropdown-icon">
+                    <span>Sign out</span>
+                </a>
+            </div>
         </div>
-        <a href="{% url 'presenta_logout' %}" class="sign-out">Sign out</a>
         {% else %}
         <div class="menu-btn">
             <img src="{% static 'img/menu.png' %}" class="menu-icon" height="15">

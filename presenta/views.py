@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User, DesignRequestFile, Activity
+from .models import Profile, DesignRequest, User, DesignRequestFile, Activity, UserSettings
 from PIL import Image
 from io import BytesIO
 import base64
@@ -1276,3 +1276,192 @@ def password_reset_confirm(request, user_id):
     )
     
     return JsonResponse({'success': True, 'message': 'Password has been reset successfully.'})
+
+# ========================
+# SETTINGS VIEWS
+# ========================
+
+@login_required
+def settings_page(request):
+    """Redirect to appropriate settings page based on user role."""
+    try:
+        profile = request.user.profile
+        if request.user.is_superuser or profile.user_role == 'admin':
+            return redirect('admin_settings')
+        elif profile.user_role == 'designer':
+            return redirect('designer_settings')
+        else:
+            return redirect('account_settings')
+    except Profile.DoesNotExist:
+        return redirect('account_settings')
+
+
+@login_required
+def account_settings(request):
+    """Account and notification settings for all users."""
+    from .forms import UserSettingsForm
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = user.presenta_user
+    
+    # Get or create user settings
+    user_settings, created = UserSettings.objects.get_or_create(user=user)
+    
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST)
+        if form.is_valid():
+            # Handle password change
+            current_password = form.cleaned_data.get('current_password')
+            new_password = form.cleaned_data.get('new_password')
+            confirm_password = form.cleaned_data.get('confirm_password')
+            
+            if new_password:
+                if not presenta_user.check_password(current_password):
+                    form.add_error('current_password', 'Current password is incorrect.')
+                elif new_password != confirm_password:
+                    form.add_error('confirm_password', 'Passwords do not match.')
+                elif len(new_password) < 8:
+                    form.add_error('new_password', 'Password must be at least 8 characters.')
+                else:
+                    # Update both Presenta User and Django User passwords
+                    presenta_user.set_password(new_password)
+                    presenta_user.save()
+                    user.set_password(new_password)
+                    user.save()
+                    
+                    # Log the password change
+                    log_activity(
+                        user=user,
+                        activity_type='password_changed',
+                        message="Password was changed from settings."
+                    )
+                    
+                    messages.success(request, 'Password changed successfully.')
+                    return redirect('account_settings')
+            
+            # Update user settings
+            user_settings.theme_preference = form.cleaned_data.get('theme_preference', user_settings.theme_preference)
+            user_settings.timezone = form.cleaned_data.get('timezone', user_settings.timezone)
+            user_settings.language = form.cleaned_data.get('language', user_settings.language)
+            user_settings.email_notifications_enabled = form.cleaned_data.get('email_notifications_enabled', False)
+            user_settings.order_updates_email = form.cleaned_data.get('order_updates_email', False)
+            user_settings.marketing_emails = form.cleaned_data.get('marketing_emails', False)
+            user_settings.notification_frequency = form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
+            user_settings.profile_visibility = form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
+            user_settings.show_online_status = form.cleaned_data.get('show_online_status', False)
+            user_settings.save()
+            
+            messages.success(request, 'Settings updated successfully.')
+            return redirect('account_settings')
+    else:
+        # Populate form with current settings
+        initial_data = {
+            'theme_preference': user_settings.theme_preference,
+            'timezone': user_settings.timezone,
+            'language': user_settings.language,
+            'email_notifications_enabled': user_settings.email_notifications_enabled,
+            'order_updates_email': user_settings.order_updates_email,
+            'marketing_emails': user_settings.marketing_emails,
+            'notification_frequency': user_settings.notification_frequency,
+            'profile_visibility': user_settings.profile_visibility,
+            'show_online_status': user_settings.show_online_status,
+        }
+        form = UserSettingsForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'settings_section': 'account',
+        'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
+    }
+    return render(request, 'settings/account_settings.html', context)
+
+
+@login_required
+def designer_settings(request):
+    """Settings page for designers."""
+    from .forms import DesignerSettingsForm
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = user.presenta_user
+    
+    # Check if user is a designer
+    if user.profile.user_role != 'designer':
+        messages.error(request, 'You do not have permission to access designer settings.')
+        return redirect('account_settings')
+    
+    # Get or create user settings
+    user_settings, created = UserSettings.objects.get_or_create(user=user)
+    
+    if request.method == 'POST':
+        designer_form = DesignerSettingsForm(request.POST)
+        
+        if designer_form.is_valid():
+            user_settings.designer_availability = designer_form.cleaned_data.get('designer_availability', user_settings.designer_availability)
+            user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
+            user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
+            user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
+            user_settings.save()
+            
+            messages.success(request, 'Designer settings updated successfully.')
+            return redirect('designer_settings')
+    else:
+        # Populate form with current settings
+        initial_data = {
+            'designer_availability': user_settings.designer_availability,
+            'designer_rate': user_settings.designer_rate,
+            'designer_specializations': user_settings.designer_specializations,
+            'accept_project_requests': user_settings.accept_project_requests,
+        }
+        designer_form = DesignerSettingsForm(initial=initial_data)
+    
+    context = {
+        'designer_form': designer_form,
+        'settings_section': 'designer',
+        'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
+    }
+    return render(request, 'settings/designer_settings.html', context)
+
+
+@login_required
+def admin_settings(request):
+    """Settings page for administrators."""
+    from .forms import AdminSettingsForm
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = user.presenta_user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or user.profile.user_role == 'admin'):
+        messages.error(request, 'You do not have permission to access admin settings.')
+        return redirect('account_settings')
+    
+    # Get or create user settings
+    user_settings, created = UserSettings.objects.get_or_create(user=user)
+    
+    if request.method == 'POST':
+        admin_form = AdminSettingsForm(request.POST)
+        
+        if admin_form.is_valid():
+            user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
+            user_settings.save()
+            
+            messages.success(request, 'Admin settings updated successfully.')
+            return redirect('admin_settings')
+    else:
+        initial_data = {
+            'maintenance_mode': user_settings.maintenance_mode,
+            'site_name': 'Presenta',
+            'site_description': 'Professional Design Services Platform',
+            'support_email': 'support@presenta.com',
+        }
+        admin_form = AdminSettingsForm(initial=initial_data)
+    
+    context = {
+        'admin_form': admin_form,
+        'settings_section': 'admin',
+        'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
+    }
+    return render(request, 'settings/admin_settings.html', context)

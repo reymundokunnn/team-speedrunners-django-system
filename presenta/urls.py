@@ -47,4 +47,10 @@ urlpatterns = [
     path('password-reset/lookup/', views.password_reset_lookup, name='password_reset_lookup'),
     path('password-reset/form/<int:user_id>/', views.password_reset_form, name='password_reset_form'),
     path('password-reset/confirm/<int:user_id>/', views.password_reset_confirm, name='password_reset_confirm'),
+    
+    # Settings
+    path('settings/', views.settings_page, name='settings'),
+    path('settings/account/', views.account_settings, name='account_settings'),
+    path('settings/designer/', views.designer_settings, name='designer_settings'),
+    path('settings/admin/', views.admin_settings, name='admin_settings'),
 ]
