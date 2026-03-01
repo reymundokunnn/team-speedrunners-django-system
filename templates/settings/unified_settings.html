@@ -47,8 +47,9 @@
 
             <!-- Account & Notifications Section -->
             <section id="section-account" class="settings-unified-section active">
-                <form method="post" class="settings-unified-form" id="account-form">
+                <form method="post" class="settings-unified-form" id="account-form" action="{% url 'unified_settings' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="form_type" value="account">
                     
                     <div class="settings-unified-section-header">
                         <h2><span class="orange">Account</span> Settings</h2>
@@ -343,8 +344,9 @@
             <!-- Designer Settings Section -->
             {% if user.profile.user_role == 'designer' %}
             <section id="section-designer" class="settings-unified-section">
-                <form method="post" class="settings-unified-form" id="designer-form">
+                <form method="post" class="settings-unified-form" id="designer-form" action="{% url 'unified_settings' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="form_type" value="designer">
 
                     <div class="settings-unified-section-header">
                         <h2><span class="orange">Designer</span> Settings</h2>
@@ -488,8 +490,9 @@
             <!-- Admin Settings Section -->
             {% if user.is_superuser or user.profile.user_role == 'admin' %}
             <section id="section-admin" class="settings-unified-section">
-                <form method="post" class="settings-unified-form" id="admin-form">
+                <form method="post" class="settings-unified-form" id="admin-form" action="{% url 'unified_settings' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="form_type" value="admin">
 
                     <div class="settings-unified-section-header">
                         <h2>Admin Settings</h2>

@@ -1329,8 +1329,10 @@ def unified_settings(request):
     
     # Handle POST requests for different sections
     if request.method == 'POST':
-        # Check which form was submitted
-        if 'designer_availability' in request.POST and designer_form:
+        # Check which form was submitted using the hidden form_type field
+        form_type = request.POST.get('form_type', '')
+        
+        if form_type == 'designer' and designer_form:
             # Designer settings form
             designer_form = DesignerSettingsForm(request.POST)
             if designer_form.is_valid():
@@ -1344,18 +1346,66 @@ def unified_settings(request):
                 user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
                 user_settings.save()
                 messages.success(request, 'Designer settings updated successfully.')
-        elif 'maintenance_mode' in request.POST and admin_form:
+            else:
+                messages.error(request, 'Error updating designer settings. Please check the form.')
+        elif form_type == 'admin' and admin_form:
             # Admin settings form
             admin_form = AdminSettingsForm(request.POST)
             if admin_form.is_valid():
                 user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
                 user_settings.save()
                 messages.success(request, 'Admin settings updated successfully.')
+            else:
+                messages.error(request, 'Error updating admin settings. Please check the form.')
         else:
-            # Account settings form
+            # Account settings form (default)
+            # First handle profile update if it has first_name
+            if 'first_name' in request.POST or 'last_name' in request.POST:
+                profile_form = EditProfileForm(request.POST, instance=presenta_user)
+                if profile_form.is_valid():
+                    profile = profile_form.save(commit=False)
+                    
+                    # Handle profile picture cropping
+                    cropped_image_data = request.POST.get('cropped_image_data')
+                    remove_picture = request.POST.get('cropped_image_data') == 'remove'
+                    
+                    if remove_picture:
+                        if profile.profile_picture:
+                            profile.profile_picture.delete(save=True)
+                        profile.profile_picture = None
+                    elif cropped_image_data and not cropped_image_data.startswith('remove'):
+                        try:
+                            format_part, imgstr = cropped_image_data.split(';base64,')
+                            image_data = base64.b64decode(imgstr)
+                            image = Image.open(BytesIO(image_data))
+                            if image.mode in ('RGBA', 'P'):
+                                image = image.convert('RGB')
+                            img_io = BytesIO()
+                            image.save(img_io, format='JPEG', quality=85)
+                            img_io.seek(0)
+                            import uuid
+                            filename = f"profile_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                            from django.core.files.uploadedfile import InMemoryUploadedFile
+                            cropped_file = InMemoryUploadedFile(
+                                img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                            )
+                            profile.profile_picture = cropped_file
+                        except Exception as e:
+                            print(f"Error processing image: {e}")
+                    
+                    profile.save()
+                    
+                    # Also update Django user first_name and last_name
+                    if profile.first_name:
+                        user.first_name = profile.first_name
+                    if profile.last_name:
+                        user.last_name = profile.last_name
+                    if profile.first_name or profile.last_name:
+                        user.save()
+            
+            # Handle account settings
             account_form = UserSettingsForm(request.POST)
             if account_form.is_valid():
-                user_settings.theme_preference = account_form.cleaned_data.get('theme_preference', user_settings.theme_preference)
                 user_settings.timezone = account_form.cleaned_data.get('timezone', user_settings.timezone)
                 user_settings.language = account_form.cleaned_data.get('language', user_settings.language)
                 user_settings.currency_preference = account_form.cleaned_data.get('currency_preference', user_settings.currency_preference)
@@ -1367,12 +1417,16 @@ def unified_settings(request):
                 user_settings.show_online_status = account_form.cleaned_data.get('show_online_status', False)
                 user_settings.save()
                 messages.success(request, 'Settings updated successfully.')
+            else:
+                # If account form has errors, show them
+                for field, errors in account_form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'{field}: {error}')
         
         return redirect('unified_settings')
     
     # Populate account form with current settings
     account_form = UserSettingsForm(initial={
-        'theme_preference': user_settings.theme_preference,
         'timezone': user_settings.timezone,
         'language': user_settings.language,
         'currency_preference': user_settings.currency_preference,
@@ -1456,7 +1510,6 @@ def account_settings(request):
                     return redirect('account_settings')
             
             # Update user settings
-            user_settings.theme_preference = form.cleaned_data.get('theme_preference', user_settings.theme_preference)
             user_settings.timezone = form.cleaned_data.get('timezone', user_settings.timezone)
             user_settings.language = form.cleaned_data.get('language', user_settings.language)
             user_settings.currency_preference = form.cleaned_data.get('currency_preference', user_settings.currency_preference)
@@ -1473,7 +1526,6 @@ def account_settings(request):
     else:
         # Populate form with current settings
         initial_data = {
-            'theme_preference': user_settings.theme_preference,
             'timezone': user_settings.timezone,
             'language': user_settings.language,
             'currency_preference': user_settings.currency_preference,

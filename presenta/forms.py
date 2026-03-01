@@ -162,11 +162,6 @@ class UserSettingsForm(forms.Form):
     )
     
     # Display settings
-    theme_preference = forms.ChoiceField(
-        label='Theme',
-        choices=[('light', 'Light Mode'), ('dark', 'Dark Mode'), ('auto', 'Auto')],
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
-    )
     timezone = forms.ChoiceField(
         label='Timezone',
         choices=TIMEZONE_CHOICES,
@@ -218,14 +213,16 @@ class UserSettingsForm(forms.Form):
             ('weekly', 'Weekly Digest'),
             ('never', 'Never'),
         ],
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False
     )
     
     # Privacy settings
     profile_visibility = forms.ChoiceField(
         label='Profile Visibility',
         choices=[('public', 'Public'), ('private', 'Private')],
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        required=False
     )
     show_online_status = forms.BooleanField(
         label='Show Online Status',
