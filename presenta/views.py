@@ -1283,6 +1283,121 @@ def password_reset_confirm(request, user_id):
 
 @login_required
 def settings_page(request):
+    """Redirect to unified settings page."""
+    return redirect('unified_settings')
+
+
+@login_required
+def unified_settings(request):
+    """Unified settings page with all settings sections in one page."""
+    from .forms import UserSettingsForm, DesignerSettingsForm, AdminSettingsForm, EditProfileForm
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = user.presenta_user
+    
+    # Get or create user settings
+    user_settings, created = UserSettings.objects.get_or_create(user=user)
+    
+    # Initialize all forms
+    account_form = UserSettingsForm()
+    profile_form = EditProfileForm(instance=presenta_user)
+    designer_form = None
+    admin_form = None
+    
+    # Designer forms
+    if user.profile.user_role == 'designer':
+        designer_form = DesignerSettingsForm(initial={
+            'designer_availability': user_settings.designer_availability,
+            'designer_rate': user_settings.designer_rate,
+            'designer_specializations': user_settings.designer_specializations,
+            'accept_project_requests': user_settings.accept_project_requests,
+            'portfolio_url': user_settings.portfolio_url,
+            'max_concurrent_projects': user_settings.max_concurrent_projects,
+            'revision_limit': user_settings.revision_limit,
+            'minimum_project_budget': user_settings.minimum_project_budget,
+        })
+    
+    # Admin forms
+    if user.is_superuser or user.profile.user_role == 'admin':
+        admin_form = AdminSettingsForm(initial={
+            'maintenance_mode': user_settings.maintenance_mode,
+            'site_name': 'Presenta',
+            'site_description': 'Professional Design Services Platform',
+            'support_email': 'support@presenta.com',
+        })
+    
+    # Handle POST requests for different sections
+    if request.method == 'POST':
+        # Check which form was submitted
+        if 'designer_availability' in request.POST and designer_form:
+            # Designer settings form
+            designer_form = DesignerSettingsForm(request.POST)
+            if designer_form.is_valid():
+                user_settings.designer_availability = designer_form.cleaned_data.get('designer_availability', user_settings.designer_availability)
+                user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
+                user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
+                user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
+                user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
+                user_settings.max_concurrent_projects = designer_form.cleaned_data.get('max_concurrent_projects') or user_settings.max_concurrent_projects
+                user_settings.revision_limit = designer_form.cleaned_data.get('revision_limit') or user_settings.revision_limit
+                user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
+                user_settings.save()
+                messages.success(request, 'Designer settings updated successfully.')
+        elif 'maintenance_mode' in request.POST and admin_form:
+            # Admin settings form
+            admin_form = AdminSettingsForm(request.POST)
+            if admin_form.is_valid():
+                user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
+                user_settings.save()
+                messages.success(request, 'Admin settings updated successfully.')
+        else:
+            # Account settings form
+            account_form = UserSettingsForm(request.POST)
+            if account_form.is_valid():
+                user_settings.theme_preference = account_form.cleaned_data.get('theme_preference', user_settings.theme_preference)
+                user_settings.timezone = account_form.cleaned_data.get('timezone', user_settings.timezone)
+                user_settings.language = account_form.cleaned_data.get('language', user_settings.language)
+                user_settings.currency_preference = account_form.cleaned_data.get('currency_preference', user_settings.currency_preference)
+                user_settings.email_notifications_enabled = account_form.cleaned_data.get('email_notifications_enabled', False)
+                user_settings.order_updates_email = account_form.cleaned_data.get('order_updates_email', False)
+                user_settings.marketing_emails = account_form.cleaned_data.get('marketing_emails', False)
+                user_settings.notification_frequency = account_form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
+                user_settings.profile_visibility = account_form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
+                user_settings.show_online_status = account_form.cleaned_data.get('show_online_status', False)
+                user_settings.save()
+                messages.success(request, 'Settings updated successfully.')
+        
+        return redirect('unified_settings')
+    
+    # Populate account form with current settings
+    account_form = UserSettingsForm(initial={
+        'theme_preference': user_settings.theme_preference,
+        'timezone': user_settings.timezone,
+        'language': user_settings.language,
+        'currency_preference': user_settings.currency_preference,
+        'email_notifications_enabled': user_settings.email_notifications_enabled,
+        'order_updates_email': user_settings.order_updates_email,
+        'marketing_emails': user_settings.marketing_emails,
+        'notification_frequency': user_settings.notification_frequency,
+        'profile_visibility': user_settings.profile_visibility,
+        'show_online_status': user_settings.show_online_status,
+    })
+    
+    context = {
+        'form': account_form,
+        'profile_form': profile_form,
+        'designer_form': designer_form,
+        'admin_form': admin_form,
+        'presenta_user': presenta_user,
+        'settings_section': 'unified',
+        'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
+    }
+    return render(request, 'settings/unified_settings.html', context)
+
+
+@login_required
+def settings_page_old(request):
     """Redirect to appropriate settings page based on user role."""
     try:
         profile = request.user.profile
@@ -1475,3 +1590,171 @@ def admin_settings(request):
         'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
     }
     return render(request, 'settings/admin_settings.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def change_password_ajax(request):
+    """AJAX endpoint to change password from settings page."""
+    from django.http import JsonResponse
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = user.presenta_user
+    
+    current_password = request.POST.get('current_password', '')
+    new_password = request.POST.get('new_password', '')
+    confirm_password = request.POST.get('confirm_password', '')
+    
+    errors = {}
+    
+    # Validation
+    if not current_password:
+        errors['current_password'] = 'Current password is required'
+    
+    if not new_password:
+        errors['new_password'] = 'New password is required'
+    elif len(new_password) < 8:
+        errors['new_password'] = 'Password must be at least 8 characters'
+    
+    if not confirm_password:
+        errors['confirm_password'] = 'Please confirm your password'
+    elif new_password != confirm_password:
+        errors['confirm_password'] = 'Passwords do not match'
+    
+    # Check current password
+    if current_password and not presenta_user.check_password(current_password):
+        errors['current_password'] = 'Current password is incorrect'
+    
+    if errors:
+        return JsonResponse({
+            'success': False,
+            'error': 'Please fix the errors below',
+            'errors': errors
+        })
+    
+    # Update password
+    try:
+        presenta_user.set_password(new_password)
+        presenta_user.save()
+        
+        # Also update Django User password
+        user.set_password(new_password)
+        user.save()
+        
+        # Log the password change
+        log_activity(
+            user=user,
+            activity_type='password_changed',
+            message="Password was changed from settings."
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Password changed successfully!'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred while changing password. Please try again.'
+        })
+
+
+@login_required
+def edit_profile_settings(request):
+    """Edit profile settings page with compact layout."""
+    from .forms import EditProfileForm
+    from django.contrib import messages
+    
+    user = request.user
+    
+    # Get the Presenta User profile
+    try:
+        presenta_user = user.presenta_user
+    except User.DoesNotExist:
+        return redirect('index')
+    
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=presenta_user)
+        
+        if form.is_valid():
+            # save the form but don't commit yet
+            profile = form.save(commit=False)
+            
+            # handle profile picture cropping
+            cropped_image_data = request.POST.get('cropped_image_data')
+            remove_picture = request.POST.get('cropped_image_data') == 'remove'
+            
+            if remove_picture:
+                # remove the profile picture
+                if profile.profile_picture:
+                    profile.profile_picture.delete(save=True)
+                profile.profile_picture = None
+            elif cropped_image_data and not cropped_image_data.startswith('remove'):
+                # decode base64 image data
+                try:
+                    format_part, imgstr = cropped_image_data.split(';base64,')
+                    image_data = base64.b64decode(imgstr)
+                    
+                    # open image with PIL
+                    image = Image.open(BytesIO(image_data))
+                    
+                    # convert to RGB if necessary
+                    if image.mode in ('RGBA', 'P'):
+                        image = image.convert('RGB')
+                    
+                    # save to BytesIO
+                    img_io = BytesIO()
+                    image.save(img_io, format='JPEG', quality=85)
+                    img_io.seek(0)
+                    
+                    # generate filename
+                    import uuid
+                    filename = f"profile_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                    
+                    # save to media directory
+                    from django.core.files.uploadedfile import InMemoryUploadedFile
+                    cropped_file = InMemoryUploadedFile(
+                        img_io,
+                        None,
+                        filename,
+                        'image/jpeg',
+                        img_io.tell(),
+                        None
+                    )
+                    profile.profile_picture = cropped_file
+                except Exception as e:
+                    print(f"Error processing image: {e}")
+            
+            profile.save()
+            
+            # Log profile update activity
+            log_activity(
+                user=user,
+                activity_type='profile_updated',
+                message="Profile information updated."
+            )
+            
+            # also update Django user email if changed
+            if form.cleaned_data.get('email'):
+                user.email = form.cleaned_data.get('email')
+                user.save()
+            
+            # also update Django user first_name and last_name for immediate top bar reflection
+            if form.cleaned_data.get('first_name'):
+                user.first_name = form.cleaned_data.get('first_name')
+            if form.cleaned_data.get('last_name'):
+                user.last_name = form.cleaned_data.get('last_name')
+            if form.cleaned_data.get('first_name') or form.cleaned_data.get('last_name'):
+                user.save()
+            
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('edit_profile_settings')
+    else:
+        form = EditProfileForm(instance=presenta_user)
+    
+    context = {
+        'form': form,
+        'presenta_user': presenta_user,
+    }
+    return render(request, 'settings/edit_profile_settings.html', context)

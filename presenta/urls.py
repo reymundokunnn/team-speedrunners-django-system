@@ -50,7 +50,10 @@ urlpatterns = [
     
     # Settings
     path('settings/', views.settings_page, name='settings'),
+    path('settings/unified/', views.unified_settings, name='unified_settings'),
     path('settings/account/', views.account_settings, name='account_settings'),
     path('settings/designer/', views.designer_settings, name='designer_settings'),
     path('settings/admin/', views.admin_settings, name='admin_settings'),
+    path('settings/edit-profile/', views.edit_profile_settings, name='edit_profile_settings'),
+    path('settings/change-password/', views.change_password_ajax, name='change_password_ajax'),
 ]

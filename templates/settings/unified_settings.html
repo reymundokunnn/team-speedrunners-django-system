@@ -1,0 +1,941 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Settings - Presenta{% endblock %}
+
+{% block content %}
+<div class="settings-unified-container">
+    <div class="settings-unified-content">
+        <!-- Settings Sidebar Navigation -->
+        <aside class="settings-unified-sidebar">
+            <nav class="settings-unified-nav">
+                <a href="#" class="settings-unified-nav-item active" data-section="account">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Account & Notifications</span>
+                </a>
+                <a href="#" class="settings-unified-nav-item" data-section="edit-profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Edit Profile</span>
+                </a>
+                {% if user.profile.user_role == 'designer' %}
+                <a href="#" class="settings-unified-nav-item" data-section="designer">
+                    <span class="nav-icon">🎨</span>
+                    <span class="nav-label">Designer Settings</span>
+                </a>
+                {% endif %}
+                {% if user.is_superuser or user.profile.user_role == 'admin' %}
+                <a href="#" class="settings-unified-nav-item" data-section="admin">
+                    <span class="nav-icon">👑</span>
+                    <span class="nav-label">Admin Settings</span>
+                </a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <!-- Settings Sections Container -->
+        <main class="settings-unified-main">
+            {% if messages %}
+            <div class="settings-unified-messages">
+                {% for message in messages %}
+                <div class="settings-unified-alert settings-unified-alert-success">
+                    {{ message }}
+                    <button type="button" class="settings-unified-alert-close">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Account & Notifications Section -->
+            <section id="section-account" class="settings-unified-section active">
+                <form method="post" class="settings-unified-form" id="account-form">
+                    {% csrf_token %}
+                    
+                    <div class="settings-unified-section-header">
+                        <h2><span class="orange">Account</span> Settings</h2>
+                        <p class="settings-section-description">Manage your account preferences and notifications</p>
+                    </div>
+
+                    <div class="settings-unified-items-container">
+                        <!-- Password Change -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Change Password</h3>
+                            <p class="settings-unified-description">Update your password to keep your account secure.</p>
+                            <button type="button" class="settings-unified-btn settings-unified-btn-primary" onclick="openModal('changePasswordModal')">
+                                Change Password
+                            </button>
+                        </div>
+
+                        <!-- Region Settings -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Region and Language</h3>
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_timezone" class="settings-unified-label">{{ form.timezone.label }}</label>
+                                        <span class="settings-unified-description">Select your timezone for scheduled activities</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ form.timezone }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_language" class="settings-unified-label">{{ form.language.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ form.language }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_currency_preference" class="settings-unified-label">{{ form.currency_preference.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ form.currency_preference }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Notifications -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Email Notifications</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ form.email_notifications_enabled }}
+                                        <span>{{ form.email_notifications_enabled.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                            
+                            <div id="notification-options" class="settings-unified-notification-options">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label class="settings-unified-checkbox-label">
+                                            {{ form.order_updates_email }}
+                                            <span>{{ form.order_updates_email.label }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                    </div>
+                                </div>
+                                
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label class="settings-unified-checkbox-label">
+                                            {{ form.marketing_emails }}
+                                            <span>{{ form.marketing_emails.label }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                    </div>
+                                </div>
+                                
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_notification_frequency" class="settings-unified-label">{{ form.notification_frequency.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ form.notification_frequency }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Privacy & Visibility -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Privacy & Visibility</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-label">{{ form.profile_visibility.label }}</label>
+                                    <span class="settings-unified-description">Control who can see your profile</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    <div class="settings-unified-radio-group">
+                                        {% for value, label in form.profile_visibility.field.choices %}
+                                        <label class="settings-unified-radio-label">
+                                            <input type="radio" name="profile_visibility" value="{{ value }}" {% if form.profile_visibility.value == value %}checked{% endif %}>
+                                            <span>{{ label }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ form.show_online_status }}
+                                        <span>{{ form.show_online_status.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="settings-unified-actions">
+                        <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Changes</button>
+                        {% if user.is_superuser or user.profile.user_role == 'admin' %}
+                        <a href="{% url 'admin_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% elif user.profile.user_role == 'designer' %}
+                        <a href="{% url 'designer_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{% url 'user_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </section>
+
+            <!-- Edit Profile Section -->
+            <section id="section-edit-profile" class="settings-unified-section">
+                <form method="POST" action="{% url 'edit_profile_settings' %}" enctype="multipart/form-data" id="editProfileForm" class="settings-unified-form">
+                    {% csrf_token %}
+                    
+                    <!-- Hidden inputs for image handling -->
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*" style="display: none;">
+                    <input type="hidden" id="cropped_image_data" name="cropped_image_data" value="">
+                    
+                    <div class="settings-unified-section-header">
+                        <h2><span class="orange">Edit</span> Profile</h2>
+                        <p class="settings-section-description">Update your personal information and profile picture</p>
+                    </div>
+
+                    <div class="edit-profile-layout-compact">
+                        <!-- Profile Picture Sidebar -->
+                        <aside class="profile-sidebar-compact">
+                            <div class="profile-picture-section-compact">
+                                <div class="current-picture-wrapper-compact">
+                                    {% if presenta_user.profile_picture %}
+                                        <img id="currentProfilePicture" 
+                                             src="{{ presenta_user.profile_picture.url }}" 
+                                             alt="Profile Picture" 
+                                             class="current-profile-picture-compact">
+                                    {% else %}
+                                        <img id="currentProfilePicture" 
+                                             src="{% static 'img/default-avatar.png' %}" 
+                                             alt="Profile Picture" 
+                                             class="current-profile-picture-compact">
+                                    {% endif %}
+                                    
+                                    <img id="picturePreview" 
+                                         src="" 
+                                         alt="Preview" 
+                                         class="current-profile-picture-compact" 
+                                         style="display: none;">
+                                    
+                                    <div class="picture-overlay-compact">
+                                        <button type="button" id="changePictureBtn" class="change-picture-btn-compact">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                                <circle cx="12" cy="13" r="4"></circle>
+                                            </svg>
+                                            Change Photo
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {% if presenta_user.profile_picture %}
+                                <button type="button" id="removePictureBtn" class="btn-remove-photo">
+                                    Remove Photo
+                                </button>
+                                {% endif %}
+                            </div>
+                        </aside>
+
+                        <!-- Profile Edit Form -->
+                        <div class="profile-form-compact">
+                            <!-- Personal Information Section -->
+                            <div class="form-section-compact">
+                                <div class="form-section-header-compact">
+                                    <h3>Personal Information</h3>
+                                </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
+                                        <label for="id_first_name">First Name</label>
+                                        {{ profile_form.first_name }}
+                                    </div>
+                                    <div class="form-group-compact">
+                                        <label for="id_last_name">Last Name</label>
+                                        {{ profile_form.last_name }}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
+                                        <label for="id_email">Email Address</label>
+                                        {{ profile_form.email }}
+                                    </div>
+                                    <div class="form-group-compact">
+                                        <label for="id_phone_number">Phone Number</label>
+                                        {{ profile_form.phone_number }}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
+                                        <label for="id_gender">Gender</label>
+                                        <select id="id_gender" name="gender" class="form-control-compact">
+                                            <option value="">-- Select Gender --</option>
+                                            <option value="M" {% if presenta_user.gender == 'M' %}selected{% endif %}>Male</option>
+                                            <option value="F" {% if presenta_user.gender == 'F' %}selected{% endif %}>Female</option>
+                                            <option value="O" {% if presenta_user.gender == 'O' %}selected{% endif %}>Other</option>
+                                            <option value="P" {% if presenta_user.gender == 'P' %}selected{% endif %}>Prefer not to say</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group-compact">
+                                        <label for="id_date_of_birth">Date of Birth</label>
+                                        {{ profile_form.date_of_birth }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Information Section -->
+                            <div class="form-section-compact">
+                                <div class="form-section-header-compact">
+                                    <h3>Additional Information</h3>
+                                </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
+                                        <label for="id_company">Company</label>
+                                        {{ profile_form.company }}
+                                    </div>
+                                    <div class="form-group-compact">
+                                        <label for="id_location">Location</label>
+                                        {{ profile_form.location }}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group-compact full-width">
+                                    <label for="id_bio">Bio</label>
+                                    {{ profile_form.bio }}
+                                </div>
+                            </div>
+                            
+                            <!-- Form Actions -->
+                            <div class="form-actions-compact">
+                                <button type="submit" id="submitProfileBtn" class="settings-unified-btn settings-unified-btn-primary">
+                                    <span class="btn-text">Save Changes</span>
+                                    <span class="btn-loader"></span>
+                                </button>
+                                {% if user.profile.user_role == 'designer' %}
+                                    <a href="{% url 'designer_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                                {% elif user.profile.user_role == 'admin' %}
+                                    <a href="{% url 'admin_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                                {% else %}
+                                    <a href="{% url 'user_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Designer Settings Section -->
+            {% if user.profile.user_role == 'designer' %}
+            <section id="section-designer" class="settings-unified-section">
+                <form method="post" class="settings-unified-form" id="designer-form">
+                    {% csrf_token %}
+
+                    <div class="settings-unified-section-header">
+                        <h2><span class="orange">Designer</span> Settings</h2>
+                        <p class="settings-section-description">Manage your professional profile and work preferences</p>
+                    </div>
+
+                    <div class="settings-unified-items-container">
+                        <!-- Work Availability -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Work Availability</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-label">{{ designer_form.designer_availability.label }}</label>
+                                    <span class="settings-unified-description">Set your availability status for new projects</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    <div class="settings-unified-radio-group">
+                                        {% for value, label in designer_form.designer_availability.field.choices %}
+                                        <label class="settings-unified-radio-label">
+                                            <input type="radio" name="designer_availability" value="{{ value }}" {% if designer_form.designer_availability.value == value %}checked{% endif %}>
+                                            <span>{{ label }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rate & Pricing -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Pricing & Rate</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_designer_rate" class="settings-unified-label">{{ designer_form.designer_rate.label }}</label>
+                                    <span class="settings-unified-description">Your hourly rate in USD</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.designer_rate }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Specializations & Skills -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Specializations & Skills</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_designer_specializations" class="settings-unified-label">{{ designer_form.designer_specializations.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.designer_specializations.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.designer_specializations }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Requests -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Project Requests</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ designer_form.accept_project_requests }}
+                                        <span>{{ designer_form.accept_project_requests.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-info-box">
+                                💡 When enabled, clients will be able to request projects from you. When disabled, no new requests will be sent to you.
+                            </div>
+                        </div>
+
+                        <!-- Portfolio & Professional Info -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Portfolio & Professional Info</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_portfolio_url" class="settings-unified-label">{{ designer_form.portfolio_url.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.portfolio_url.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.portfolio_url }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Preferences -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Project Preferences</h3>
+                            
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_max_concurrent_projects" class="settings-unified-label">{{ designer_form.max_concurrent_projects.label }}</label>
+                                        <span class="settings-unified-description">{{ designer_form.max_concurrent_projects.help_text }}</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.max_concurrent_projects }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_revision_limit" class="settings-unified-label">{{ designer_form.revision_limit.label }}</label>
+                                        <span class="settings-unified.revision_limit.help-description">{{ designer_form_text }}</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.revision_limit }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_minimum_project_budget" class="settings-unified-label">{{ designer_form.minimum_project_budget.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.minimum_project_budget.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.minimum_project_budget }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="settings-unified-actions">
+                        <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Changes</button>
+                        <a href="{% url 'designer_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </section>
+            {% endif %}
+
+            <!-- Admin Settings Section -->
+            {% if user.is_superuser or user.profile.user_role == 'admin' %}
+            <section id="section-admin" class="settings-unified-section">
+                <form method="post" class="settings-unified-form" id="admin-form">
+                    {% csrf_token %}
+
+                    <div class="settings-unified-section-header">
+                        <h2>Admin Settings</h2>
+                        <p class="settings-section-description">Configure system-wide settings and maintenance options</p>
+                    </div>
+
+                    <div class="settings-unified-items-container">
+                        <!-- System Status -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">System Status</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ admin_form.maintenance_mode }}
+                                        <span>{{ admin_form.maintenance_mode.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-info-box settings-unified-info-box-warning">
+                                ⚠️ <strong>Maintenance Mode:</strong> {{ admin_form.maintenance_mode.help_text }}
+                            </div>
+                        </div>
+
+                        <!-- Site Information -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Site Information</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_site_name" class="settings-unified-label">{{ admin_form.site_name.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.site_name }}
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_site_description" class="settings-unified-label">{{ admin_form.site_description.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.site_description }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Support & Contact -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Support & Contact</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_support_email" class="settings-unified-label">{{ admin_form.support_email.label }}</label>
+                                    <span class="settings-unified-description">This email will be displayed in support forms and contact pages</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.support_email }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Advanced Settings</h3>
+                            
+                            <div class="settings-unified-info-box">
+                                <p>Advanced configuration options such as:</p>
+                                <ul>
+                                    <li>Email SMTP settings</li>
+                                    <li>API key management</li>
+                                    <li>Backup & data export</li>
+                                    <li>Third-party integrations</li>
+                                </ul>
+                                <p><em>Contact your system administrator for access to these settings.</em></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="settings-unified-actions">
+                        <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Changes</button>
+                        <a href="{% url 'admin_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="change-password-modal">
+    <div class="change-password-modal-content">
+        <div class="change-password-modal-header">
+            <h3>Change Password</h3>
+            <button type="button" class="change-password-modal-close" onclick="closeModal('changePasswordModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="changePasswordForm" class="change-password-modal-form">
+            {% csrf_token %}
+            <div class="change-password-form-group">
+                <label for="modal_current_password">Current Password</label>
+                <input type="password" id="modal_current_password" name="current_password" class="change-password-form-control" placeholder="Enter current password" required>
+                <span id="current_password_error" class="change-password-form-error"></span>
+            </div>
+            <div class="change-password-form-group">
+                <label for="modal_new_password">New Password</label>
+                <input type="password" id="modal_new_password" name="new_password" class="change-password-form-control" placeholder="Enter new password" required>
+                <span id="new_password_error" class="change-password-form-error"></span>
+            </div>
+            <div class="change-password-form-group">
+                <label for="modal_confirm_password">Confirm New Password</label>
+                <input type="password" id="modal_confirm_password" name="confirm_password" class="change-password-form-control" placeholder="Confirm new password" required>
+                <span id="confirm_password_error" class="change-password-form-error"></span>
+            </div>
+            <div id="password_change_message" class="change-password-form-message"></div>
+            <div class="change-password-modal-actions">
+                <button type="button" class="change-password-btn change-password-btn-secondary" onclick="closeModal('changePasswordModal')">Cancel</button>
+                <button type="submit" class="change-password-btn change-password-btn-primary" id="changePasswordSubmit">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Cropper Modal -->
+<div id="cropperModal" class="cropper-modal">
+    <div class="cropper-modal-content">
+        <div class="cropper-modal-header">
+            <h3>Crop Profile Picture</h3>
+            <button type="button" id="closeCropperBtn" class="close-btn" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="cropper-modal-body">
+            <div class="cropper-container">
+                <img id="cropperImage" src="" alt="Image to crop">
+            </div>
+            
+            <!-- Transform Controls Row -->
+            <div class="cropper-controls">
+                <button type="button" id="zoomInBtn" class="btn btn-secondary btn-icon" title="Zoom in">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                </button>
+                
+                <button type="button" id="zoomOutBtn" class="btn btn-secondary btn-icon" title="Zoom out">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                </button>
+                
+                <div class="controls-divider"></div>
+                
+                <button type="button" id="rotateLeftBtn" class="btn btn-secondary btn-icon" title="Rotate left 45°">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 5"></path>
+                        <polyline points="3 3 3 9 9 9"></polyline>
+                    </svg>
+                </button>
+                
+                <button type="button" id="rotateRightBtn" class="btn btn-secondary btn-icon" title="Rotate right 45°">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 5"></path>
+                        <polyline points="21 3 21 9 15 9"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="controls-divider"></div>
+                
+                <button type="button" id="flipHorizontalBtn" class="btn btn-secondary btn-icon" title="Flip horizontally">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 4v16h8V4H1z"></path>
+                        <path d="M15 4v16h8V4h-8z"></path>
+                        <line x1="11" y1="9" x2="13" y2="9"></line>
+                        <line x1="11" y1="13" x2="13" y2="13"></line>
+                    </svg>
+                </button>
+                
+                <button type="button" id="flipVerticalBtn" class="btn btn-secondary btn-icon" title="Flip vertically">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 1h16v7H4V1z"></path>
+                        <path d="M4 16h16v7H4v-7z"></path>
+                        <line x1="9" y1="10" x2="15" y2="10"></line>
+                        <line x1="9" y1="14" x2="15" y2="14"></line>
+                    </svg>
+                </button>
+                
+                <div class="controls-divider"></div>
+                
+                <button type="button" id="resetCropBtn" class="btn btn-secondary btn-icon" title="Reset to default">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="cropper-controls-bottom">
+                <button type="button" id="cancelCropBtn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Cancel
+                </button>
+                <button type="button" id="applyCropBtn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Apply Crop
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== Section Navigation ==========
+    const navItems = document.querySelectorAll('.settings-unified-nav-item');
+    const sections = document.querySelectorAll('.settings-unified-section');
+    
+    // Get initial section from URL hash or default to account
+    const hash = window.location.hash.replace('#', '');
+    let activeSection = hash || 'account';
+    
+    // Validate activeSection exists
+    const validSections = Array.from(navItems).map(item => item.dataset.section);
+    if (!validSections.includes(activeSection)) {
+        activeSection = 'account';
+    }
+    
+    // Set initial active state
+    navItems.forEach(item => {
+        if (item.dataset.section === activeSection) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    sections.forEach(section => {
+        if (section.id === 'section-' + activeSection) {
+            section.classList.add('active');
+        } else {
+            section.classList.remove('active');
+        }
+    });
+    
+    // Handle navigation clicks
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const section = this.dataset.section;
+            
+            // Update nav active state
+            navItems.forEach(nav => nav.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding section
+            sections.forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById('section-' + section).classList.add('active');
+            
+            // Update URL hash
+            window.location.hash = section;
+        });
+    });
+    
+    // ========== Account Settings - Notification Toggle ==========
+    const emailNotificationsCheckbox = document.getElementById('id_email_notifications_enabled');
+    const notificationOptions = document.getElementById('notification-options');
+    
+    function toggleNotificationOptions() {
+        if (emailNotificationsCheckbox && notificationOptions) {
+            if (emailNotificationsCheckbox.checked) {
+                notificationOptions.style.display = 'block';
+            } else {
+                notificationOptions.style.display = 'none';
+            }
+        }
+    }
+    
+    if (emailNotificationsCheckbox) {
+        emailNotificationsCheckbox.addEventListener('change', toggleNotificationOptions);
+        toggleNotificationOptions();
+    }
+    
+    // ========== Close Alert Messages ==========
+    const closeButtons = document.querySelectorAll('.settings-unified-alert-close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.parentElement.style.display = 'none';
+        });
+    });
+    
+    // ========== Change Password Modal ==========
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('modal_current_password').value;
+            const newPassword = document.getElementById('modal_new_password').value;
+            const confirmPassword = document.getElementById('modal_confirm_password').value;
+            const messageEl = document.getElementById('password_change_message');
+            const submitBtn = document.getElementById('changePasswordSubmit');
+            
+            // Clear previous errors
+            document.getElementById('current_password_error').textContent = '';
+            document.getElementById('new_password_error').textContent = '';
+            document.getElementById('confirm_password_error').textContent = '';
+            messageEl.textContent = '';
+            messageEl.className = 'change-password-form-message';
+            
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // Submit via AJAX
+            fetch('/settings/change-password/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                
+                if (data.success) {
+                    messageEl.textContent = data.message || 'Password changed successfully!';
+                    messageEl.className = 'change-password-form-message change-password-form-success-text';
+                    
+                    // Close modal and reset form after success
+                    setTimeout(() => {
+                        closeModal('changePasswordModal');
+                        changePasswordForm.reset();
+                    }, 1500);
+                } else {
+                    if (data.errors) {
+                        if (data.errors.current_password) {
+                            document.getElementById('current_password_error').textContent = data.errors.current_password;
+                        }
+                        if (data.errors.new_password) {
+                            document.getElementById('new_password_error').textContent = data.errors.new_password;
+                        }
+                        if (data.errors.confirm_password) {
+                            document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
+                        }
+                    }
+                    messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                    messageEl.className = 'change-password-form-message change-password-form-error-text';
+                }
+            })
+            .catch(error => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                messageEl.textContent = 'An error occurred. Please try again.';
+                messageEl.className = 'change-password-form-message change-password-form-error-text';
+                console.error('Password change error:', error);
+            });
+        });
+    }
+    
+    // Note: Profile picture functionality is handled in main_site/static/js/script.js
+    // to avoid duplicate event listeners
+});
+
+// ========== Global Functions ==========
+function getCSRFToken() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    return csrfToken ? csrfToken.value : '';
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('change-password-modal')) {
+        closeModal('changePasswordModal');
+    }
+    if (event.target.classList.contains('cropper-modal')) {
+        closeCropperModal();
+    }
+};
+
+function closeCropperModal() {
+    const modal = document.getElementById('cropperModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    document.body.classList.remove('cropper-modal-open');
+    document.documentElement.classList.remove('cropper-modal-open');
+    
+    // Destroy cropper if it exists (global variable from script.js)
+    if (typeof cropper !== 'undefined' && cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    
+    // Reset file input
+    const profilePictureInput = document.getElementById('profile_picture');
+    if (profilePictureInput) {
+        profilePictureInput.value = '';
+    }
+}
+</script>
+
+{% endblock %}
