@@ -38,6 +38,8 @@ Activate it:
 
 ### 3. Install Dependencies
 
+Install the dependencies specified in requirements.txt
+
 ```bash
 pip install -r requirements.txt
 ```
