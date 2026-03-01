@@ -39,7 +39,7 @@ Activate it:
 ### 3. Install Dependencies
 
 ```bash
-pip install django pillow
+pip install -r requirements.txt
 ```
 
 ### 4. Set Up the Database
