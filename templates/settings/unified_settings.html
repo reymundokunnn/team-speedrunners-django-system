@@ -10,22 +10,45 @@
         <aside class="settings-unified-sidebar">
             <nav class="settings-unified-nav">
                 <a href="#" class="settings-unified-nav-item active" data-section="account">
-                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </span>
                     <span class="nav-label">Account & Notifications</span>
                 </a>
                 <a href="#" class="settings-unified-nav-item" data-section="edit-profile">
-                    <span class="nav-icon">👤</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </span>
                     <span class="nav-label">Edit Profile</span>
                 </a>
                 {% if user.profile.user_role == 'designer' %}
                 <a href="#" class="settings-unified-nav-item" data-section="designer">
-                    <span class="nav-icon">🎨</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                            <path d="M2 2l7.586 7.586"></path>
+                            <circle cx="11" cy="11" r="2"></circle>
+                        </svg>
+                    </span>
                     <span class="nav-label">Designer Settings</span>
                 </a>
                 {% endif %}
                 {% if user.is_superuser or user.profile.user_role == 'admin' %}
                 <a href="#" class="settings-unified-nav-item" data-section="admin">
-                    <span class="nav-icon">👑</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                    </span>
                     <span class="nav-label">Admin Settings</span>
                 </a>
                 {% endif %}
@@ -197,8 +220,9 @@
 
             <!-- Edit Profile Section -->
             <section id="section-edit-profile" class="settings-unified-section">
-                <form method="POST" action="{% url 'edit_profile_settings' %}" enctype="multipart/form-data" id="editProfileForm" class="settings-unified-form">
+<form method="POST" action="{% url 'unified_settings' %}" enctype="multipart/form-data" id="editProfileForm" class="settings-unified-form">
                     {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit-profile">
                     
                     <!-- Hidden inputs for image handling -->
                     <input type="file" id="profile_picture" name="profile_picture" accept="image/*" style="display: none;">

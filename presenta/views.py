@@ -1357,6 +1357,53 @@ def unified_settings(request):
                 messages.success(request, 'Admin settings updated successfully.')
             else:
                 messages.error(request, 'Error updating admin settings. Please check the form.')
+        elif form_type == 'edit-profile':
+            # Edit Profile form
+            profile_form = EditProfileForm(request.POST, instance=presenta_user)
+            if profile_form.is_valid():
+                profile = profile_form.save(commit=False)
+                
+                # Handle profile picture cropping
+                cropped_image_data = request.POST.get('cropped_image_data')
+                remove_picture = request.POST.get('cropped_image_data') == 'remove'
+                
+                if remove_picture:
+                    if profile.profile_picture:
+                        profile.profile_picture.delete(save=True)
+                    profile.profile_picture = None
+                elif cropped_image_data and not cropped_image_data.startswith('remove'):
+                    try:
+                        format_part, imgstr = cropped_image_data.split(';base64,')
+                        image_data = base64.b64decode(imgstr)
+                        image = Image.open(BytesIO(image_data))
+                        if image.mode in ('RGBA', 'P'):
+                            image = image.convert('RGB')
+                        img_io = BytesIO()
+                        image.save(img_io, format='JPEG', quality=85)
+                        img_io.seek(0)
+                        import uuid
+                        filename = f"profile_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                        from django.core.files.uploadedfile import InMemoryUploadedFile
+                        cropped_file = InMemoryUploadedFile(
+                            img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                        )
+                        profile.profile_picture = cropped_file
+                    except Exception as e:
+                        print(f"Error processing image: {e}")
+                
+                profile.save()
+                
+                # Also update Django user first_name and last_name
+                if profile.first_name:
+                    user.first_name = profile.first_name
+                if profile.last_name:
+                    user.last_name = profile.last_name
+                if profile.first_name or profile.last_name:
+                    user.save()
+                
+                messages.success(request, 'Profile updated successfully.')
+            else:
+                messages.error(request, 'Error updating profile. Please check the form.')
         else:
             # Account settings form (default)
             # First handle profile update if it has first_name
@@ -1714,99 +1761,5 @@ def change_password_ajax(request):
 
 @login_required
 def edit_profile_settings(request):
-    """Edit profile settings page with compact layout."""
-    from .forms import EditProfileForm
-    from django.contrib import messages
-    
-    user = request.user
-    
-    # Get the Presenta User profile
-    try:
-        presenta_user = user.presenta_user
-    except User.DoesNotExist:
-        return redirect('index')
-    
-    if request.method == 'POST':
-        form = EditProfileForm(request.POST, instance=presenta_user)
-        
-        if form.is_valid():
-            # save the form but don't commit yet
-            profile = form.save(commit=False)
-            
-            # handle profile picture cropping
-            cropped_image_data = request.POST.get('cropped_image_data')
-            remove_picture = request.POST.get('cropped_image_data') == 'remove'
-            
-            if remove_picture:
-                # remove the profile picture
-                if profile.profile_picture:
-                    profile.profile_picture.delete(save=True)
-                profile.profile_picture = None
-            elif cropped_image_data and not cropped_image_data.startswith('remove'):
-                # decode base64 image data
-                try:
-                    format_part, imgstr = cropped_image_data.split(';base64,')
-                    image_data = base64.b64decode(imgstr)
-                    
-                    # open image with PIL
-                    image = Image.open(BytesIO(image_data))
-                    
-                    # convert to RGB if necessary
-                    if image.mode in ('RGBA', 'P'):
-                        image = image.convert('RGB')
-                    
-                    # save to BytesIO
-                    img_io = BytesIO()
-                    image.save(img_io, format='JPEG', quality=85)
-                    img_io.seek(0)
-                    
-                    # generate filename
-                    import uuid
-                    filename = f"profile_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
-                    
-                    # save to media directory
-                    from django.core.files.uploadedfile import InMemoryUploadedFile
-                    cropped_file = InMemoryUploadedFile(
-                        img_io,
-                        None,
-                        filename,
-                        'image/jpeg',
-                        img_io.tell(),
-                        None
-                    )
-                    profile.profile_picture = cropped_file
-                except Exception as e:
-                    print(f"Error processing image: {e}")
-            
-            profile.save()
-            
-            # Log profile update activity
-            log_activity(
-                user=user,
-                activity_type='profile_updated',
-                message="Profile information updated."
-            )
-            
-            # also update Django user email if changed
-            if form.cleaned_data.get('email'):
-                user.email = form.cleaned_data.get('email')
-                user.save()
-            
-            # also update Django user first_name and last_name for immediate top bar reflection
-            if form.cleaned_data.get('first_name'):
-                user.first_name = form.cleaned_data.get('first_name')
-            if form.cleaned_data.get('last_name'):
-                user.last_name = form.cleaned_data.get('last_name')
-            if form.cleaned_data.get('first_name') or form.cleaned_data.get('last_name'):
-                user.save()
-            
-            messages.success(request, 'Profile updated successfully.')
-            return redirect('edit_profile_settings')
-    else:
-        form = EditProfileForm(instance=presenta_user)
-    
-    context = {
-        'form': form,
-        'presenta_user': presenta_user,
-    }
-    return render(request, 'settings/edit_profile_settings.html', context)
+    """Redirect to unified settings page with edit profile section active."""
+    return redirect('unified_settings')

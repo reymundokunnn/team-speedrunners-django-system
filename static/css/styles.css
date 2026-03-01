@@ -7852,7 +7852,18 @@ body.dark-mode .change-password-btn-secondary:hover {
 }
 
 .settings-unified-nav-item .nav-icon {
-    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.settings-unified-nav-item .nav-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
 }
 
 .settings-unified-nav-item .nav-label {
