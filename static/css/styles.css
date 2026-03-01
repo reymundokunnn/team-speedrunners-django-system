@@ -434,6 +434,10 @@ header .right .user-info-wrapper .user-dropdown-menu.active {
     flex-shrink: 0;
 }
 
+body.dark-mode .user-dropdown-menu .dropdown-icon {
+    filter: invert(1);
+}
+
 .user-dropdown-menu .dropdown-divider {
     margin: 8px 0;
     border: none;
@@ -1846,7 +1850,61 @@ body.dark-mode .status-badge {
     opacity: 0.95;
 }
 
-/* Empty state */
+/* Empty State - Consistent styling across all dashboards */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    min-height: 200px;
+}
+
+.empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.6;
+    color: #e87f14;
+}
+
+.empty-state span {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin: 0;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+/* Dark mode support for empty state */
+body.dark-mode .empty-state {
+    background-color: #2d2d2d;
+    border-color: #4a4a4a;
+}
+
+body.dark-mode .empty-state svg {
+    color: #ffaa5c;
+}
+
+body.dark-mode .empty-state span {
+    color: #e0e0e0;
+}
+
+body.dark-mode .empty-state p {
+    color: #aaa;
+}
+
+/* Legacy empty-state support (for backward compatibility) */
 .design-requests-table~span,
 .recent-designs-table~span {
     display: block;

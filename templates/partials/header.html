@@ -42,10 +42,6 @@
                 {% endif %}
             </div>
             <div class="user-dropdown-menu" id="user-dropdown-menu">
-                <a href="{% url 'settings' %}" class="dropdown-item">
-                    <img src="{% static 'img/user-icon.svg' %}" alt="Settings" class="dropdown-icon">
-                    <span>Settings</span>
-                </a>
                 {% if user.is_superuser or user.profile.user_role == 'admin' %}
                 <a href="{% url 'admin_dashboard' %}" class="dropdown-item">
                     <img src="{% static 'img/dashboard-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
@@ -58,10 +54,14 @@
                 </a>
                 {% else %}
                 <a href="{% url 'user_dashboard' %}" class="dropdown-item">
-                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <img src="{% static 'img/user-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
                     <span>Dashboard</span>
                 </a>
                 {% endif %}
+                <a href="{% url 'settings' %}" class="dropdown-item">
+                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Settings" class="dropdown-icon">
+                    <span>Settings</span>
+                </a>
                 <hr class="dropdown-divider">
                 <a href="{% url 'presenta_logout' %}" class="dropdown-item logout">
                     <img src="{% static 'img/logout-icon.svg' %}" alt="Logout" class="dropdown-icon">
