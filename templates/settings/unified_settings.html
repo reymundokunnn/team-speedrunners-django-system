@@ -71,15 +71,6 @@
                             <div class="settings-unified-form-row">
                                 <div class="settings-unified-row">
                                     <div class="settings-unified-label-container">
-                                        <label for="id_timezone" class="settings-unified-label">{{ form.timezone.label }}</label>
-                                        <span class="settings-unified-description">Select your timezone for scheduled activities</span>
-                                    </div>
-                                    <div class="settings-unified-input-container">
-                                        {{ form.timezone }}
-                                    </div>
-                                </div>
-                                <div class="settings-unified-row">
-                                    <div class="settings-unified-label-container">
                                         <label for="id_language" class="settings-unified-label">{{ form.language.label }}</label>
                                     </div>
                                     <div class="settings-unified-input-container">
@@ -95,6 +86,15 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_timezone" class="settings-unified-label">{{ form.timezone.label }}</label>
+                                        <span class="settings-unified-description">Select your timezone for scheduled activities</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ form.timezone }}
+                                    </div>
+                                </div>
                         </div>
 
                         <!-- Email Notifications -->
