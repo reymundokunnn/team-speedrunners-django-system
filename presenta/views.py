@@ -306,6 +306,7 @@ def request_design(request):
     design_type = request.POST.get('design_type')
     description = request.POST.get('description')
     budget = request.POST.get('budget')
+    currency = request.POST.get('currency', 'USD')
     deadline = request.POST.get('deadline')
     
     if title and design_type and description:
@@ -315,6 +316,7 @@ def request_design(request):
             design_type=design_type,
             description=description,
             budget=budget if budget else None,
+            currency=currency,
             deadline=deadline if deadline else None,
         )
         
@@ -564,6 +566,7 @@ def edit_design_request(request, request_id):
         design_type = request.POST.get('design_type')
         description = request.POST.get('description')
         budget = request.POST.get('budget')
+        currency = request.POST.get('currency', 'USD')
         deadline = request.POST.get('deadline')
         
         if title and design_type and description:
@@ -571,6 +574,7 @@ def edit_design_request(request, request_id):
             design_request.design_type = design_type
             design_request.description = description
             design_request.budget = budget if budget else None
+            design_request.currency = currency
             design_request.deadline = deadline if deadline else None
             design_request.save()
             

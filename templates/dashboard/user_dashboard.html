@@ -272,6 +272,7 @@
                                             data-design-type="{{ request.design_type }}"
                                             data-description="{{ request.description|escapejs }}"
                                             data-budget="{{ request.budget|default:'' }}"
+                                            data-currency="{{ request.currency|default:'USD' }}"
                                             data-deadline="{{ request.deadline|date:'Y-m-d'|default:'' }}"
                                             onclick="openEditModal(this)">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -368,7 +369,7 @@
                                         </td>
                                         <td class="budget-cell">
                                             {% if request.budget %}
-                                                <span class="budget-amount">${{ request.budget }}</span>
+                                                <span class="budget-amount">{{ request.currency|default:'USD' }} {{ request.budget }}</span>
                                             {% else %}
                                                 <span class="no-budget">-</span>
                                             {% endif %}
@@ -429,7 +430,18 @@
                 required></textarea>
 
             <label for="budget">Budget (Optional)</label>
-            <input type="number" id="budget" name="budget" placeholder="Enter budget amount" step="0.01">
+            <div class="budget-currency-inline">
+                <select id="currency" name="currency" class="currency-select">
+                    <option value="USD">US Dollar ($)</option>
+                    <option value="EUR">Euro (€)</option>
+                    <option value="GBP">British Pound (£)</option>
+                    <option value="PHP">Philippine Peso (₱)</option>
+                    <option value="JPY">Japanese Yen (¥)</option>
+                    <option value="AUD">Australian Dollar (A$)</option>
+                    <option value="CAD">Canadian Dollar (C$)</option>
+                </select>
+                <input type="number" id="budget" name="budget" placeholder="Enter amount" step="0.01">
+            </div>
 
             <label for="deadline">Deadline (Optional)</label>
             <input type="date" id="deadline" name="deadline">
@@ -477,7 +489,18 @@
                 required></textarea>
 
             <label for="edit_budget">Budget (Optional)</label>
-            <input type="number" id="edit_budget" name="budget" placeholder="Enter budget amount" step="0.01">
+            <div class="budget-currency-inline">
+                <select id="edit_currency" name="currency" class="currency-select">
+                    <option value="USD">US Dollar ($)</option>
+                    <option value="EUR">Euro (€)</option>
+                    <option value="GBP">British Pound (£)</option>
+                    <option value="PHP">Philippine Peso (₱)</option>
+                    <option value="JPY">Japanese Yen (¥)</option>
+                    <option value="AUD">Australian Dollar (A$)</option>
+                    <option value="CAD">Canadian Dollar (C$)</option>
+                </select>
+                <input type="number" id="edit_budget" name="budget" placeholder="Enter amount" step="0.01">
+            </div>
 
             <label for="edit_deadline">Deadline (Optional)</label>
             <input type="date" id="edit_deadline" name="deadline">

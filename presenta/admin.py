@@ -35,7 +35,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 class DesignRequestAdmin(admin.ModelAdmin):
-    list_display = ('title', 'requester', 'designer', 'status', 'budget', 'deadline', 'created_at')
+    list_display = ('title', 'requester', 'designer', 'status', 'budget', 'currency', 'deadline', 'created_at')
     list_filter = ('status', 'created_at', 'deadline')
     search_fields = ('title', 'description', 'requester__username', 'designer__username')
     readonly_fields = ('created_at', 'updated_at')
@@ -48,7 +48,7 @@ class DesignRequestAdmin(admin.ModelAdmin):
             'fields': ('requester', 'designer')
         }),
         ('Details', {
-            'fields': ('budget', 'deadline', 'notes')
+            'fields': ('budget', 'currency', 'deadline', 'notes')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at', 'completed_at'),

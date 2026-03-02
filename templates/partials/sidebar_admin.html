@@ -3,56 +3,19 @@
     <div class="side-item-wrapper">
         <div class="side-item active" data-section="dashboard">
             <img src="{% static 'img/dashboard/side-0.png' %}" class="dashboard-sidebar-icon">
-            <a href="javascript:void(0)">Dashboard</a>
+            <a href="{% url 'admin_dashboard' %}">Dashboard</a>
         </div>
         <div class="side-item" data-section="requests">
             <img src="{% static 'img/dashboard/side-2.png' %}" class="dashboard-sidebar-icon">
-            <a href="javascript:void(0)">All Requests</a>
+            <a href="{% url 'admin_dashboard' %}#requests">All Requests</a>
         </div>
         <div class="side-item" data-section="users">
             <img src="{% static 'img/dashboard/side-6.png' %}" class="dashboard-sidebar-icon">
-            <a href="javascript:void(0)">Users</a>
+            <a href="{% url 'admin_dashboard' %}#users">Users</a>
         </div>
         <div class="side-item">
             <img src="{% static 'img/dashboard/side-7.png' %}" class="dashboard-sidebar-icon">
             <a href="{% url 'admin_dashboard' %}">Reports</a>
         </div>
-        <div class="side-item side-item-link" data-href="{% url 'settings' %}">
-            <img src="{% static 'img/dashboard/side-5.png' %}" class="dashboard-sidebar-icon">
-            <a href="{% url 'settings' %}">Settings</a>
-        </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click handlers for sidebar navigation
-    var sidebarItems = document.querySelectorAll('.side-item[data-section]');
-    sidebarItems.forEach(function(item) {
-        item.style.cursor = 'pointer';
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            var sectionId = this.getAttribute('data-section');
-            console.log('Admin sidebar clicked, section:', sectionId);
-            if (sectionId && typeof showDashboardSection === 'function') {
-                showDashboardSection(sectionId);
-            } else {
-                console.error('showDashboardSection function not found');
-            }
-        });
-    });
-    
-    // Handle external navigation links (like Edit Profile)
-    var linkItems = document.querySelectorAll('.side-item[data-href]');
-    linkItems.forEach(function(item) {
-        item.style.cursor = 'pointer';
-        item.addEventListener('click', function(e) {
-            // Don't prevent default - let the link work normally
-            var href = this.getAttribute('data-href');
-            if (href) {
-                window.location.href = href;
-            }
-        });
-    });
-});
-</script>

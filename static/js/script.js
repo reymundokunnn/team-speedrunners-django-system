@@ -600,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hour = new Date().getHours();
         let greeting = 'Good day';
 
-        if (hour >= 5 && hour < 12) {
+        if (hour >= 0 && hour < 12) {
             greeting = 'Good morning';
         } else if (hour >= 12 && hour < 18) {
             greeting = 'Good afternoon';
@@ -1168,6 +1168,7 @@ function openEditModal(button) {
     var designType = button.dataset.designType;
     var description = button.dataset.description;
     var budget = button.dataset.budget;
+    var currency = button.dataset.currency || 'USD';
     var deadline = button.dataset.deadline;
 
     // Set form action URL
@@ -1180,6 +1181,7 @@ function openEditModal(button) {
         document.getElementById('edit_design_type').value = designType;
         document.getElementById('edit_description').value = description;
         document.getElementById('edit_budget').value = budget;
+        document.getElementById('edit_currency').value = currency;
         document.getElementById('edit_deadline').value = deadline;
 
         // Show modal using openModal
@@ -1903,9 +1905,20 @@ document.addEventListener('DOMContentLoaded', function() {
         var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
         var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
         
-        // Always default to dashboard section on page load
-        // (localStorage is only used when clicking sidebar, not on initial load)
-        showDashboardSection('dashboard');
+        // Check if there's a hash in the URL (from sidebar navigation)
+        var hash = window.location.hash.replace('#', '');
+        var initialSection = 'dashboard'; // Default section
+        
+        // If there's a hash, check if the section exists before using it
+        if (hash) {
+            var targetSection = document.getElementById(hash + '-section');
+            if (targetSection) {
+                initialSection = hash;
+            }
+        }
+        
+        // Show the initial section
+        showDashboardSection(initialSection);
         
         // Add click handlers for sidebar navigation
         var sidebarItems = document.querySelectorAll('.side-item[data-section]');

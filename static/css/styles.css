@@ -2145,6 +2145,13 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     padding-right: 36px;
 }
 
+.budget-currency-inline {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+    align-items: stretch;
+}
+
 .file-upload-area {
     border: 2px dashed #ccc;
     border-radius: 10px;
@@ -2197,6 +2204,10 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
 
     .design-request-form label {
         font-size: 0.85rem;
+    }
+
+    .budget-currency-inline {
+        grid-template-columns: 1fr;
     }
 
     .design-request-form input[type="text"],
@@ -7795,10 +7806,18 @@ body.dark-mode .change-password-btn-secondary:hover {
    ========================================================================== */
 
 /* Container */
+.settings-page-content {
+    flex: 1;
+    padding: clamp(20px, 5vw, 40px);
+    min-width: 0;
+    margin-left: 60px;
+    margin-top: -20px;
+}
+
 .settings-unified-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 /* Content Layout */
@@ -8512,6 +8531,10 @@ body.dark-mode .form-actions-compact {
    ========================================================================== */
 
 @media (max-width: 900px) {
+    .settings-page-content {
+        margin-left: 0;
+    }
+    
     .settings-unified-content {
         flex-direction: column;
     }

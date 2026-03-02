@@ -4,8 +4,19 @@
 {% block title %}Settings - Presenta{% endblock %}
 
 {% block content %}
-<div class="settings-unified-container">
-    <div class="settings-unified-content">
+<section class="dashboard-section">
+    <div class="dashboard-container">
+        {% if user.is_superuser or user.profile.user_role == 'admin' %}
+            {% include "partials/sidebar_admin.html" %}
+        {% elif user.profile.user_role == 'designer' %}
+            {% include "partials/sidebar_designer.html" %}
+        {% else %}
+            {% include "partials/sidebar_user.html" %}
+        {% endif %}
+        
+        <div class="settings-page-content">
+            <div class="settings-unified-container">
+                <div class="settings-unified-content">
         <!-- Settings Sidebar Navigation -->
         <aside class="settings-unified-sidebar">
             <nav class="settings-unified-nav">
@@ -746,10 +757,11 @@
                     </svg>
                     Apply Crop
                 </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
