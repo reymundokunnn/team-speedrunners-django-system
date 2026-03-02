@@ -37,7 +37,6 @@ if (menuBtn) {
             mobileDropdown.classList.remove('show');
             mobileDropdown.classList.add('hide');
 
-            // Remove hide class and hide after animation
             setTimeout(() => {
                 mobileDropdown.classList.remove('hide');
                 mobileDropdown.style.display = 'none';
@@ -78,6 +77,32 @@ if (mobileDropdown) {
     });
 }
 
+// User Profile Dropdown
+const userProfileToggle = document.getElementById('user-profile-toggle');
+const userDropdownMenu = document.getElementById('user-dropdown-menu');
+
+if (userProfileToggle && userDropdownMenu) {
+    userProfileToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        userDropdownMenu.classList.toggle('active');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!userProfileToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+            userDropdownMenu.classList.remove('active');
+        }
+    });
+
+    // Close dropdown when a link is clicked
+    const dropdownItems = userDropdownMenu.querySelectorAll('.dropdown-item');
+    dropdownItems.forEach(item => {
+        item.addEventListener('click', function () {
+            userDropdownMenu.classList.remove('active');
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const sideMenuIcon = document.querySelector('.side-menu-icon');
     if (sideMenuIcon) {
@@ -92,7 +117,6 @@ function toggleSidebar() {
     if (sidebar) {
         sidebar.classList.toggle('collapsed');
         
-        // Save collapsed state to localStorage
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed);
     } else {
@@ -100,7 +124,6 @@ function toggleSidebar() {
     }
 }
 
-// Restore sidebar state on page load
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.querySelector('.side-panel');
     const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
@@ -138,7 +161,6 @@ function toggleForms(event) {
     }
 }
 
-// password toggle function
 function togglePassword(inputId, button) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -152,7 +174,6 @@ function togglePassword(inputId, button) {
     }
 }
 
-// Password strength meter and match check
 function initPasswordStrengthMeter() {
     const password1Input = document.getElementById('id_password1');
     const password2Input = document.getElementById('id_password2');
@@ -160,13 +181,13 @@ function initPasswordStrengthMeter() {
     const strengthText = document.getElementById('password-strength-text');
 
     if (password1Input && strengthFill && strengthText) {
-        // Remove existing listener to prevent duplicates
+        // remove existing listener to prevent duplicates
         password1Input.removeEventListener('input', updatePasswordStrength);
         password1Input.addEventListener('input', updatePasswordStrength);
     }
 
     if (password1Input && password2Input) {
-        // Remove existing listener to prevent duplicates
+        // remove existing listener to prevent duplicates
         password2Input.removeEventListener('input', checkPasswordMatch);
         password1Input.removeEventListener('input', checkPasswordMatch);
         password2Input.addEventListener('input', checkPasswordMatch);
@@ -192,12 +213,15 @@ function updatePasswordStrength() {
         strengthFill.style.width = '0';
         strengthText.textContent = '';
     } else if (strength <= 2) {
+        strengthFill.style.width = '33%';
         strengthFill.classList.add('weak');
         strengthText.textContent = 'Weak password';
     } else if (strength <= 3) {
+        strengthFill.style.width = '66%';
         strengthFill.classList.add('medium');
         strengthText.textContent = 'Medium password';
     } else {
+        strengthFill.style.width = '100%';
         strengthFill.classList.add('strong');
         strengthText.textContent = 'Strong password';
     }
@@ -229,12 +253,11 @@ function checkPasswordMatch() {
     }
 }
 
-// Initialize password strength on page load
+
 document.addEventListener('DOMContentLoaded', function () {
     initPasswordStrengthMeter();
 });
 
-// Re-initialize when switching forms
 const originalToggleForms = toggleForms;
 toggleForms = function(event) {
     originalToggleForms(event);
@@ -294,23 +317,36 @@ function closeModal(modalType) {
     }
 }
 
-/* Forgot Password Modal */
 function openForgotPasswordModal() {
     openModal('forgotPasswordModal');
+    // Clear any previous messages
+    const messageEl = document.getElementById('forgotPasswordMessage');
+    if (messageEl) {
+        messageEl.textContent = '';
+        messageEl.className = 'form-message';
+    }
 }
 
 function closeForgotPasswordModal() {
     closeModal('forgotPasswordModal');
+    // Reset form
+    const form = document.getElementById('forgotPasswordForm');
+    if (form) form.reset();
+    const messageEl = document.getElementById('forgotPasswordMessage');
+    if (messageEl) {
+        messageEl.textContent = '';
+        messageEl.className = 'form-message';
+    }
 }
 
 function submitForgotPassword(event) {
     event.preventDefault();
-    const email = document.getElementById('forgotPasswordEmail').value;
+    const identifier = document.getElementById('forgotPasswordIdentifier').value.trim();
     const messageEl = document.getElementById('forgotPasswordMessage');
     const submitBtn = document.getElementById('forgotPasswordSubmit');
     
-    if (!email) {
-        messageEl.textContent = 'Please enter your email address';
+    if (!identifier) {
+        messageEl.textContent = 'Please enter your email or username';
         messageEl.className = 'form-error-text';
         return;
     }
@@ -319,14 +355,184 @@ function submitForgotPassword(event) {
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
     
-    // Simulate API call (replace with actual endpoint)
-    fetch('/api/forgot-password/', {
+    // Call the lookup endpoint
+    fetch('/password-reset/lookup/', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': getCSRFToken()
         },
-        body: JSON.stringify({ email: email })
+        body: new URLSearchParams({ identifier: identifier })
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        
+        if (data.found) {
+            // Store user ID and show reset form
+            document.getElementById('resetUserId').value = data.user_id;
+            document.getElementById('resetPasswordUserInfo').textContent = 
+                'Create a new password for ' + (data.email || data.username);
+            closeForgotPasswordModal();
+            openResetPasswordFormModal();
+        } else {
+            messageEl.textContent = data.error || 'No account found with that email or username.';
+            messageEl.className = 'form-error-text';
+        }
+    })
+    .catch(error => {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        messageEl.textContent = 'An error occurred. Please try again.';
+        messageEl.className = 'form-error-text';
+        console.error('Forgot password error:', error);
+    });
+}
+
+/* Reset Password Form Modal */
+function openResetPasswordFormModal() {
+    openModal('resetPasswordFormModal');
+    // Initialize password strength meter for reset form
+    initResetPasswordStrengthMeter();
+}
+
+function closeResetPasswordFormModal() {
+    closeModal('resetPasswordFormModal');
+    // Reset form
+    const form = document.getElementById('resetPasswordForm');
+    if (form) form.reset();
+    const messageEl = document.getElementById('resetPasswordFormMessage');
+    if (messageEl) {
+        messageEl.textContent = '';
+        messageEl.className = 'form-message';
+    }
+    // Clear match message
+    const matchMessage = document.getElementById('resetPasswordMatchMessage');
+    if (matchMessage) {
+        matchMessage.textContent = '';
+        matchMessage.className = 'password-match-message';
+    }
+    // Clear strength indicator
+    const strengthFill = document.getElementById('resetPasswordStrengthFill');
+    const strengthText = document.getElementById('resetPasswordStrengthText');
+    if (strengthFill) {
+        strengthFill.style.width = '0';
+        strengthFill.className = 'strength-fill';
+    }
+    if (strengthText) strengthText.textContent = '';
+}
+
+function initResetPasswordStrengthMeter() {
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmNewPassword');
+    const strengthFill = document.getElementById('resetPasswordStrengthFill');
+    const strengthText = document.getElementById('resetPasswordStrengthText');
+
+    if (newPasswordInput && strengthFill && strengthText) {
+        // Remove existing listener to prevent duplicates
+        newPasswordInput.removeEventListener('input', updateResetPasswordStrength);
+        newPasswordInput.addEventListener('input', updateResetPasswordStrength);
+    }
+
+    if (newPasswordInput && confirmPasswordInput) {
+        // Remove existing listener to prevent duplicates
+        confirmPasswordInput.removeEventListener('input', checkResetPasswordMatch);
+        newPasswordInput.removeEventListener('input', checkResetPasswordMatch);
+        confirmPasswordInput.addEventListener('input', checkResetPasswordMatch);
+        newPasswordInput.addEventListener('input', checkResetPasswordMatch);
+    }
+}
+
+function updateResetPasswordStrength() {
+    const password = this.value;
+    const strengthFill = document.getElementById('resetPasswordStrengthFill');
+    const strengthText = document.getElementById('resetPasswordStrengthText');
+    let strength = 0;
+
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[a-z]/)) strength += 1;
+    if (password.match(/[A-Z]/)) strength += 1;
+    if (password.match(/[0-9]/)) strength += 1;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+
+    strengthFill.classList.remove('weak', 'medium', 'strong');
+
+    if (password.length === 0) {
+        strengthFill.style.width = '0';
+        strengthText.textContent = '';
+    } else if (strength <= 2) {
+        strengthFill.style.width = '33%';
+        strengthFill.classList.add('weak');
+        strengthText.textContent = 'Weak password';
+    } else if (strength <= 3) {
+        strengthFill.style.width = '66%';
+        strengthFill.classList.add('medium');
+        strengthText.textContent = 'Medium password';
+    } else {
+        strengthFill.style.width = '100%';
+        strengthFill.classList.add('strong');
+        strengthText.textContent = 'Strong password';
+    }
+}
+
+function checkResetPasswordMatch() {
+    const password1 = document.getElementById('newPassword').value;
+    const password2 = document.getElementById('confirmNewPassword').value;
+    const matchMessage = document.getElementById('resetPasswordMatchMessage');
+
+    if (password2.length === 0) {
+        matchMessage.textContent = '';
+        matchMessage.className = 'password-match-message';
+    } else if (password1 === password2) {
+        matchMessage.textContent = 'Passwords match';
+        matchMessage.className = 'password-match-message match-success';
+    } else {
+        matchMessage.textContent = 'Passwords do not match';
+        matchMessage.className = 'password-match-message match-error';
+    }
+}
+
+function submitResetPassword(event) {
+    event.preventDefault();
+    const userId = document.getElementById('resetUserId').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    const messageEl = document.getElementById('resetPasswordFormMessage');
+    const submitBtn = document.getElementById('resetPasswordSubmit');
+    
+    // Validation
+    if (!newPassword || !confirmPassword) {
+        messageEl.textContent = 'Please fill in both password fields';
+        messageEl.className = 'form-error-text';
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        messageEl.textContent = 'Passwords do not match';
+        messageEl.className = 'form-error-text';
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        messageEl.textContent = 'Password must be at least 8 characters long';
+        messageEl.className = 'form-error-text';
+        return;
+    }
+    
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
+    // Submit the new password
+    fetch('/password-reset/confirm/' + userId + '/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: new URLSearchParams({
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -334,13 +540,23 @@ function submitForgotPassword(event) {
         submitBtn.disabled = false;
         
         if (data.success) {
-            messageEl.textContent = 'Password reset instructions have been sent to your email.';
+            messageEl.textContent = 'Password reset successfully! Redirecting to login...';
             messageEl.className = 'form-success-text';
             setTimeout(() => {
-                closeForgotPasswordModal();
-                document.getElementById('forgotPasswordForm').reset();
-                messageEl.textContent = '';
-            }, 3000);
+                closeResetPasswordFormModal();
+                // Show success message on login form
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    // Create or update success message
+                    let successDiv = loginForm.querySelector('.form-success');
+                    if (!successDiv) {
+                        successDiv = document.createElement('div');
+                        successDiv.className = 'form-success';
+                        loginForm.insertBefore(successDiv, loginForm.firstChild);
+                    }
+                    successDiv.textContent = 'Password reset successfully! Please sign in with your new password.';
+                }
+            }, 2000);
         } else {
             messageEl.textContent = data.error || 'An error occurred. Please try again.';
             messageEl.className = 'form-error-text';
@@ -351,7 +567,7 @@ function submitForgotPassword(event) {
         submitBtn.disabled = false;
         messageEl.textContent = 'An error occurred. Please try again.';
         messageEl.className = 'form-error-text';
-        console.error('Forgot password error:', error);
+        console.error('Reset password error:', error);
     });
 }
 
@@ -384,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hour = new Date().getHours();
         let greeting = 'Good day';
 
-        if (hour >= 5 && hour < 12) {
+        if (hour >= 0 && hour < 12) {
             greeting = 'Good morning';
         } else if (hour >= 12 && hour < 18) {
             greeting = 'Good afternoon';
@@ -952,6 +1168,7 @@ function openEditModal(button) {
     var designType = button.dataset.designType;
     var description = button.dataset.description;
     var budget = button.dataset.budget;
+    var currency = button.dataset.currency || 'USD';
     var deadline = button.dataset.deadline;
 
     // Set form action URL
@@ -964,6 +1181,7 @@ function openEditModal(button) {
         document.getElementById('edit_design_type').value = designType;
         document.getElementById('edit_description').value = description;
         document.getElementById('edit_budget').value = budget;
+        document.getElementById('edit_currency').value = currency;
         document.getElementById('edit_deadline').value = deadline;
 
         // Show modal using openModal
@@ -1099,7 +1317,6 @@ function openAvailableRequestModal(button) {
 
 // Initialize dashboard-specific handlers
 document.addEventListener('DOMContentLoaded', function () {
-    // User Dashboard - Edit modal file upload - accumulate files
     var editFileUploadArea = document.getElementById('editFileUploadArea');
     var editFileInput = document.getElementById('edit_reference_files');
     var editFileList = document.getElementById('editFileList');
@@ -1301,6 +1518,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (cropperImage && cropperModal) {
                         // Show modal immediately
                         cropperModal.classList.add('show');
+                        document.documentElement.classList.add('cropper-modal-open');
+                        document.body.classList.add('cropper-modal-open');
 
                         // Destroy existing cropper
                         if (cropper) {
@@ -1363,6 +1582,78 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cancelCropBtn) {
         cancelCropBtn.addEventListener('click', function () {
             closeCropperModal();
+        });
+    }
+
+    // Zoom In
+    var zoomInBtn = document.getElementById('zoomInBtn');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.zoom(0.1);
+            }
+        });
+    }
+
+    // Zoom Out
+    var zoomOutBtn = document.getElementById('zoomOutBtn');
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.zoom(-0.1);
+            }
+        });
+    }
+
+    // Rotate Left
+    var rotateLeftBtn = document.getElementById('rotateLeftBtn');
+    if (rotateLeftBtn) {
+        rotateLeftBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(-45);
+            }
+        });
+    }
+
+    // Rotate Right
+    var rotateRightBtn = document.getElementById('rotateRightBtn');
+    if (rotateRightBtn) {
+        rotateRightBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(45);
+            }
+        });
+    }
+
+    // Flip Horizontal
+    var flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
+    if (flipHorizontalBtn) {
+        flipHorizontalBtn.addEventListener('click', function () {
+            if (cropper) {
+                var scaleX = cropper.getData().scaleX || 1;
+                cropper.scaleX(-scaleX);
+            }
+        });
+    }
+
+    // Flip Vertical
+    var flipVerticalBtn = document.getElementById('flipVerticalBtn');
+    if (flipVerticalBtn) {
+        flipVerticalBtn.addEventListener('click', function () {
+            if (cropper) {
+                var scaleY = cropper.getData().scaleY || 1;
+                cropper.scaleY(-scaleY);
+            }
+        });
+    }
+
+    // Reset Crop
+    var resetCropBtn = document.getElementById('resetCropBtn');
+    if (resetCropBtn) {
+        resetCropBtn.addEventListener('click', function () {
+            if (cropper) {
+                cropper.reset();
+            }
         });
     }
 
@@ -1440,6 +1731,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cropperModal) {
             cropperModal.classList.remove('show');
         }
+
+        document.documentElement.classList.remove('cropper-modal-open');
+        document.body.classList.remove('cropper-modal-open');
 
         if (cropper) {
             cropper.destroy();
@@ -1611,9 +1905,20 @@ document.addEventListener('DOMContentLoaded', function() {
         var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
         var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
         
-        // Always default to dashboard section on page load
-        // (localStorage is only used when clicking sidebar, not on initial load)
-        showDashboardSection('dashboard');
+        // Check if there's a hash in the URL (from sidebar navigation)
+        var hash = window.location.hash.replace('#', '');
+        var initialSection = 'dashboard'; // Default section
+        
+        // If there's a hash, check if the section exists before using it
+        if (hash) {
+            var targetSection = document.getElementById(hash + '-section');
+            if (targetSection) {
+                initialSection = hash;
+            }
+        }
+        
+        // Show the initial section
+        showDashboardSection(initialSection);
         
         // Add click handlers for sidebar navigation
         var sidebarItems = document.querySelectorAll('.side-item[data-section]');
