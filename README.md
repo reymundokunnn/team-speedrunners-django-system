@@ -21,7 +21,7 @@ Follow these steps to get the project running locally:
 
 ```bash
 git clone https://github.com/reymundokunnn/team-speedrunners-django-system.git
-cd presenta
+cd team-speedrunners-django-system
 ```
 
 ### 2. Create a Virtual Environment
