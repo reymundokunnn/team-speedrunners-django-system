@@ -1,9 +1,15 @@
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.so
 db.sqlite3
 .env
 venv/
 .env/
+.vscode/
+.idea/
 *.log
 media/
 profile_pics/
