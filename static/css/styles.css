@@ -6980,23 +6980,11 @@ body.dark-mode .users-table th.sortable.sorted {
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Samples ni Sakura Bakushin O */
-
-body.dark-mode main .samples-parent .samples-div-item {
-    background-color: #333;
-    box-shadow: rgba(0, 0, 0, 0.26) 5px 5px 5px 1px, rgba(0, 0, 0, 0.26) 5px 5px 5px 1px;
-}
+/* Samples Base Styles (enhanced redesign) */
 
 .samples-highlight {
     color: #e87f13;
     display: inline;
-}
-
-.samples-h1 {
-    margin: 100px 15px 10px 15px;
-    font-size: clamp(1.5rem, 1rem + 2vw, 3rem);
-    text-align: center;
-    line-height: 1.2;
 }
 
 .samples-img {
@@ -7009,20 +6997,31 @@ body.dark-mode main .samples-parent .samples-div-item {
 .samples-parent {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1rem;
-    margin: 10px 15px 45px 15px;
+    gap: 1.5rem;
+    margin: 0;
 }
 
 .samples-div-item {
     background-color: #b2b2b2;
-    box-shadow: rgba(0, 0, 0, 0.26) 5px 5px 5px 1px, rgba(0, 0, 0, 0.26) 5px 5px 5px 1px;
-    font-size: 30px;
-    text-align: center;
-    padding: 10px;
-    border-radius: 5px;
+    box-shadow: rgba(0, 0, 0, 0.15) 4px 8px 12px;
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
     aspect-ratio: auto;
-    min-height: 180px;
-    margin-bottom: auto;
+    min-height: 250px;
+    transition: all 0.3s ease-in-out;
+}
+
+.samples-div-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.samples-div-item:hover {
+    box-shadow: rgba(232, 127, 19, 0.4) 0px 10px 30px;
+    transform: translateY(-5px);
+    transition: all 0.3s ease-in-out;
 }
 
 .samples-desc {
@@ -7032,14 +7031,140 @@ body.dark-mode main .samples-parent .samples-div-item {
     text-align: center;
 }
 
-.samples-div-item:hover {
-    box-shadow: rgba(0, 0, 0, 0.26) 10px 10px 10px 1px, rgba(0, 0, 0, 0.26) 10px 10px 10px 1px;
-    transform: scale(1.02);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
 .samples-text.hidden {
     display: none;
+}
+
+/* Enhanced Samples Page Styling */
+.samples-section {
+    background: linear-gradient(135deg, rgba(232, 127, 19, 0.05) 0%, rgba(232, 127, 19, 0.02) 100%);
+    padding: 60px 20px;
+}
+
+.samples-header {
+    margin: 40px 15px 80px 15px;
+    text-align: center;
+}
+
+.samples-h1 {
+    margin: 0 0 20px 0;
+    font-size: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.samples-subtitle {
+    font-size: clamp(1rem, 0.8rem + 1vw, 1.3rem);
+    color: #666;
+    margin: 0;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .samples-subtitle {
+    color: #aaa;
+}
+
+/* Category Sections */
+.samples-category {
+    margin: 0 15px 70px 15px;
+}
+
+.category-header {
+    margin-bottom: 40px;
+}
+
+.category-title {
+    font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+    margin: 0 0 12px 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.category-desc {
+    font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.15rem);
+    color: #777;
+    margin: 0;
+    font-weight: 300;
+}
+
+body.dark-mode .category-desc {
+    color: #999;
+}
+
+/* Placeholder Items */
+.samples-placeholder {
+    background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+    border: 2px dashed #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 250px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.samples-placeholder:hover {
+    background: linear-gradient(135deg, #efefef 0%, #f5f5f5 100%);
+    border-color: #e87f13;
+    transform: scale(1.02);
+}
+
+body.dark-mode .samples-placeholder {
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border-color: #555;
+}
+
+body.dark-mode .samples-placeholder:hover {
+    background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
+    border-color: #e87f13;
+    box-shadow: 0 0 20px rgba(232, 127, 19, 0.3);
+}
+
+.placeholder-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.placeholder-icon {
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: #ccc;
+    line-height: 1;
+}
+
+.samples-placeholder:hover .placeholder-icon {
+    color: #e87f13;
+    transform: scale(1.2);
+    transition: all 0.3s ease-in-out;
+}
+
+.placeholder-text {
+    font-size: clamp(0.9rem, 0.8rem + 0.5vw, 1.1rem);
+    color: #999;
+    margin: 0;
+    font-weight: 500;
+}
+
+body.dark-mode .placeholder-text {
+    color: #aaa;
+}
+
+.samples-placeholder:hover .placeholder-text {
+    color: #e87f13;
+}
+
+/* Dark mode for samples */
+body.dark-mode main .samples-parent .samples-div-item {
+    background-color: #333;
+    box-shadow: rgba(0, 0, 0, 0.26) 5px 5px 5px 1px, rgba(0, 0, 0, 0.26) 5px 5px 5px 1px;
+}
+
+body.dark-mode .samples-section {
+    background: linear-gradient(135deg, rgba(232, 127, 19, 0.08) 0%, rgba(232, 127, 19, 0.04) 100%);
 }
 
 /* ==========================================================================

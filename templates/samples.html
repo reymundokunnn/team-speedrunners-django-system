@@ -1,20 +1,82 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-<!-- paste main content here. -->
 <section class="samples-section">
-	<h1 class="samples-h1">EXAMPLES OF <div class="samples-highlight">SAMPLES</div>
-	</h1>
+	<div class="samples-header">
+		<h1 class="samples-h1">Our <span class="samples-highlight">Design Portfolio</span></h1>
+		<p class="samples-subtitle">Explore our collection of professional design work across multiple domains</p>
+	</div>
 
-	<div class="samples-parent">
-		<div class="samples-div-item"><img src="{% static 'img/samples/1.jpg' %}" alt="Sample 1" class="samples-img">
-			<p class="samples-text.hidden">This is an example.</p>
+	<!-- Presentations Section -->
+	<div class="samples-category">
+		<div class="category-header">
+			<h2 class="category-title">📊 Presentations</h2>
+			<p class="category-desc">Professional presentation decks and business slides</p>
 		</div>
-		<div class="samples-div-item"><img src="{% static 'img/samples/2.jpg' %}" alt="Sample 2" class="samples-img"></div>
-		<div class="samples-div-item"><img src="{% static 'img/samples/3.jpg' %}" alt="Sample 3" class="samples-img"></div>
-		<div class="samples-div-item"><img src="{% static 'img/samples/4.jpg' %}" alt="Sample 4" class="samples-img"></div>
-		<div class="samples-div-item"><img src="{% static 'img/samples/5.jpg' %}" alt="Sample 5" class="samples-img"></div>
-		<div class="samples-div-item"><img src="{% static 'img/samples/6.jpg' %}" alt="Sample 6" class="samples-img"></div>
+		<div class="samples-parent">
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/1.jpg' %}" alt="Presentation Sample 1" class="samples-img">
+			</div>
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/2.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+			</div>
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/3.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+			</div>
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/4.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+			</div>
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/5.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+			</div>
+			<div class="samples-div-item">
+				<img src="{% static 'img/samples/6.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+			</div>
+		</div>
+	</div>
+
+	<!-- Infographics Section -->
+	<div class="samples-category">
+		<div class="category-header">
+			<h2 class="category-title">📈 Infographics</h2>
+			<p class="category-desc">Data visualization and informative graphics</p>
+		</div>
+		<div class="samples-parent">
+			<div class="samples-div-item samples-placeholder">
+				<div class="placeholder-content">
+					<span class="placeholder-icon">+</span>
+					<p class="placeholder-text">Add your infographic</p>
+				</div>
+			</div>
+			<div class="samples-div-item samples-placeholder">
+				<div class="placeholder-content">
+					<span class="placeholder-icon">+</span>
+					<p class="placeholder-text">Add your infographic</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Posters Section -->
+	<div class="samples-category">
+		<div class="category-header">
+			<h2 class="category-title">🎨 Posters</h2>
+			<p class="category-desc">Eye-catching poster designs and promotional materials</p>
+		</div>
+		<div class="samples-parent">
+			<div class="samples-div-item samples-placeholder">
+				<div class="placeholder-content">
+					<span class="placeholder-icon">+</span>
+					<p class="placeholder-text">Add your poster</p>
+				</div>
+			</div>
+			<div class="samples-div-item samples-placeholder">
+				<div class="placeholder-content">
+					<span class="placeholder-icon">+</span>
+					<p class="placeholder-text">Add your poster</p>
+				</div>
+			</div>
+		</div>
 	</div>
 </section>
 {% endblock %}
