@@ -3,16 +3,6 @@
 {% load static %}
 {% load file_filters %}
 {% block content %}
-<style>
-/* Dashboard Section Visibility - Critical Fix */
-.dashboard-section-content {
-    display: none !important;
-}
-.dashboard-section-content.active {
-    display: block !important;
-}
-</style>
-
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_user.html" %}

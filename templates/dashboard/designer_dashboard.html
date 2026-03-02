@@ -477,36 +477,5 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click handlers for view and edit buttons
-    document.querySelectorAll('.btn-view, .btn-edit').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var designId = this.getAttribute('data-design-id');
-            if (designId && typeof openProjectModal === 'function') {
-                openProjectModal(parseInt(designId));
-            }
-        });
-    });
-});
 
-// Store current design ID for cancel action
-var currentCancelDesignId = null;
-
-function openCancelConfirmModal() {
-    document.getElementById('cancelConfirmModal').classList.add('active');
-    // Get the current design ID from the modal
-    currentCancelDesignId = document.getElementById('modalDesignId').value;
-    // Update the form action URL
-    var cancelForm = document.getElementById('cancelProjectForm');
-    if (currentCancelDesignId) {
-        cancelForm.action = '/design-request/' + currentCancelDesignId + '/cancel/';
-    }
-}
-
-function closeCancelConfirmModal() {
-    document.getElementById('cancelConfirmModal').classList.remove('active');
-    currentCancelDesignId = null;
-}
-</script>
 {% endblock %}

@@ -1934,3 +1934,772 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function getCSRFToken() {
+    var csrfInput = document.getElementById('csrfToken');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    // Fallback: try to get from cookie
+    var name = 'csrftoken';
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue || '';
+}
+
+function openAddUserModal() {
+    // Clear the form
+    var addUserForm = document.getElementById('addUserForm');
+    if (addUserForm) {
+        addUserForm.reset();
+    }
+    var addUserId = document.getElementById('addUserId');
+    if (addUserId) {
+        addUserId.value = '';
+    }
+    openModal('addUserModal');
+}
+
+function saveNewUser() {
+    var firstName = document.getElementById('addFirstName').value.trim();
+    var lastName = document.getElementById('addLastName').value.trim();
+    
+    // Client-side validation
+    if (!firstName || !lastName) {
+        showMessageModal('Error', 'First name and last name are required.', 'error');
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('username', document.getElementById('addUsername').value);
+    formData.append('email', document.getElementById('addEmail').value);
+    formData.append('password', document.getElementById('addPassword').value);
+    formData.append('first_name', firstName);
+    formData.append('last_name', lastName);
+    formData.append('user_role', document.getElementById('addUserRole').value);
+    formData.append('gender', document.getElementById('addGender').value);
+    formData.append('phone_number', document.getElementById('addPhone').value);
+    formData.append('company', document.getElementById('addCompany').value);
+    formData.append('location', document.getElementById('addLocation').value);
+
+    fetch('/manage/user/create/', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: formData
+    })
+        .then(function (response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, status: response.status, data: data };
+            });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                closeModal('addUserModal');
+                showMessageModal('Success', 'User created successfully!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showMessageModal('Error', result.data.error || 'Unknown error occurred.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error creating user:', error);
+            showMessageModal('Error', 'Error creating user. Please try again.', 'error');
+        });
+}
+
+function viewUser(userId) {
+    fetch('/manage/user/' + userId + '/view/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert('Access denied. You must be an admin to view user details.');
+                    return;
+                }
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            // Populate view modal with user data
+            document.getElementById('viewUserName').textContent = (data.first_name + ' ' + data.last_name).trim() || data.username || 'Unknown';
+            document.getElementById('viewUserUsername').textContent = '@' + (data.username || 'N/A');
+            document.getElementById('viewUserEmail').textContent = data.email || 'Not provided';
+            document.getElementById('viewUserRole').textContent = data.user_role_display || data.user_role || 'User';
+            document.getElementById('viewUserRole').className = 'role-badge role-' + (data.user_role || 'user');
+            document.getElementById('viewUserCompany').textContent = data.company || 'Not provided';
+            document.getElementById('viewUserLocation').textContent = data.location || 'Not provided';
+            document.getElementById('viewUserJoined').textContent = data.joined_date || 'Not available';
+            document.getElementById('viewUserRequests').textContent = data.design_requests_count || 0;
+
+            // Profile picture
+            var profilePic = document.getElementById('viewUserProfilePic');
+            var placeholder = document.getElementById('viewUserAvatarPlaceholder');
+            if (data.profile_picture) {
+                profilePic.src = data.profile_picture;
+                profilePic.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            } else {
+                profilePic.style.display = 'none';
+                if (placeholder) {
+                    placeholder.textContent = (data.first_name ? data.first_name[0] : (data.username ? data.username[0] : '?')).toUpperCase();
+                    placeholder.style.display = 'flex';
+                }
+            }
+
+            // Show modal
+            openModal('viewUserModal');
+        })
+        .catch(function (error) {
+            console.error('Error fetching user:', error);
+            alert('Error loading user details. Please try again. Error: ' + error.message);
+        });
+}
+
+function editUser(userId) {
+    fetch('/manage/user/' + userId + '/edit/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert('Access denied. You must be an admin to edit users.');
+                    return;
+                }
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            // Populate edit form
+            document.getElementById('editUserId').value = data.id;
+            document.getElementById('editFirstName').value = data.first_name || '';
+            document.getElementById('editLastName').value = data.last_name || '';
+            document.getElementById('editEmail').value = data.email || '';
+            document.getElementById('editUsername').value = data.username || '';
+            document.getElementById('editUserRole').value = data.user_role || 'user';
+            document.getElementById('editGender').value = data.gender || '';
+            document.getElementById('editPhone').value = data.phone_number || '';
+            document.getElementById('editDOB').value = data.date_of_birth || '';
+            document.getElementById('editCompany').value = data.company || '';
+            document.getElementById('editLocation').value = data.location || '';
+            document.getElementById('editBio').value = data.bio || '';
+
+            // Show modal
+            openModal('editUserModal');
+        })
+        .catch(function (error) {
+            console.error('Error fetching user:', error);
+            alert('Error loading user data. Please try again. Error: ' + error.message);
+        });
+}
+
+function saveUser() {
+    var userId = document.getElementById('editUserId').value;
+    var formData = new FormData();
+
+    formData.append('first_name', document.getElementById('editFirstName').value);
+    formData.append('last_name', document.getElementById('editLastName').value);
+    formData.append('email', document.getElementById('editEmail').value);
+    formData.append('user_role', document.getElementById('editUserRole').value);
+    formData.append('gender', document.getElementById('editGender').value);
+    formData.append('phone_number', document.getElementById('editPhone').value);
+    formData.append('date_of_birth', document.getElementById('editDOB').value);
+    formData.append('company', document.getElementById('editCompany').value);
+    formData.append('location', document.getElementById('editLocation').value);
+    formData.append('bio', document.getElementById('editBio').value);
+
+    fetch('/manage/user/' + userId + '/edit/', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: formData
+    })
+        .then(function (response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, status: response.status, data: data };
+            });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                closeModal('editUserModal');
+                showMessageModal('Success', 'User updated successfully!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error saving user:', error);
+            showMessageModal('Error', 'Error saving user. Please try again.', 'error');
+        });
+}
+
+function deleteUser(userId) {
+    fetch('/manage/user/' + userId + '/view/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert('Access denied. You must be an admin to delete users.');
+                    return;
+                }
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            // Set user info in delete modal
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = (data.first_name + ' ' + data.last_name).trim() || data.username || 'Unknown';
+
+            // Show confirmation modal
+            openModal('deleteUserModal');
+        })
+        .catch(function (error) {
+            console.error('Error fetching user:', error);
+            alert('Error loading user data. Please try again. Error: ' + error.message);
+        });
+}
+
+function confirmDeleteUser() {
+    var userId = document.getElementById('deleteUserId').value;
+
+    fetch('/manage/user/' + userId + '/delete/', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+        .then(function (response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, status: response.status, data: data };
+            });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                closeModal('deleteUserModal');
+                showMessageModal('Success', 'User deleted successfully!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error deleting user:', error);
+            showMessageModal('Error', 'Error deleting user. Please try again.', 'error');
+        });
+}
+
+function showMessageModal(title, message, type, callback) {
+    var modalId = 'messageModal';
+    var modal = document.getElementById(modalId);
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'add-new-design-modal';
+        modal.innerHTML = '<div class="modal-content message-modal-content"><button class="close-btn" onclick="closeMessageModal()" aria-label="Close modal"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><div class="message-modal-icon" id="messageModalIcon"></div><h2 id="messageModalTitle"></h2><p id="messageModalText" class="message-modal-text"></p><div class="modal-actions"><button type="button" class="btn btn-primary" onclick="closeMessageModal(true)">OK</button></div></div>';
+        document.body.appendChild(modal);
+    }
+    
+    // Set content
+    document.getElementById('messageModalTitle').textContent = title;
+    document.getElementById('messageModalText').textContent = message;
+    
+    // Set icon based on type
+    var iconContainer = document.getElementById('messageModalIcon');
+    if (type === 'success') {
+        iconContainer.innerHTML = '✓';
+        iconContainer.className = 'message-modal-icon success';
+    } else if (type === 'error') {
+        iconContainer.innerHTML = '✕';
+        iconContainer.className = 'message-modal-icon error';
+    } else {
+        iconContainer.innerHTML = 'ℹ';
+        iconContainer.className = 'message-modal-icon info';
+    }
+    
+    // Store callback
+    modal.callback = callback;
+    
+    // Show modal
+    modal.classList.add('show');
+}
+
+function closeMessageModal(triggerCallback) {
+    var modal = document.getElementById('messageModal');
+    if (modal) {
+        modal.classList.remove('show');
+        if (triggerCallback && modal.callback) {
+            modal.callback();
+        }
+    }
+}
+
+function toggleSelectAllUsers() {
+    var selectAllCheckbox = document.getElementById('selectAllUsers');
+    var userCheckboxes = document.querySelectorAll('.user-checkbox');
+    userCheckboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    var bulkActionsBar = document.querySelector('.bulk-actions-bar');
+    var selectedCount = document.getElementById('selectedCount');
+    
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.classList.add('show');
+        selectedCount.textContent = checkedBoxes.length + ' user' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
+    } else {
+        bulkActionsBar.classList.remove('show');
+    }
+    
+    // Update select all checkbox state
+    var allCheckboxes = document.querySelectorAll('.user-checkbox');
+    var selectAllCheckbox = document.getElementById('selectAllUsers');
+    if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function bulkDeleteUsers() {
+    var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    var userIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+    
+    if (userIds.length === 0) {
+        showMessageModal('Error', 'No users selected.', 'error');
+        return;
+    }
+    
+    // Show confirmation modal
+    document.getElementById('bulkDeleteUserIds').value = userIds.join(',');
+    document.getElementById('bulkDeleteCount').textContent = userIds.length;
+    openModal('bulkDeleteUserModal');
+}
+
+function confirmBulkDeleteUsers() {
+    var userIds = document.getElementById('bulkDeleteUserIds').value.split(',');
+    var csrfToken = getCSRFToken();
+    var deletePromises = userIds.map(function(userId) {
+        return fetch('/manage/user/' + userId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            }
+        });
+    });
+    
+    Promise.all(deletePromises)
+        .then(function() {
+            closeModal('bulkDeleteUserModal');
+            showMessageModal('Success', userIds.length + ' users deleted successfully!', 'success');
+            setTimeout(function() {
+                location.reload();
+            }, 1500);
+        })
+        .catch(function(error) {
+            console.error('Error deleting users:', error);
+            showMessageModal('Error', 'Error deleting some users. Please try again.', 'error');
+        });
+}
+
+function toggleFilterDropdown() {
+    var dropdown = document.getElementById('filterDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
+}
+
+function applyFilters() {
+    // Get selected roles
+    var roleCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:first-child input:checked');
+    var selectedRoles = Array.from(roleCheckboxes).map(function(cb) { return cb.value; });
+    
+    // Get selected statuses
+    var statusCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:nth-child(2) input:checked');
+    var selectedStatuses = Array.from(statusCheckboxes).map(function(cb) { return cb.value; });
+    
+    console.log('Selected roles:', selectedRoles);
+    console.log('Selected statuses:', selectedStatuses);
+    
+    // Filter table rows
+    var tableBody = document.querySelector('.users-table tbody');
+    if (!tableBody) {
+        console.error('Table body not found');
+        return;
+    }
+    
+    var rows = tableBody.querySelectorAll('tr');
+    console.log('Total rows found:', rows.length);
+    
+    var visibleRowCount = 0;
+    var emptyStateRow = document.getElementById('emptyStateRow');
+    
+    rows.forEach(function(row, index) {
+        // Skip empty state row
+        if (row.id === 'emptyStateRow') {
+            row.style.display = 'none';
+            return;
+        }
+        
+        var roleBadge = row.querySelector('.role-badge');
+        var roleClass = roleBadge ? roleBadge.className : '';
+        var roleMatch = roleClass.match(/role-(user|designer|admin)\b/);
+        var roleValue = roleMatch ? roleMatch[1] : '';
+        
+        console.log('Row', index, 'role class:', roleClass, 'extracted role:', roleValue);
+        
+        // Show row if no filters selected OR if role matches
+        var showByRole = selectedRoles.length === 0 || selectedRoles.indexOf(roleValue) !== -1;
+        var showByStatus = true;
+        
+        if (showByRole && showByStatus) {
+            row.style.display = '';
+            visibleRowCount++;
+            console.log('Row', index, 'VISIBLE');
+        } else {
+            row.style.display = 'none';
+            console.log('Row', index, 'HIDDEN');
+        }
+    });
+    
+    console.log('Visible rows:', visibleRowCount);
+    
+    // Show empty state if needed
+    if (emptyStateRow) {
+        if (visibleRowCount === 0 && selectedRoles.length > 0) {
+            emptyStateRow.style.display = '';
+            var emptyStateSpan = emptyStateRow.querySelector('td.empty-state span');
+            if (emptyStateSpan) {
+                emptyStateSpan.textContent = 'No users match the selected filters';
+            }
+        } else if (visibleRowCount === 0 && selectedRoles.length === 0) {
+            emptyStateRow.style.display = '';
+            var emptyStateSpan = emptyStateRow.querySelector('td.empty-state span');
+            if (emptyStateSpan) {
+                emptyStateSpan.textContent = 'No users found';
+            }
+        }
+    }
+}
+
+function clearFilters() {
+    var checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
+    checkboxes.forEach(function(cb) { cb.checked = false; });
+    applyFilters();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Close filter dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        var container = document.querySelector('.filter-dropdown-container');
+        var dropdown = document.getElementById('filterDropdown');
+        if (container && !container.contains(event.target)) {
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        }
+    });
+
+    // Handle user action buttons (view/edit/delete)
+    document.querySelectorAll('.action-buttons button').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var userId = this.getAttribute('data-user-id');
+            var action = this.getAttribute('data-action');
+
+            if (action === 'view') {
+                viewUser(userId);
+            } else if (action === 'edit') {
+                editUser(userId);
+            } else if (action === 'delete') {
+                deleteUser(userId);
+            }
+        });
+    });
+});
+
+var currentCancelDesignId = null;
+
+function openCancelConfirmModal() {
+    var modal = document.getElementById('cancelConfirmModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+    // Get the current design ID from the modal
+    var designIdInput = document.getElementById('modalDesignId');
+    if (designIdInput) {
+        currentCancelDesignId = designIdInput.value;
+        // Update the form action URL
+        var cancelForm = document.getElementById('cancelProjectForm');
+        if (cancelForm && currentCancelDesignId) {
+            cancelForm.action = '/design-request/' + currentCancelDesignId + '/cancel/';
+        }
+    }
+}
+
+function closeCancelConfirmModal() {
+    var modal = document.getElementById('cancelConfirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    currentCancelDesignId = null;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for view and edit buttons in project modal
+    document.querySelectorAll('.btn-view, .btn-edit').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var designId = this.getAttribute('data-design-id');
+            if (designId && typeof openProjectModal === 'function') {
+                openProjectModal(parseInt(designId));
+            }
+        });
+    });
+});
+
+function closeCropperModal() {
+    const modal = document.getElementById('cropperModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    document.body.classList.remove('cropper-modal-open');
+    document.documentElement.classList.remove('cropper-modal-open');
+    
+    // Destroy cropper if it exists (global variable from script.js)
+    if (typeof cropper !== 'undefined' && cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    
+    // Reset file input
+    const profilePictureInput = document.getElementById('profile_picture');
+    if (profilePictureInput) {
+        profilePictureInput.value = '';
+    }
+}
+
+// Settings page initialization - runs on unified_settings.html page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Only run this on the settings page
+    if (!document.querySelector('.settings-unified-nav-item')) {
+        return;
+    }
+    
+    // ========== Section Navigation ==========
+    const navItems = document.querySelectorAll('.settings-unified-nav-item');
+    const sections = document.querySelectorAll('.settings-unified-section');
+    
+    if (navItems.length === 0 || sections.length === 0) {
+        return;
+    }
+    
+    // Get initial section from URL hash or default to account
+    const hash = window.location.hash.replace('#', '');
+    let activeSection = hash || 'account';
+    
+    // Validate activeSection exists
+    const validSections = Array.from(navItems).map(item => item.dataset.section);
+    if (!validSections.includes(activeSection)) {
+        activeSection = 'account';
+    }
+    
+    // Set initial active state
+    navItems.forEach(item => {
+        if (item.dataset.section === activeSection) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    sections.forEach(section => {
+        if (section.id === 'section-' + activeSection) {
+            section.classList.add('active');
+        } else {
+            section.classList.remove('active');
+        }
+    });
+    
+    // Handle navigation clicks
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const section = this.dataset.section;
+            
+            // Update nav active state
+            navItems.forEach(nav => nav.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding section
+            sections.forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById('section-' + section).classList.add('active');
+            
+            // Update URL hash
+            window.location.hash = section;
+        });
+    });
+    
+    // ========== Account Settings - Notification Toggle ==========
+    const emailNotificationsCheckbox = document.getElementById('id_email_notifications_enabled');
+    const notificationOptions = document.getElementById('notification-options');
+    
+    function toggleNotificationOptions() {
+        if (emailNotificationsCheckbox && notificationOptions) {
+            if (emailNotificationsCheckbox.checked) {
+                notificationOptions.style.display = 'block';
+            } else {
+                notificationOptions.style.display = 'none';
+            }
+        }
+    }
+    
+    if (emailNotificationsCheckbox) {
+        emailNotificationsCheckbox.addEventListener('change', toggleNotificationOptions);
+        toggleNotificationOptions();
+    }
+    
+    // ========== Close Alert Messages ==========
+    const closeButtons = document.querySelectorAll('.settings-unified-alert-close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.parentElement.style.display = 'none';
+        });
+    });
+    
+    // ========== Change Password Modal ==========
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('modal_current_password').value;
+            const newPassword = document.getElementById('modal_new_password').value;
+            const confirmPassword = document.getElementById('modal_confirm_password').value;
+            const messageEl = document.getElementById('password_change_message');
+            const submitBtn = document.getElementById('changePasswordSubmit');
+            
+            // Clear previous errors
+            document.getElementById('current_password_error').textContent = '';
+            document.getElementById('new_password_error').textContent = '';
+            document.getElementById('confirm_password_error').textContent = '';
+            messageEl.textContent = '';
+            messageEl.className = 'change-password-form-message';
+            
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // Submit via AJAX
+            fetch('/settings/change-password/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                
+                if (data.success) {
+                    messageEl.textContent = data.message || 'Password changed successfully!';
+                    messageEl.className = 'change-password-form-message change-password-form-success-text';
+                    
+                    // Close modal and reset form after success
+                    setTimeout(() => {
+                        closeModal('changePasswordModal');
+                        changePasswordForm.reset();
+                    }, 1500);
+                } else {
+                    if (data.errors) {
+                        if (data.errors.current_password) {
+                            document.getElementById('current_password_error').textContent = data.errors.current_password;
+                        }
+                        if (data.errors.new_password) {
+                            document.getElementById('new_password_error').textContent = data.errors.new_password;
+                        }
+                        if (data.errors.confirm_password) {
+                            document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
+                        }
+                    }
+                    messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                    messageEl.className = 'change-password-form-message change-password-form-error-text';
+                }
+            })
+            .catch(error => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                messageEl.textContent = 'An error occurred. Please try again.';
+                messageEl.className = 'change-password-form-message change-password-form-error-text';
+                console.error('Password change error:', error);
+            });
+        });
+    }
+});
+
+// Close modals when clicking outside (window-level handler)
+window.onclick = function(event) {
+    if (event.target.classList.contains('change-password-modal')) {
+        closeModal('changePasswordModal');
+    }
+    if (event.target.classList.contains('cropper-modal')) {
+        closeCropperModal();
+    }
+};
