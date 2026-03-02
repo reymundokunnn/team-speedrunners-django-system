@@ -20,7 +20,7 @@ Follow these steps to get the project running locally:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/rikkatakanashiii/presenta.git
+git clone https://github.com/reymundokunnn/team-speedrunners-django-system.git
 cd presenta
 ```
 
