@@ -56,4 +56,7 @@ urlpatterns = [
     path('settings/admin/', views.admin_settings, name='admin_settings'),
     path('settings/edit-profile/', views.edit_profile_settings, name='edit_profile_settings'),
     path('settings/change-password/', views.change_password_ajax, name='change_password_ajax'),
+    
+    # User status
+    path('api/update-status/', views.update_user_status, name='update_user_status'),
 ]

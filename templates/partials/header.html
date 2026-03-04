@@ -1,5 +1,33 @@
 {% load static %}
 
+{% if announcement_banner %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('has-announcement-banner');
+    });
+</script>
+<div class="announcement-banner" id="announcementBanner" style="background-color: {{ announcement_banner.bg_color }}; color: {{ announcement_banner.text_color }};">
+    <div class="announcement-banner-content">
+        <span class="announcement-banner-message">{{ announcement_banner.message }}</span>
+        <button class="announcement-banner-close" onclick="closeAnnouncementBanner()" aria-label="Close announcement">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+</div>
+<script>
+function closeAnnouncementBanner() {
+    var banner = document.getElementById('announcementBanner');
+    if (banner) {
+        banner.style.display = 'none';
+        document.body.classList.remove('has-announcement-banner');
+    }
+}
+</script>
+{% endif %}
+
 <header>
     <div class="left">
         {% if user.is_authenticated %}
@@ -35,11 +63,14 @@
                     <span class="user-name"><b>{{ display_name }}</b></span><br>
                     <span class="user-username">@{{ user.username }}</span>
                 </div>
-                {% if profile_picture_url %}
-                <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
-                {% else %}
-                <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
-                {% endif %}
+                <div style="position: relative;">
+                    {% if profile_picture_url %}
+                    <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
+                    {% else %}
+                    <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
+                    {% endif %}
+                    <div class="user-status-badge" id="user-status-badge" data-status="{{ user.presenta_user.online_status }}"></div>
+                </div>
             </div>
             <div class="user-dropdown-menu" id="user-dropdown-menu">
                 {% if user.is_superuser or user.profile.user_role == 'admin' %}
@@ -58,6 +89,13 @@
                     <span>Dashboard</span>
                 </a>
                 {% endif %}
+                <button id="set-status-btn" class="dropdown-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="4"></circle>
+                    </svg>
+                    <span><b>Set Status</b></span>
+                </button>
                 <a href="{% url 'settings' %}" class="dropdown-item">
                     <img src="{% static 'img/dashboard-icon.svg' %}" alt="Settings" class="dropdown-icon">
                     <span>Settings</span>
@@ -100,3 +138,39 @@
         {% endif %}
     </div>
 </header>
+
+<!-- Status Change Modal -->
+<div id="status-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Set Your Status</h2>
+            <span class="modal-close" id="status-modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="status-options">
+                <div class="status-option" data-status="online">
+                    <div class="status-indicator online"></div>
+                    <div class="status-text">
+                        <h3>Online</h3>
+                        <p>You appear online to others</p>
+                    </div>
+                </div>
+                <div class="status-option" data-status="idle">
+                    <div class="status-indicator idle"></div>
+                    <div class="status-text">
+                        <h3>Idle</h3>
+                        <p>You appear away from your desk</p>
+                    </div>
+                </div>
+                <div class="status-option" data-status="do_not_disturb">
+                    <div class="status-indicator do_not_disturb"></div>
+                    <div class="status-text">
+                        <h3>Do Not Disturb</h3>
+                        <p>You appear busy and unavailable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="status-modal-overlay" class="modal-overlay"></div>

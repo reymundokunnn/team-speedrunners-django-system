@@ -19,6 +19,12 @@ class User(models.Model):
         ('P', 'Prefer not to say'),
     ]
     
+    ONLINE_STATUS_CHOICES = [
+        ('online', 'Online'),
+        ('idle', 'Idle'),
+        ('do_not_disturb', 'Do Not Disturb'),
+    ]
+    
     # Auth link
     auth_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='presenta_user', null=True, blank=True)
     
@@ -38,6 +44,14 @@ class User(models.Model):
     company = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    pronouns = models.CharField(max_length=50, blank=True, null=True, help_text='e.g., he/him, she/her, they/them')
+    
+    # Status
+    online_status = models.CharField(max_length=20, choices=ONLINE_STATUS_CHOICES, default='online')
+    
+    # Verification
+    email_verified = models.BooleanField(default=False)
+    phone_verified = models.BooleanField(default=False)
     
     # Timestamps
     joined_date = models.DateTimeField(auto_now_add=True)
@@ -225,6 +239,20 @@ class UserSettings(models.Model):
         ('CAD', 'Canadian Dollar (C$)'),
     ]
     
+    CONTACT_METHOD_CHOICES = [
+        ('email', 'Email'),
+        ('phone', 'Phone'),
+        ('inapp', 'In-App Messaging'),
+    ]
+    
+    HOURS_CHOICES = [
+        ('hours_9_5', '9 AM - 5 PM'),
+        ('hours_8_6', '8 AM - 6 PM'),
+        ('hours_10_8', '10 AM - 8 PM'),
+        ('flexible', 'Flexible Hours'),
+        ('custom', 'Custom Hours'),
+    ]
+    
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_settings')
     
     # Display & Theme Settings
@@ -240,7 +268,15 @@ class UserSettings(models.Model):
     
     # Privacy Settings
     profile_visibility = models.CharField(max_length=20, choices=[('public', 'Public'), ('private', 'Private')], default='public')
-    show_online_status = models.BooleanField(default=True)
+    show_user_status = models.BooleanField(default=True)
+    
+    # Profile-related settings (all roles)
+    social_media_links = models.JSONField(default=dict, blank=True, help_text='Social media URLs: {"linkedin": "", "twitter": "", "instagram": "", "portfolio": ""}')
+    availability_hours = models.CharField(max_length=20, choices=HOURS_CHOICES, default='flexible', blank=True)
+    custom_hours = models.CharField(max_length=100, blank=True, help_text='Custom availability hours, e.g., "Mon-Fri 2PM-10PM"')
+    preferred_contact_method = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES, default='email', blank=True)
+    emergency_contact_name = models.CharField(max_length=100, blank=True)
+    emergency_contact_phone = models.CharField(max_length=20, blank=True)
     
     # User/Client-specific settings
     currency_preference = models.CharField(max_length=10, choices=CURRENCY_CHOICES, default='USD', blank=True)
@@ -255,9 +291,61 @@ class UserSettings(models.Model):
     max_concurrent_projects = models.IntegerField(default=5, blank=True)
     revision_limit = models.IntegerField(default=3, blank=True, help_text='Maximum revisions per project')
     minimum_project_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    turnaround_time_days = models.IntegerField(default=5, blank=True, help_text='Typical project turnaround time in days')
+    industry_expertise = models.TextField(blank=True, help_text='Comma-separated industries: Tech, Fashion, Real Estate, etc.')
+    software_tools = models.TextField(blank=True, help_text='Design software proficiency: Figma, Adobe Suite, etc.')
+    extra_revision_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Price per extra revision')
+    rush_job_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.25, help_text='Multiplier for rush jobs (e.g., 1.25 = 25% extra)')
+    communication_preference = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES, default='email', blank=True)
+    portfolio_public = models.BooleanField(default=True, help_text='Show portfolio to non-logged-in users')
+    auto_accept_criteria = models.JSONField(default=dict, blank=True, help_text='Auto-accept projects matching criteria')
+    show_testimonials = models.BooleanField(default=True, help_text='Display client testimonials on profile')
+    payout_method = models.CharField(max_length=50, blank=True, help_text='Preferred payout method: bank transfer, PayPal, etc.')
+    payout_frequency = models.CharField(max_length=20, choices=[('weekly', 'Weekly'), ('biweekly', 'Bi-weekly'), ('monthly', 'Monthly')], default='monthly', blank=True)
     
     # Admin settings
     maintenance_mode = models.BooleanField(default=False)
+    user_approval_required = models.BooleanField(default=False, help_text='Require admin approval for new user signups')
+    platform_commission_percent = models.DecimalField(max_digits=5, decimal_places=2, default=10.00, help_text='Platform commission percentage')
+    email_template_welcome = models.TextField(blank=True, help_text='Custom HTML for welcome email')
+    email_template_notification = models.TextField(blank=True, help_text='Custom HTML for notification email')
+    announcement_banner = models.TextField(blank=True, help_text='Site-wide announcement banner message')
+    announcement_banner_visible = models.BooleanField(default=False)
+    announcement_banner_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('info', 'Info (Blue)'),
+            ('warning', 'Warning (Orange)'),
+            ('success', 'Success (Green)'),
+            ('error', 'Error (Red)'),
+        ],
+        default='info',
+        help_text='Type of announcement banner'
+    )
+    announcement_banner_bg_color = models.CharField(
+        max_length=20,
+        default='',
+        blank=True,
+        help_text='Custom background color (e.g., #FF5733). Leave empty for default type color.'
+    )
+    announcement_banner_text_color = models.CharField(
+        max_length=20,
+        default='',
+        blank=True,
+        help_text='Custom text color (e.g., #FFFFFF). Leave empty for default white text.'
+    )
+    moderation_keywords = models.TextField(blank=True, help_text='Comma-separated keywords for content flagging')
+    backup_schedule = models.CharField(max_length=20, choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')], default='daily', blank=True)
+    api_rate_limit = models.IntegerField(default=100, help_text='API requests per hour limit')
+    form_submission_limit = models.IntegerField(default=50, help_text='Form submissions per hour limit')
+    grant_analytics_to_roles = models.TextField(blank=True, help_text='Comma-separated roles with analytics access: designer, admin')
+    dispute_resolution_days = models.IntegerField(default=30, help_text='Days allowed for dispute resolution')
+    auto_refund_enabled = models.BooleanField(default=True)
+    seasonal_active = models.BooleanField(default=False, help_text='Enable seasonal settings')
+    seasonal_name = models.CharField(max_length=100, blank=True, help_text='e.g., Holiday Season, New Year')
+    seasonal_start_date = models.DateField(null=True, blank=True)
+    seasonal_end_date = models.DateField(null=True, blank=True)
+    seasonal_fee_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.0, help_text='Fee multiplier during peak season')
     
     # Two-factor authentication
     two_fa_enabled = models.BooleanField(default=False)

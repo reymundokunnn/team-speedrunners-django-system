@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Update greeting based on time of day
+// update greeting based on time of day.
 document.addEventListener('DOMContentLoaded', function () {
     const greetingElement = document.getElementById('greeting');
     if (greetingElement) {
@@ -608,11 +608,9 @@ document.addEventListener('DOMContentLoaded', function () {
             greeting = 'Good evening';
         }
 
-        // Get the first name span
         const firstNameSpan = greetingElement.querySelector('.orange');
         const firstName = firstNameSpan ? firstNameSpan.textContent : '';
 
-        // Update the greeting text
         if (firstName) {
             greetingElement.innerHTML = greeting + ', <span class="orange">' + firstName + '</span>!';
         } else {
@@ -2702,4 +2700,163 @@ window.onclick = function(event) {
     if (event.target.classList.contains('cropper-modal')) {
         closeCropperModal();
     }
+    if (event.target.classList.contains('modal-overlay') && event.target.id === 'status-modal-overlay') {
+        closeStatusModal();
+    }
 };
+
+// ============ USER STATUS SYSTEM ============
+
+// Initialize status badge styling
+function initializeStatusBadge() {
+    const statusBadge = document.getElementById('user-status-badge');
+    if (!statusBadge) return;
+    
+    const status = statusBadge.getAttribute('data-status') || 'online';
+    updateStatusBadgeAppearance(status, statusBadge);
+}
+
+// Update the appearance of the status badge
+function updateStatusBadgeAppearance(status, badge = null) {
+    if (!badge) {
+        badge = document.getElementById('user-status-badge');
+    }
+    if (!badge) return;
+    
+    // Remove all status classes
+    badge.classList.remove('online', 'idle', 'do_not_disturb');
+    
+    // Add the appropriate class
+    badge.classList.add(status);
+}
+
+// Open status modal
+function openStatusModal() {
+    const modal = document.getElementById('status-modal');
+    const overlay = document.getElementById('status-modal-overlay');
+    const statusBadge = document.getElementById('user-status-badge');
+    const currentStatus = statusBadge ? statusBadge.getAttribute('data-status') : 'online';
+    
+    if (!modal || !overlay) return;
+    
+    // Show modal and overlay
+    modal.classList.add('active');
+    overlay.classList.add('active');
+    
+    // Mark the current status as selected
+    const statusOptions = modal.querySelectorAll('.status-option');
+    statusOptions.forEach(option => {
+        option.classList.remove('selected');
+        if (option.getAttribute('data-status') === currentStatus) {
+            option.classList.add('selected');
+        }
+    });
+}
+
+// Close status modal
+function closeStatusModal() {
+    const modal = document.getElementById('status-modal');
+    const overlay = document.getElementById('status-modal-overlay');
+    
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
+// Update user status via API
+function updateUserStatus(status) {
+    fetch('/api/update-status/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the badge
+            const badge = document.getElementById('user-status-badge');
+            if (badge) {
+                badge.setAttribute('data-status', status);
+                updateStatusBadgeAppearance(status, badge);
+            }
+            
+            // Close the modal
+            closeStatusModal();
+            
+            // Close the dropdown menu
+            const dropdown = document.getElementById('user-dropdown-menu');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+            
+            // Show success message (optional)
+            console.log('Status updated successfully');
+        } else {
+            console.error('Failed to update status:', data.error);
+            alert('Failed to update status. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
+        alert('An error occurred while updating status.');
+    });
+}
+
+// Get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Status modal event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize status badge on page load
+    initializeStatusBadge();
+    
+    // Set Status button in dropdown
+    const setStatusBtn = document.getElementById('set-status-btn');
+    if (setStatusBtn) {
+        setStatusBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openStatusModal();
+        });
+    }
+    
+    // Status modal close button
+    const statusModalClose = document.getElementById('status-modal-close');
+    if (statusModalClose) {
+        statusModalClose.addEventListener('click', closeStatusModal);
+    }
+    
+    // Status options click handlers
+    const statusOptions = document.querySelectorAll('.status-option');
+    statusOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            
+            // Update UI to show this is selected
+            statusOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            // Update status via API
+            updateUserStatus(status);
+        });
+    });
+});

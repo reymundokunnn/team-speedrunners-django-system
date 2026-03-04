@@ -49,3 +49,81 @@ def user_profile(request):
         'profile_picture_url': profile_picture_url,
         'display_name': display_name,
     }
+
+
+def announcement_banner(request):
+    """Provide announcement banner data to all templates.
+    
+    Retrieves the announcement settings from any UserSettings instance that has
+    announcement text set (typically admin's settings) and exposes
+    the banner content, visibility, type, and colors to templates.
+    """
+    from .models import UserSettings
+    
+    try:
+        # Get any UserSettings with announcement text
+        user_settings = UserSettings.objects.filter(
+            announcement_banner__isnull=False
+        ).exclude(
+            announcement_banner=''
+        ).first()
+        
+        if user_settings and user_settings.announcement_banner:
+            # Get banner type (default to 'info')
+            banner_type = 'info'
+            try:
+                if hasattr(user_settings, 'announcement_banner_type'):
+                    banner_type = user_settings.announcement_banner_type or 'info'
+            except:
+                pass
+            
+            # Get custom background color or use default based on type
+            bg_color = ''
+            try:
+                if hasattr(user_settings, 'announcement_banner_bg_color'):
+                    bg_color = user_settings.announcement_banner_bg_color or ''
+            except:
+                pass
+            
+            if not bg_color:
+                type_colors = {
+                    'info': '#3498db',      # Blue
+                    'warning': '#e67e22',   # Orange
+                    'success': '#27ae60',   # Green
+                    'error': '#e74c3c',     # Red
+                }
+                bg_color = type_colors.get(banner_type, '#3498db')
+            
+            # Get text color
+            text_color = '#ffffff'
+            try:
+                if hasattr(user_settings, 'announcement_banner_text_color'):
+                    text_color = user_settings.announcement_banner_text_color or '#ffffff'
+            except:
+                pass
+            
+            # Check visibility - respect the actual checkbox setting
+            is_visible = False
+            try:
+                if hasattr(user_settings, 'announcement_banner_visible'):
+                    is_visible = user_settings.announcement_banner_visible
+            except:
+                pass
+            
+            if not is_visible:
+                return {'announcement_banner': None}
+            
+            return {
+                'announcement_banner': {
+                    'message': user_settings.announcement_banner,
+                    'visible': is_visible,
+                    'type': banner_type,
+                    'bg_color': bg_color,
+                    'text_color': text_color,
+                }
+            }
+    except Exception as e:
+        import sys
+        print(f"Announcement banner error: {e}", file=sys.stderr)
+    
+    return {'announcement_banner': None}

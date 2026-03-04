@@ -3,6 +3,23 @@ from django.utils.timesince import timesince
 
 register = template.Library()
 
+CURRENCY_SYMBOLS = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'PHP': '₱',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+}
+
+@register.filter
+def currency_symbol(code):
+    """Convert currency code to symbol."""
+    if not code:
+        code = 'USD'
+    return CURRENCY_SYMBOLS.get(code, '$')
+
 @register.filter
 def get_finished_files(files):
     """Filter to get finished files from a queryset."""

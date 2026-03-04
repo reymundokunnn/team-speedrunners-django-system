@@ -36,7 +36,15 @@
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                     </span>
-                    <span class="nav-label">Edit Profile</span>
+                    <span class="nav-label">Edit Account Info</span>
+                </a>
+                <a href="#" class="settings-unified-nav-item" data-section="profile-settings">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </span>
+                    <span class="nav-label">Profile Settings</span>
                 </a>
                 {% if user.profile.user_role == 'designer' %}
                 <a href="#" class="settings-unified-nav-item" data-section="designer">
@@ -205,8 +213,8 @@
                             <div class="settings-unified-row">
                                 <div class="settings-unified-label-container">
                                     <label class="settings-unified-checkbox-label">
-                                        {{ form.show_online_status }}
-                                        <span>{{ form.show_online_status.label }}</span>
+                                        {{ form.show_user_status }}
+                                        <span>{{ form.show_user_status.label }}</span>
                                     </label>
                                 </div>
                                 <div class="settings-unified-input-container">
@@ -231,7 +239,7 @@
 
             <!-- Edit Profile Section -->
             <section id="section-edit-profile" class="settings-unified-section">
-<form method="POST" action="{% url 'unified_settings' %}" enctype="multipart/form-data" id="editProfileForm" class="settings-unified-form">
+                <form method="POST" action="{% url 'unified_settings' %}" enctype="multipart/form-data" id="editProfileForm" class="settings-unified-form">
                     {% csrf_token %}
                     <input type="hidden" name="form_type" value="edit-profile">
                     
@@ -240,7 +248,7 @@
                     <input type="hidden" id="cropped_image_data" name="cropped_image_data" value="">
                     
                     <div class="settings-unified-section-header">
-                        <h2><span class="orange">Edit</span> Profile</h2>
+                        <h2><span class="orange">Edit</span> Account Info</h2>
                         <p class="settings-section-description">Update your personal information and profile picture</p>
                     </div>
 
@@ -355,6 +363,13 @@
                                     <label for="id_bio">Bio</label>
                                     {{ profile_form.bio }}
                                 </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
+                                        <label for="id_pronouns">Pronouns</label>
+                                        {{ profile_form.pronouns }}
+                                    </div>
+                                </div>
                             </div>
                             
                             <!-- Form Actions -->
@@ -372,6 +387,145 @@
                                 {% endif %}
                             </div>
                         </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Profile Settings Section -->
+            <section id="section-profile-settings" class="settings-unified-section">
+                <form method="post" class="settings-unified-form" id="profile-settings-form" action="{% url 'unified_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="profile-settings">
+                    
+                    <div class="settings-unified-section-header">
+                        <h2><span class="orange">Profile</span> Settings</h2>
+                        <p class="settings-section-description">Manage your professional links, availability, and contact preferences</p>
+                    </div>
+
+                    <div class="settings-unified-items-container">
+                        <!-- Social Media Links -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Social Media & Links</h3>
+                            <p class="settings-unified-description">Add your professional social media profiles and portfolio links</p>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_linkedin_url" class="settings-unified-label">{{ profile_settings_form.linkedin_url.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.linkedin_url }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_twitter_url" class="settings-unified-label">{{ profile_settings_form.twitter_url.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.twitter_url }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_instagram_url" class="settings-unified-label">{{ profile_settings_form.instagram_url.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.instagram_url }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_portfolio_url_profile" class="settings-unified-label">{{ profile_settings_form.portfolio_url_profile.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.portfolio_url_profile }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Availability Hours -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Availability & Hours</h3>
+                            <p class="settings-unified-description">Set your work hours and availability status</p>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_availability_hours_profile" class="settings-unified-label">{{ profile_settings_form.availability_hours.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.availability_hours }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_custom_hours_profile" class="settings-unified-label">{{ profile_settings_form.custom_hours.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.custom_hours }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Preferences -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Contact & Communication</h3>
+                            <p class="settings-unified-description">Set your preferred contact method and communication preferences</p>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-label">{{ profile_settings_form.preferred_contact_method.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    <div class="settings-unified-radio-group">
+                                        {% for value, label in profile_settings_form.preferred_contact_method.field.choices %}
+                                        <label class="settings-unified-radio-label">
+                                            <input type="radio" name="preferred_contact_method" value="{{ value }}" {% if profile_settings_form.preferred_contact_method.value == value %}checked{% endif %}>
+                                            <span>{{ label }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Emergency Contact Information</h3>
+                            <p class="settings-unified-description">Provide emergency contact details for account security</p>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_emergency_contact_name" class="settings-unified-label">{{ profile_settings_form.emergency_contact_name.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.emergency_contact_name }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_emergency_contact_phone" class="settings-unified-label">{{ profile_settings_form.emergency_contact_phone.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ profile_settings_form.emergency_contact_phone }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="settings-unified-actions">
+                        <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Changes</button>
+                        {% if user.is_superuser or user.profile.user_role == 'admin' %}
+                        <a href="{% url 'admin_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% elif user.profile.user_role == 'designer' %}
+                        <a href="{% url 'designer_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{% url 'user_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
+                        {% endif %}
                     </div>
                 </form>
             </section>
@@ -409,19 +563,62 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="settings-unified-info-box">
+                                💡 Your work hours and availability are managed in the <strong>Profile Settings</strong> section.
+                            </div>
                         </div>
 
                         <!-- Rate & Pricing -->
                         <div class="settings-unified-group">
                             <h3 class="settings-unified-group-title">Pricing & Rate</h3>
                             
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_designer_rate" class="settings-unified-label">{{ designer_form.designer_rate.label }}</label>
+                                        <span class="settings-unified-description">Your hourly rate</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.designer_rate }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_turnaround_time_days" class="settings-unified-label">{{ designer_form.turnaround_time_days.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.turnaround_time_days }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_extra_revision_price" class="settings-unified-label">{{ designer_form.extra_revision_price.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.extra_revision_price }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_rush_job_multiplier" class="settings-unified-label">{{ designer_form.rush_job_multiplier.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ designer_form.rush_job_multiplier }}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="settings-unified-row">
                                 <div class="settings-unified-label-container">
-                                    <label for="id_designer_rate" class="settings-unified-label">{{ designer_form.designer_rate.label }}</label>
-                                    <span class="settings-unified-description">Your hourly rate in USD</span>
+                                    <label for="id_minimum_project_budget" class="settings-unified-label">{{ designer_form.minimum_project_budget.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.minimum_project_budget.help_text }}</span>
                                 </div>
                                 <div class="settings-unified-input-container">
-                                    {{ designer_form.designer_rate }}
+                                    {{ designer_form.minimum_project_budget }}
                                 </div>
                             </div>
                         </div>
@@ -437,6 +634,26 @@
                                 </div>
                                 <div class="settings-unified-input-container">
                                     {{ designer_form.designer_specializations }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_industry_expertise" class="settings-unified-label">{{ designer_form.industry_expertise.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.industry_expertise.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.industry_expertise }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_software_tools" class="settings-unified-label">{{ designer_form.software_tools.label }}</label>
+                                    <span class="settings-unified-description">{{ designer_form.software_tools.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ designer_form.software_tools }}
                                 </div>
                             </div>
                         </div>
@@ -474,11 +691,37 @@
                                     {{ designer_form.portfolio_url }}
                                 </div>
                             </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ designer_form.portfolio_public }}
+                                        <span>{{ designer_form.portfolio_public.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ designer_form.show_testimonials }}
+                                        <span>{{ designer_form.show_testimonials.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Project Preferences -->
                         <div class="settings-unified-group">
                             <h3 class="settings-unified-group-title">Project Preferences</h3>
+                            
+                            <div class="settings-unified-info-box">
+                                💡 Your preferred contact method is managed in the <strong>Profile Settings</strong> section.
+                            </div>
                             
                             <div class="settings-unified-form-row">
                                 <div class="settings-unified-row">
@@ -493,7 +736,7 @@
                                 <div class="settings-unified-row">
                                     <div class="settings-unified-label-container">
                                         <label for="id_revision_limit" class="settings-unified-label">{{ designer_form.revision_limit.label }}</label>
-                                        <span class="settings-unified.revision_limit.help-description">{{ designer_form_text }}</span>
+                                        <span class="settings-unified-description">{{ designer_form.revision_limit.help_text }}</span>
                                     </div>
                                     <div class="settings-unified-input-container">
                                         {{ designer_form.revision_limit }}
@@ -542,6 +785,17 @@
                             <div class="settings-unified-row">
                                 <div class="settings-unified-label-container">
                                     <label class="settings-unified-checkbox-label">
+                                        {{ admin_form.user_approval_required }}
+                                        <span>{{ admin_form.user_approval_required.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
                                         {{ admin_form.maintenance_mode }}
                                         <span>{{ admin_form.maintenance_mode.label }}</span>
                                     </label>
@@ -552,6 +806,20 @@
                             
                             <div class="settings-unified-info-box settings-unified-info-box-warning">
                                 ⚠️ <strong>Maintenance Mode:</strong> {{ admin_form.maintenance_mode.help_text }}
+                            </div>
+                        </div>
+
+                        <!-- Commission & Fees -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Commission & Fees</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_platform_commission_percent" class="settings-unified-label">{{ admin_form.platform_commission_percent.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.platform_commission_percent }}
+                                </div>
                             </div>
                         </div>
 
@@ -593,19 +861,236 @@
                             </div>
                         </div>
 
-                        <!-- Advanced Settings -->
+                        <!-- Email Templates -->
                         <div class="settings-unified-group">
-                            <h3 class="settings-unified-group-title">Advanced Settings</h3>
+                            <h3 class="settings-unified-group-title">Email Templates</h3>
                             
-                            <div class="settings-unified-info-box">
-                                <p>Advanced configuration options such as:</p>
-                                <ul>
-                                    <li>Email SMTP settings</li>
-                                    <li>API key management</li>
-                                    <li>Backup & data export</li>
-                                    <li>Third-party integrations</li>
-                                </ul>
-                                <p><em>Contact your system administrator for access to these settings.</em></p>
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_email_template_welcome" class="settings-unified-label">{{ admin_form.email_template_welcome.label }}</label>
+                                    <span class="settings-unified-description">{{ admin_form.email_template_welcome.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.email_template_welcome }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_email_template_notification" class="settings-unified-label">{{ admin_form.email_template_notification.label }}</label>
+                                    <span class="settings-unified-description">{{ admin_form.email_template_notification.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.email_template_notification }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Announcements -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Announcements</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ admin_form.announcement_banner_visible }}
+                                        <span>{{ admin_form.announcement_banner_visible.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_announcement_banner" class="settings-unified-label">{{ admin_form.announcement_banner.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.announcement_banner }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_announcement_banner_type" class="settings-unified-label">{{ admin_form.announcement_banner_type.label }}</label>
+                                    <span class="settings-unified-description">Choose a preset banner style</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.announcement_banner_type }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_announcement_banner_bg_color" class="settings-unified-label">{{ admin_form.announcement_banner_bg_color.label }}</label>
+                                        <span class="settings-unified-description">{{ admin_form.announcement_banner_bg_color.help_text }}</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ admin_form.announcement_banner_bg_color }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_announcement_banner_text_color" class="settings-unified-label">{{ admin_form.announcement_banner_text_color.label }}</label>
+                                        <span class="settings-unified-description">{{ admin_form.announcement_banner_text_color.help_text }}</span>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ admin_form.announcement_banner_text_color }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Moderation -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Content Moderation</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_moderation_keywords" class="settings-unified-label">{{ admin_form.moderation_keywords.label }}</label>
+                                    <span class="settings-unified-description">{{ admin_form.moderation_keywords.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.moderation_keywords }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Backup & Maintenance -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Backup & Maintenance</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-label">{{ admin_form.backup_schedule.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    <div class="settings-unified-radio-group">
+                                        {% for value, label in admin_form.backup_schedule.field.choices %}
+                                        <label class="settings-unified-radio-label">
+                                            <input type="radio" name="backup_schedule" value="{{ value }}" {% if admin_form.backup_schedule.value == value %}checked{% endif %}>
+                                            <span>{{ label }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rate Limiting -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Rate Limiting</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_api_rate_limit" class="settings-unified-label">{{ admin_form.api_rate_limit.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.api_rate_limit }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_form_submission_limit" class="settings-unified-label">{{ admin_form.form_submission_limit.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.form_submission_limit }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analytics Access -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Analytics Access</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_grant_analytics_to_roles" class="settings-unified-label">{{ admin_form.grant_analytics_to_roles.label }}</label>
+                                    <span class="settings-unified-description">{{ admin_form.grant_analytics_to_roles.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.grant_analytics_to_roles }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dispute Resolution -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Dispute Resolution</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_dispute_resolution_days" class="settings-unified-label">{{ admin_form.dispute_resolution_days.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.dispute_resolution_days }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ admin_form.auto_refund_enabled }}
+                                        <span>{{ admin_form.auto_refund_enabled.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seasonal Settings -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Seasonal Settings</h3>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ admin_form.seasonal_active }}
+                                        <span>{{ admin_form.seasonal_active.label }}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_seasonal_name" class="settings-unified-label">{{ admin_form.seasonal_name.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.seasonal_name }}
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-form-row">
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_seasonal_start_date" class="settings-unified-label">{{ admin_form.seasonal_start_date.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ admin_form.seasonal_start_date }}
+                                    </div>
+                                </div>
+                                <div class="settings-unified-row">
+                                    <div class="settings-unified-label-container">
+                                        <label for="id_seasonal_end_date" class="settings-unified-label">{{ admin_form.seasonal_end_date.label }}</label>
+                                    </div>
+                                    <div class="settings-unified-input-container">
+                                        {{ admin_form.seasonal_end_date }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_seasonal_fee_multiplier" class="settings-unified-label">{{ admin_form.seasonal_fee_multiplier.label }}</label>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ admin_form.seasonal_fee_multiplier }}
+                                </div>
                             </div>
                         </div>
                     </div>

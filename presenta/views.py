@@ -174,7 +174,7 @@ def user_dashboard(request):
     design_requests = DesignRequest.objects.filter(requester=user).prefetch_related('files').order_by('-created_at')
     
     # Get user's recent activities (not cleared)
-    # Include: user's own activities + activities on their design requests (from designers/admins)
+    # Include: user's own activities + activities on their design requests from designers/admins
     from django.db.models import Q
     
     user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
@@ -219,14 +219,10 @@ def designer_dashboard(request):
     available_requests = DesignRequest.objects.filter(designer=None, status='pending').prefetch_related('files').order_by('-created_at')
     
     # Get designer's recent activities (not cleared)
-    # Include: designer's own activities + activities on their assigned projects
-    from django.db.models import Q
-    
-    designer_request_ids = DesignRequest.objects.filter(designer=user).values_list('id', flat=True)
-    
+    # Only show activities performed BY the designer (their own actions)
+    # Designers should NOT see activities performed by clients on their requests
     activities = Activity.objects.filter(
-        Q(user=user) |  # Designer's own activities
-        Q(related_request_id__in=designer_request_ids),  # Activities on designer's assigned projects
+        user=user,  # Only activities performed by the designer themselves
         is_cleared=False
     ).select_related('related_request', 'user').order_by('-created_at')[:10]
     
@@ -374,12 +370,12 @@ def accept_design_request(request, request_id):
             related_request=design_request
         )
         
-        # Log activity for requester
+        # Log activity for requester (notify them that a designer has been assigned)
         if design_request.requester:
             designer_name = f"{user.first_name} {user.last_name}".strip() or user.username
             log_activity(
                 user=design_request.requester,
-                activity_type='assigned',
+                activity_type='designer_assigned',
                 message=f"Designer {designer_name} assigned to '{design_request.title}'.",
                 related_request=design_request
             )
@@ -1098,10 +1094,36 @@ def delete_user(request, user_id):
 @require_http_methods(["POST"])
 def clear_activities(request):
     """Clear all activities for the current user."""
+    from django.db.models import Q
     user = request.user
     
-    # Mark all user's activities as cleared
-    Activity.objects.filter(user=user, is_cleared=False).update(is_cleared=True)
+    # Check if user is admin
+    is_admin = user.is_superuser
+    if not is_admin:
+        try:
+            is_admin = user.profile.user_role == 'admin'
+        except Profile.DoesNotExist:
+            pass
+    
+    if is_admin:
+        # Admins see ALL platform activities, so clear all
+        Activity.objects.filter(is_cleared=False).update(is_cleared=True)
+    else:
+        # Get IDs of requests related to this user
+        # For clients: requests they submitted
+        # For designers: requests assigned to them
+        user_request_ids = DesignRequest.objects.filter(
+            Q(requester=user) | Q(designer=user)
+        ).values_list('id', flat=True)
+        
+        # Mark all activities as cleared:
+        # 1. User's own activities
+        # 2. Activities on user's requests (submitted requests or assigned projects)
+        Activity.objects.filter(
+            Q(user=user) | 
+            Q(related_request_id__in=user_request_ids),
+            is_cleared=False
+        ).update(is_cleared=True)
     
     # Redirect back to the referring page or dashboard
     referer = request.META.get('HTTP_REFERER')
@@ -1294,8 +1316,9 @@ def settings_page(request):
 @login_required
 def unified_settings(request):
     """Unified settings page with all settings sections in one page."""
-    from .forms import UserSettingsForm, DesignerSettingsForm, AdminSettingsForm, EditProfileForm
+    from .forms import UserSettingsForm, DesignerSettingsForm, AdminSettingsForm, EditProfileForm, ProfileSettingsForm
     from django.contrib import messages
+    import json
     
     user = request.user
     presenta_user = user.presenta_user
@@ -1306,29 +1329,80 @@ def unified_settings(request):
     # Initialize all forms
     account_form = UserSettingsForm()
     profile_form = EditProfileForm(instance=presenta_user)
+    profile_settings_form = ProfileSettingsForm()
     designer_form = None
     admin_form = None
+    
+    # Parse social media links from JSON
+    social_media = user_settings.social_media_links or {}
+    
+    # Profile Settings form initialization
+    profile_settings_form = ProfileSettingsForm(initial={
+        'linkedin_url': social_media.get('linkedin', ''),
+        'twitter_url': social_media.get('twitter', ''),
+        'instagram_url': social_media.get('instagram', ''),
+        'portfolio_url_profile': social_media.get('portfolio', ''),
+        'availability_hours': user_settings.availability_hours,
+        'custom_hours': user_settings.custom_hours,
+        'preferred_contact_method': user_settings.preferred_contact_method,
+        'emergency_contact_name': user_settings.emergency_contact_name,
+        'emergency_contact_phone': user_settings.emergency_contact_phone,
+    })
     
     # Designer forms
     if user.profile.user_role == 'designer':
         designer_form = DesignerSettingsForm(initial={
             'designer_availability': user_settings.designer_availability,
+            'availability_hours': user_settings.availability_hours,
+            'custom_hours': user_settings.custom_hours,
+            'timezone': user_settings.timezone,
             'designer_rate': user_settings.designer_rate,
+            'turnaround_time_days': user_settings.turnaround_time_days,
+            'extra_revision_price': user_settings.extra_revision_price,
+            'rush_job_multiplier': user_settings.rush_job_multiplier,
+            'minimum_project_budget': user_settings.minimum_project_budget,
             'designer_specializations': user_settings.designer_specializations,
+            'industry_expertise': user_settings.industry_expertise,
+            'software_tools': user_settings.software_tools,
             'accept_project_requests': user_settings.accept_project_requests,
-            'portfolio_url': user_settings.portfolio_url,
             'max_concurrent_projects': user_settings.max_concurrent_projects,
             'revision_limit': user_settings.revision_limit,
-            'minimum_project_budget': user_settings.minimum_project_budget,
+            'portfolio_url': user_settings.portfolio_url,
+            'portfolio_public': user_settings.portfolio_public,
+            'show_testimonials': user_settings.show_testimonials,
+            'communication_preference': user_settings.communication_preference,
+            'payout_method': user_settings.payout_method,
+            'payout_frequency': user_settings.payout_frequency,
         })
     
     # Admin forms
     if user.is_superuser or user.profile.user_role == 'admin':
         admin_form = AdminSettingsForm(initial={
+            'user_approval_required': user_settings.user_approval_required,
             'maintenance_mode': user_settings.maintenance_mode,
+            'platform_commission_percent': user_settings.platform_commission_percent,
             'site_name': 'Presenta',
             'site_description': 'Professional Design Services Platform',
             'support_email': 'support@presenta.com',
+            'email_template_welcome': user_settings.email_template_welcome,
+            'email_template_notification': user_settings.email_template_notification,
+            'announcement_banner': user_settings.announcement_banner,
+            'announcement_banner_visible': user_settings.announcement_banner_visible,
+            'announcement_banner_type': user_settings.announcement_banner_type,
+            'announcement_banner_bg_color': user_settings.announcement_banner_bg_color,
+            'announcement_banner_text_color': user_settings.announcement_banner_text_color,
+            'moderation_keywords': user_settings.moderation_keywords,
+            'backup_schedule': user_settings.backup_schedule,
+            'api_rate_limit': user_settings.api_rate_limit,
+            'form_submission_limit': user_settings.form_submission_limit,
+            'grant_analytics_to_roles': user_settings.grant_analytics_to_roles,
+            'dispute_resolution_days': user_settings.dispute_resolution_days,
+            'auto_refund_enabled': user_settings.auto_refund_enabled,
+            'seasonal_active': user_settings.seasonal_active,
+            'seasonal_name': user_settings.seasonal_name,
+            'seasonal_start_date': user_settings.seasonal_start_date,
+            'seasonal_end_date': user_settings.seasonal_end_date,
+            'seasonal_fee_multiplier': user_settings.seasonal_fee_multiplier,
         })
     
     # Handle POST requests for different sections
@@ -1336,27 +1410,81 @@ def unified_settings(request):
         # Check which form was submitted using the hidden form_type field
         form_type = request.POST.get('form_type', '')
         
-        if form_type == 'designer' and designer_form:
+        if form_type == 'profile-settings':
+            # Profile settings form
+            profile_settings_form = ProfileSettingsForm(request.POST)
+            if profile_settings_form.is_valid():
+                # Update social media links as JSON
+                user_settings.social_media_links = {
+                    'linkedin': profile_settings_form.cleaned_data.get('linkedin_url', ''),
+                    'twitter': profile_settings_form.cleaned_data.get('twitter_url', ''),
+                    'instagram': profile_settings_form.cleaned_data.get('instagram_url', ''),
+                    'portfolio': profile_settings_form.cleaned_data.get('portfolio_url_profile', ''),
+                }
+                user_settings.availability_hours = profile_settings_form.cleaned_data.get('availability_hours', user_settings.availability_hours)
+                user_settings.custom_hours = profile_settings_form.cleaned_data.get('custom_hours', user_settings.custom_hours)
+                user_settings.preferred_contact_method = profile_settings_form.cleaned_data.get('preferred_contact_method', user_settings.preferred_contact_method)
+                user_settings.emergency_contact_name = profile_settings_form.cleaned_data.get('emergency_contact_name', user_settings.emergency_contact_name)
+                user_settings.emergency_contact_phone = profile_settings_form.cleaned_data.get('emergency_contact_phone', user_settings.emergency_contact_phone)
+                user_settings.save()
+                messages.success(request, 'Profile settings updated successfully.')
+            else:
+                messages.error(request, 'Error updating profile settings. Please check the form.')
+        elif form_type == 'designer':
             # Designer settings form
             designer_form = DesignerSettingsForm(request.POST)
             if designer_form.is_valid():
                 user_settings.designer_availability = designer_form.cleaned_data.get('designer_availability', user_settings.designer_availability)
+                user_settings.availability_hours = designer_form.cleaned_data.get('availability_hours', user_settings.availability_hours)
+                user_settings.custom_hours = designer_form.cleaned_data.get('custom_hours', user_settings.custom_hours)
+                user_settings.timezone = designer_form.cleaned_data.get('timezone', user_settings.timezone)
                 user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
+                user_settings.turnaround_time_days = designer_form.cleaned_data.get('turnaround_time_days') or user_settings.turnaround_time_days
+                user_settings.extra_revision_price = designer_form.cleaned_data.get('extra_revision_price') or user_settings.extra_revision_price
+                user_settings.rush_job_multiplier = designer_form.cleaned_data.get('rush_job_multiplier') or user_settings.rush_job_multiplier
+                user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
                 user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
+                user_settings.industry_expertise = designer_form.cleaned_data.get('industry_expertise', user_settings.industry_expertise)
+                user_settings.software_tools = designer_form.cleaned_data.get('software_tools', user_settings.software_tools)
                 user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
-                user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
                 user_settings.max_concurrent_projects = designer_form.cleaned_data.get('max_concurrent_projects') or user_settings.max_concurrent_projects
                 user_settings.revision_limit = designer_form.cleaned_data.get('revision_limit') or user_settings.revision_limit
-                user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
+                user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
+                user_settings.portfolio_public = designer_form.cleaned_data.get('portfolio_public', False)
+                user_settings.show_testimonials = designer_form.cleaned_data.get('show_testimonials', False)
+                user_settings.communication_preference = designer_form.cleaned_data.get('communication_preference', user_settings.communication_preference)
+                user_settings.payout_method = designer_form.cleaned_data.get('payout_method', user_settings.payout_method)
+                user_settings.payout_frequency = designer_form.cleaned_data.get('payout_frequency', user_settings.payout_frequency)
                 user_settings.save()
                 messages.success(request, 'Designer settings updated successfully.')
             else:
                 messages.error(request, 'Error updating designer settings. Please check the form.')
-        elif form_type == 'admin' and admin_form:
+        elif form_type == 'admin':
             # Admin settings form
             admin_form = AdminSettingsForm(request.POST)
             if admin_form.is_valid():
+                user_settings.user_approval_required = admin_form.cleaned_data.get('user_approval_required', False)
                 user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
+                user_settings.platform_commission_percent = admin_form.cleaned_data.get('platform_commission_percent') or user_settings.platform_commission_percent
+                user_settings.email_template_welcome = admin_form.cleaned_data.get('email_template_welcome', user_settings.email_template_welcome)
+                user_settings.email_template_notification = admin_form.cleaned_data.get('email_template_notification', user_settings.email_template_notification)
+                user_settings.announcement_banner = admin_form.cleaned_data.get('announcement_banner', user_settings.announcement_banner)
+                user_settings.announcement_banner_visible = admin_form.cleaned_data.get('announcement_banner_visible', False)
+                user_settings.announcement_banner_type = admin_form.cleaned_data.get('announcement_banner_type', user_settings.announcement_banner_type)
+                user_settings.announcement_banner_bg_color = admin_form.cleaned_data.get('announcement_banner_bg_color', user_settings.announcement_banner_bg_color)
+                user_settings.announcement_banner_text_color = admin_form.cleaned_data.get('announcement_banner_text_color', user_settings.announcement_banner_text_color)
+                user_settings.moderation_keywords = admin_form.cleaned_data.get('moderation_keywords', user_settings.moderation_keywords)
+                user_settings.backup_schedule = admin_form.cleaned_data.get('backup_schedule', user_settings.backup_schedule)
+                user_settings.api_rate_limit = admin_form.cleaned_data.get('api_rate_limit') or user_settings.api_rate_limit
+                user_settings.form_submission_limit = admin_form.cleaned_data.get('form_submission_limit') or user_settings.form_submission_limit
+                user_settings.grant_analytics_to_roles = admin_form.cleaned_data.get('grant_analytics_to_roles', user_settings.grant_analytics_to_roles)
+                user_settings.dispute_resolution_days = admin_form.cleaned_data.get('dispute_resolution_days') or user_settings.dispute_resolution_days
+                user_settings.auto_refund_enabled = admin_form.cleaned_data.get('auto_refund_enabled', False)
+                user_settings.seasonal_active = admin_form.cleaned_data.get('seasonal_active', False)
+                user_settings.seasonal_name = admin_form.cleaned_data.get('seasonal_name', user_settings.seasonal_name)
+                user_settings.seasonal_start_date = admin_form.cleaned_data.get('seasonal_start_date') or user_settings.seasonal_start_date
+                user_settings.seasonal_end_date = admin_form.cleaned_data.get('seasonal_end_date') or user_settings.seasonal_end_date
+                user_settings.seasonal_fee_multiplier = admin_form.cleaned_data.get('seasonal_fee_multiplier') or user_settings.seasonal_fee_multiplier
                 user_settings.save()
                 messages.success(request, 'Admin settings updated successfully.')
             else:
@@ -1465,7 +1593,7 @@ def unified_settings(request):
                 user_settings.marketing_emails = account_form.cleaned_data.get('marketing_emails', False)
                 user_settings.notification_frequency = account_form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
                 user_settings.profile_visibility = account_form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
-                user_settings.show_online_status = account_form.cleaned_data.get('show_online_status', False)
+                user_settings.show_user_status = account_form.cleaned_data.get('show_user_status', False)
                 user_settings.save()
                 messages.success(request, 'Settings updated successfully.')
             else:
@@ -1486,12 +1614,13 @@ def unified_settings(request):
         'marketing_emails': user_settings.marketing_emails,
         'notification_frequency': user_settings.notification_frequency,
         'profile_visibility': user_settings.profile_visibility,
-        'show_online_status': user_settings.show_online_status,
+        'show_user_status': user_settings.show_user_status,
     })
     
     context = {
         'form': account_form,
         'profile_form': profile_form,
+        'profile_settings_form': profile_settings_form,
         'designer_form': designer_form,
         'admin_form': admin_form,
         'presenta_user': presenta_user,
@@ -1569,7 +1698,7 @@ def account_settings(request):
             user_settings.marketing_emails = form.cleaned_data.get('marketing_emails', False)
             user_settings.notification_frequency = form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
             user_settings.profile_visibility = form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
-            user_settings.show_online_status = form.cleaned_data.get('show_online_status', False)
+            user_settings.show_user_status = form.cleaned_data.get('show_user_status', False)
             user_settings.save()
             
             messages.success(request, 'Settings updated successfully.')
@@ -1585,7 +1714,7 @@ def account_settings(request):
             'marketing_emails': user_settings.marketing_emails,
             'notification_frequency': user_settings.notification_frequency,
             'profile_visibility': user_settings.profile_visibility,
-            'show_online_status': user_settings.show_online_status,
+            'show_user_status': user_settings.show_user_status,
         }
         form = UserSettingsForm(initial=initial_data)
     
@@ -1767,3 +1896,51 @@ def change_password_ajax(request):
 def edit_profile_settings(request):
     """Redirect to unified settings page with edit profile section active."""
     return redirect('unified_settings')
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_user_status(request):
+    """Update the user's online status via AJAX."""
+    from django.http import JsonResponse
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        status = data.get('status')
+        
+        # Validate status
+        valid_statuses = ['online', 'idle', 'do_not_disturb']
+        if status not in valid_statuses:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid status'
+            }, status=400)
+        
+        # Update the user's status
+        user = request.user.presenta_user
+        user.online_status = status
+        user.save()
+        
+        # Log activity
+        log_activity(
+            user=request.user,
+            activity_type='status_changed',
+            message=f"Status changed to {status}"
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Status updated successfully',
+            'status': status
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

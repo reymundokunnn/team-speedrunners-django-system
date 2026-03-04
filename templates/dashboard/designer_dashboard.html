@@ -215,7 +215,7 @@
                                     <h4>{{ request.title }}</h4>
                                     <span class="budget">
                                         {% if request.budget %}
-                                            ${{ request.budget }}
+                                            {{ request.currency|currency_symbol }}{{ request.budget }}
                                         {% else %}
                                             No budget
                                         {% endif %}
@@ -294,7 +294,7 @@
                                             {% elif design.design_type == 'poster' %}
                                             <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                             {% endif %}
-                                            <a href="#" class="project-link" data-id="{{ design.id }}" data-title="{{ design.title|escapejs }}" data-description="{{ design.description|escapejs }}" data-status="{{ design.status }}" data-requester="{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name|escapejs }}{% else %}User{% endif %}" data-deadline="{% if design.deadline %}{{ design.deadline|date:'M d, Y' }}{% else %}No deadline{% endif %}" data-budget="{% if design.budget %}${{ design.budget }}{% else %}No budget{% endif %}" data-completed-at="{% if design.completed_at %}{{ design.completed_at|date:'M d, Y' }}{% else %}Not completed{% endif %}">
+                                            <a href="#" class="project-link" data-id="{{ design.id }}" data-title="{{ design.title|escapejs }}" data-description="{{ design.description|escapejs }}" data-status="{{ design.status }}" data-requester="{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name|escapejs }}{% else %}User{% endif %}" data-deadline="{% if design.deadline %}{{ design.deadline|date:'M d, Y' }}{% else %}No deadline{% endif %}" data-budget="{% if design.budget %}{{ design.currency|currency_symbol }}{{ design.budget }}{% else %}No budget{% endif %}" data-completed-at="{% if design.completed_at %}{{ design.completed_at|date:'M d, Y' }}{% else %}Not completed{% endif %}">
                                                 {{ design.title }}
                                             </a>
                                         </div>

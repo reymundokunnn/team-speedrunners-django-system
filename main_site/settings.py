@@ -66,6 +66,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'presenta.context_processors.user_profile',
+                'presenta.context_processors.announcement_banner',
             ],
         },
     },

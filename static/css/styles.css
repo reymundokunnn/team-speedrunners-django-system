@@ -33,6 +33,18 @@
     }
 }
 
+@keyframes modalSlideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -55%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
 /* Stat Card Slide-Up Animation */
 @keyframes statCardSlideUp {
     from {
@@ -355,7 +367,35 @@ header .right .user-info .user-meta {
     margin-right: 10px;
     width: 40px;
     height: 40px;
+    position: relative;
+}
 
+/* Status Badge Styling */
+.user-status-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    background-color: #4caf50;
+}
+
+.user-status-badge.online {
+    background-color: #4caf50;
+}
+
+.user-status-badge.idle {
+    background-color: #ff9800;
+}
+
+.user-status-badge.do_not_disturb {
+    background-color: #f44336;
+}
+
+body.dark-mode .status-badge {
+    border-color: #2d2d2d;
 }
 
 .user-username {
@@ -465,6 +505,167 @@ body.dark-mode .user-dropdown-menu .dropdown-item.logout:hover {
 
 body.dark-mode .user-dropdown-menu .dropdown-divider {
     border-top-color: #444;
+}
+
+/* Status Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    top: 50%;
+    width: 500px;
+    max-width: 90vw;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal.active {
+    animation: modalSlideDown 0.3s ease-out forwards;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 1999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeInDarkMode 0.3s ease-out;
+    backdrop-filter: blur(4px);
+}
+
+.modal.active {
+    display: block;
+}
+
+.modal-overlay.active {
+    display: block;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3em;
+    color: #333;
+}
+
+.modal-close:hover {
+    color: #000;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.status-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-option {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.status-option:hover {
+    border-color: #ddd;
+    background-color: #f9f9f9;
+}
+
+.status-option.selected {
+    border-color: #e87f14;
+    background-color: #ffedda;
+}
+
+.status-indicator {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 16px;
+}
+
+.status-indicator.online {
+    background-color: #4caf50;
+}
+
+.status-indicator.idle {
+    background-color: #ff9800;
+}
+
+.status-indicator.do_not_disturb {
+    background-color: #f44336;
+}
+
+.status-text h3 {
+    margin: 0 0 4px 0;
+    font-size: 1em;
+    color: #333;
+}
+
+.status-text p {
+    margin: 0;
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* Dark mode modal styles */
+body.dark-mode .modal {
+    background-color: #2d2d2d;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .modal-header h2 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .modal-close {
+    color: #999;
+}
+
+body.dark-mode .modal-close:hover {
+    color: #e0e0e0;
+}
+
+body.dark-mode .status-option {
+    border-color: #444;
+}
+
+body.dark-mode .status-option:hover {
+    border-color: #555;
+    background-color: #363636;
+}
+
+body.dark-mode .status-option.selected {
+    border-color: #e87f14;
+    background-color: #613e19;
+}
+
+body.dark-mode .status-text h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .status-text p {
+    color: #999;
 }
 
 .dark-mode-icon {
@@ -1561,7 +1762,7 @@ body.dark-mode .dashboard-section .dashboard-container .dashboard-stats .stat-ca
     filter: invert(1);
 }
 
-body.dark-mode .dashboard-section .dashboard-container .dashboard-stats .stat-card:nth-child(3) .payment {
+body.dark-mode .payment {
     color: #ff8383;
 }
 
@@ -3228,6 +3429,7 @@ body.dark-mode .project-link {
 /* Project Modal Styles */
 .project-modal,
 .confirm-modal {
+    background-color: rgba(0, 0, 0, 0.5);
     display: none;
     position: fixed;
     top: 0;
@@ -3237,21 +3439,12 @@ body.dark-mode .project-link {
     z-index: 10000;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(4px);
 }
 
 .project-modal.active,
 .confirm-modal.active {
     display: flex;
-}
-
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
 }
 
 .modal-container {
@@ -5130,9 +5323,11 @@ body.dark-mode .edit-profile-form select#id_gender {
     border-bottom: none;
 }
 
+#modalProjectStatus {
+    margin-right: 30px;
+}
 /* Status Badges */
 .status-badge {
-    padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
@@ -5415,7 +5610,6 @@ body.dark-mode .admin-table {
 body.dark-mode .admin-table thead {
     background: linear-gradient(135deg, #d06b0f 0%, #b85a0d 100%);
 }
-
 
 body.dark-mode .admin-table td {
     border-bottom-color: #404040;
@@ -6256,8 +6450,11 @@ body.dark-mode .btn-view-more:hover {
 }
 
 .activity-icon.status-status_changed {
-    background-color: #fef3c7;
-    color: #d97706;
+    color: #000000;
+}
+
+body.dark-mode .activity-icon.status-status_changed {
+    color: #ffffff;
 }
 
 .activity-icon.status-assigned {
@@ -7950,12 +8147,20 @@ body.dark-mode .change-password-btn-secondary:hover {
     display: flex;
     gap: 30px;
     margin-top: 40px;
+    margin-left: 270px;
 }
 
 /* Sidebar */
 .settings-unified-sidebar {
-    width: 250px;
+    width: 230px;
     flex-shrink: 0;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+    z-index: 100;
+    margin-left: 100px;
 }
 
 .settings-unified-nav {
@@ -8089,11 +8294,10 @@ body.dark-mode .settings-unified-nav-item.active {
 .settings-unified-section-header {
     margin-bottom: 25px;
     padding-bottom: 15px;
-    border-bottom: 2px solid #e87f14;
 }
 
 .settings-unified-section-header h2 {
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 700;
     color: #333;
     margin: 0 0 5px 0;
@@ -8156,7 +8360,6 @@ body.dark-mode .settings-unified-group-title {
 /* Horizontal Layout */
 .settings-unified-row {
     display: flex;
-    align-items: flex-start;
     gap: 25px;
     margin-bottom: 15px;
 }
@@ -9584,4 +9787,88 @@ body.dark-mode .single-select {
     .settings-compact-btn {
         width: 100%;
     }
+}
+
+/* ========================================
+   Announcement Banner Styles
+   ======================================== */
+.announcement-banner {
+    width: 100%;
+    padding: 8px 6px;
+    text-align: center;
+    position: fixed;
+    z-index: 1001;
+    top: 0;
+    box-sizing: border-box;
+}
+
+.announcement-banner-content {
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.announcement-banner-message {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    flex: 1;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.announcement-banner-close {
+    padding-right: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.announcement-banner-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.announcement-banner-close svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.announcement-banner.info {
+    background-color: #3498db;
+    color: #ffffff;
+}
+
+.announcement-banner.warning {
+    background-color: #e67e22;
+    color: #ffffff;
+}
+
+.announcement-banner.success {
+    background-color: #27ae60;
+    color: #ffffff;
+}
+
+.announcement-banner.error {
+    background-color: #e74c3c;
+    color: #ffffff;
+}
+
+/* Adjust main content when banner is visible */
+body.has-announcement-banner header {
+    top: 40px;
+}
+
+body.has-announcement-banner main {
+    margin-top: 90px;
 }
