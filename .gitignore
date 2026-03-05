@@ -13,7 +13,6 @@ venv/
 .idea/
 *.log
 media/
-profile_pics/
 main_site/settings.py
 staticfiles/
 requirements.txt
