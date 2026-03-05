@@ -2,3 +2,4 @@ Django==6.0.2
 defusedxml==0.7.1
 ipython==8.12.3
 pytz==2025.2
+pillow==12.1.1
