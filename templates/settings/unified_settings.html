@@ -1112,11 +1112,6 @@
     <div class="change-password-modal-content">
         <div class="change-password-modal-header">
             <h3>Change Password</h3>
-            <button type="button" class="change-password-modal-close" onclick="closeModal('changePasswordModal')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
         </div>
         <form id="changePasswordForm" class="change-password-modal-form">
             {% csrf_token %}
@@ -1138,7 +1133,7 @@
             <div id="password_change_message" class="change-password-form-message"></div>
             <div class="change-password-modal-actions">
                 <button type="button" class="change-password-btn change-password-btn-secondary" onclick="closeModal('changePasswordModal')">Cancel</button>
-                <button type="submit" class="change-password-btn change-password-btn-primary" id="changePasswordSubmit">Change Password</button>
+                <button type="submit" class="change-password-btn change-password-btn-primary" id="changePasswordSubmit">Apply</button>
             </div>
         </form>
     </div>
