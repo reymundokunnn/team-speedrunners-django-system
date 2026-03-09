@@ -1646,6 +1646,10 @@ ul.whats-included li {
     color: #190062;
 }
 
+body.dark-mode .offered-3 .text-wrapper h1 {
+    color: #9271f3;
+}
+
 .round-hl {
     padding: 10px 20px;
     border-radius: 300px;
