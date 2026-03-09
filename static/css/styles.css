@@ -9867,3 +9867,17 @@ body.has-announcement-banner header {
 body.has-announcement-banner main {
     margin-top: 90px;
 }
+
+/* CONTACTS */
+
+.contacts-h1 {
+    margin-top: 100px;
+    text-align: center;
+    font-size: 50px;
+}
+.cont-box {
+    display: flex;
+}
+.cont-form {
+    display: flex;
+}
