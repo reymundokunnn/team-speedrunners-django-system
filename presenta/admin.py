@@ -3,14 +3,47 @@ from .models import User, Profile, DesignRequest
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'first_name', 'last_name', 'email', 'user_role', 'joined_date')
-    list_filter = ('user_role', 'joined_date')
+    list_display = ('username', 'first_name', 'last_name', 'email', 'user_role', 'admin_approval_status', 'joined_date')
+    list_filter = ('user_role', 'admin_approval_status', 'joined_date')
     search_fields = ('username', 'first_name', 'last_name', 'email')
     readonly_fields = ('joined_date', 'created_at', 'updated_at')
+    
+    def approve_admins(self, request, queryset):
+        updated = 0
+        for user in queryset.filter(user_role='admin', admin_approval_status='pending'):
+            user.admin_approval_status = 'approved'
+            user.save()
+            if user.auth_user:
+                user.auth_user.is_staff = True
+                user.auth_user.save()
+            updated += 1
+        self.message_user(request, f'{updated} admin accounts approved.')
+    
+    def reject_admins(self, request, queryset):
+        updated = 0
+        for user in queryset.filter(user_role='admin'):
+            user.admin_approval_status = 'rejected'
+            user.save()
+            if user.auth_user:
+                user.auth_user.is_staff = False
+                user.auth_user.is_active = False
+                user.auth_user.save()
+            updated += 1
+        self.message_user(request, f'{updated} admin accounts rejected.')
+    
+    actions = ['approve_admins', 'reject_admins']
     
     fieldsets = (
         ('Authentication', {
             'fields': ('username', 'email', 'password')
+        }),
+        ('Admin Approval', {
+            'fields': ('admin_approval_status',),
+            'classes': ('collapse',)
+        }),
+        ('Django User Permissions', {
+            'fields': ('auth_user',),
+            'classes': ('collapse',)
         }),
         ('Personal Info', {
             'fields': ('first_name', 'last_name', 'gender', 'date_of_birth', 'phone_number')

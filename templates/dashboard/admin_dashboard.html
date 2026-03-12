@@ -3,6 +3,7 @@
 {% load file_filters %}
 {% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
 {% block content %}
+<script src="{% static 'js/admin_actions.js' %}"></script>
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_admin.html" %}
@@ -347,45 +348,65 @@
                                         </div>
                                     </td>
                                     <td>
+                                        {% if user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
+                                        <span class="status-badge status-pending">
+                                            Pending Approval
+                                        </span>
+                                        {% else %}
                                         <span class="role-badge role-{{ user.user_role }}">
                                             {{ user.get_user_role_display }}
                                         </span>
+                                        {% endif %}
                                     </td>
                                     <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>
                                     <td class="actions-cell">
                                         <div class="action-buttons">
-                                            <button class="btn-icon btn-view" title="View User"
-                                                data-user-id="{{ user.id }}" data-action="view">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                    <circle cx="12" cy="12" r="3"></circle>
-                                                </svg>
-                                            </button>
-                                            <button class="btn-icon btn-edit" title="Edit User"
-                                                data-user-id="{{ user.id }}" data-action="edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path
-                                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
-                                                    </path>
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                            <button class="btn-icon btn-delete" title="Delete User"
-                                                data-user-id="{{ user.id }}" data-action="delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                                    <path
-                                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                                    </path>
-                                                </svg>
-                                            </button>
+                                            {% if request.user.is_superuser and user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
+                                                <button class="btn-icon btn-approve" title="Approve Admin" onclick="confirmAdminAction({{ user.id }}, 'approve')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                </button>
+                                                <button class="btn-icon btn-reject" title="Reject Admin" onclick="confirmAdminAction({{ user.id }}, 'reject')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </button>
+                                            {% else %}
+                                                <button class="btn-icon btn-view" title="View User"
+                                                    data-user-id="{{ user.id }}" data-action="view">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                                <button class="btn-icon btn-edit" title="Edit User"
+                                                    data-user-id="{{ user.id }}" data-action="edit">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path
+                                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
+                                                        </path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
+                                                        </path>
+                                                    </svg>
+                                                </button>
+                                                <button class="btn-icon btn-delete" title="Delete User"
+                                                    data-user-id="{{ user.id }}" data-action="delete">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path
+                                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                        </path>
+                                                    </svg>
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -422,6 +443,88 @@
                 </div>
             </div>
         </div>
+        </div>
+
+        <!-- Pending Admin Approvals Section -->
+        <div id="pending-admins-section" class="dashboard-section-content">
+            <div class="admin-header-flex">
+                <div class="left">
+                    <h1 id="greeting-approvals">Pending <span class="orange">Admin Approvals</span></h1>
+                    <span class="count-badge">{{ pending_admins|length }} pending</span>
+                </div>
+            </div>
+            <div class="admin-section-full">
+                {% if pending_admins %}
+                <div class="table-container">
+                    <table class="admin-table users-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Contact Info</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in pending_admins %}
+                            <tr>
+                                <td class="user-cell">
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            {% if user.profile_picture %}
+                                            <img src="{{ user.profile_picture.url }}" alt="{{ user.first_name }}">
+                                            {% else %}
+                                            <div class="avatar-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="user-details">
+                                            <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                                            <span class="user-username">@{{ user.username }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="contact-cell">
+                                    <div class="contact-info">
+                                        <span class="email">{{ user.email }}</span>
+                                        {% if user.phone_number %}
+                                        <span class="phone">{{ user.phone_number }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>
+                                <td class="actions-cell">
+                                    <div class="action-buttons">
+                                        <button class="btn-icon btn-approve" title="Approve Admin" onclick="confirmAdminAction({{ user.id }}, 'approve')">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-icon btn-reject" title="Reject Admin" onclick="confirmAdminAction({{ user.id }}, 'reject')">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    </svg>
+                    <span>No pending admin approvals</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
     </div>
 </section>
 

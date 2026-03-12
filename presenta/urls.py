@@ -40,6 +40,10 @@ urlpatterns = [
     path('manage/user/<int:user_id>/delete/', views.delete_user, name='delete_user'),
     path('manage/user/create/', views.create_user, name='create_user'),
     
+    # Admin approval management (superuser only)
+    path('manage/admin/<int:user_id>/approve/', views.approve_admin, name='approve_admin'),
+    path('manage/admin/<int:user_id>/reject/', views.reject_admin, name='reject_admin'),
+    
     # Activity management
     path('activities/clear/', views.clear_activities, name='clear_activities'),
     

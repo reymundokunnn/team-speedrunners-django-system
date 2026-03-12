@@ -1646,6 +1646,10 @@ ul.whats-included li {
     color: #190062;
 }
 
+body.dark-mode .offered-3 .text-wrapper h1 {
+    color: #9271f3;
+}
+
 .round-hl {
     padding: 10px 20px;
     border-radius: 300px;
@@ -3028,9 +3032,82 @@ body.dark-mode .request-meta {
     color: white;
 }
 
+.btn-icon svg {
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    width: 20px;
+    height: 20px;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-approve:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-reject {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-reject:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-approve svg,
+.btn-approve * {
+    stroke: #ffffff !important;
+    fill: none !important;
+}
+
+.btn-reject svg,
+.btn-reject * {
+    stroke: #ffffff !important;
+    fill: none !important;
+}
+
+/* Ensure SVG visibility on hover too */
+.btn-approve:hover svg,
+.btn-approve:hover * {
+    stroke: #ffffff !important;
+}
+
+.btn-reject:hover svg,
+.btn-reject:hover * {
+    stroke: #ffffff !important;
+}
+
+/* Light mode button text/icon color override for better contrast */
+.btn-approve {
+    color: #ffffff !important;
+}
+
+.btn-reject {
+    color: #ffffff !important;
+}
+
 .btn-icon:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(232, 127, 20, 0.4);
+}
+
+/* Consistent shadows for all btn-icon variants */
+.btn-icon {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .btn-icon svg {
@@ -4052,6 +4129,7 @@ body.dark-mode .edit-profile-form .form-group select {
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #efefef;
+    justify-content: flex-end;
 }
 
 body.dark-mode .form-actions {
@@ -7956,16 +8034,6 @@ body.dark-mode .settings-compact-description {
     color: #333;
 }
 
-.change-password-modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-    padding: 0;
-    line-height: 1;
-}
-
 .change-password-modal-close:hover {
     color: #333;
 }
@@ -8028,6 +8096,12 @@ body.dark-mode .settings-compact-description {
 .change-password-modal-actions {
     display: flex;
     gap: 10px;
+    justify-content: flex-end;
+}
+
+.change-password-modal-actions button {
+    flex: 0;
+    max-width: 30%;
 }
 
 .change-password-btn {
@@ -8123,12 +8197,6 @@ body.dark-mode .change-password-btn-secondary:hover {
     background-color: #4a4a4a;
 }
 
-
-/* ==========================================================================
-   Unified Settings Page Styles
-   ========================================================================== */
-
-/* Container */
 .settings-page-content {
     flex: 1;
     padding: clamp(20px, 5vw, 40px);
@@ -8551,6 +8619,7 @@ body.dark-mode .settings-unified-info-box.warning {
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #e0e0e0;
+    justify-content: flex-end;
 }
 
 body.dark-mode .settings-unified-actions {
@@ -8954,11 +9023,10 @@ body.dark-mode .form-actions-compact {
     }
 }
 
-/* ========================================
-   Settings Compact Styles - Unified Settings
-   ======================================== */
+.form-actions-compact {
+    justify-content: flex-end;
+}
 
-/* Settings Section Visibility */
 .settings-section {
     display: none;
     width: 100%;

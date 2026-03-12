@@ -273,6 +273,9 @@ def admin_dashboard(request):
     # get all users
     all_users = User.objects.all()
     
+    # get pending admin approvals
+    pending_admins = User.objects.filter(user_role='admin', admin_approval_status='pending')
+    
     # Get admin's recent activities (not cleared) - admins see ALL platform activities
     activities = Activity.objects.filter(
         is_cleared=False
@@ -859,6 +862,7 @@ def create_user(request):
             first_name=first_name,
             last_name=last_name,
             user_role=user_role,
+            admin_approval_status='pending' if user_role == 'admin' else 'approved',
             gender=gender,
             phone_number=phone_number,
             company=company,
@@ -1088,6 +1092,69 @@ def delete_user(request, user_id):
         return JsonResponse({'success': True, 'message': f'User {username} deleted successfully'})
     
     return redirect('admin_dashboard')
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def approve_admin(request, user_id):
+    # Approve pending admin account (superuser only).
+    if not request.user.is_superuser:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Superuser access only'}, status=403)
+    
+    user = get_object_or_404(User, id=user_id)
+    if user.user_role != 'admin':
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Not an admin account'}, status=400)
+    
+    user.admin_approval_status = 'approved'
+    user.save()
+    
+    if user.auth_user:
+        user.auth_user.is_staff = True
+        user.auth_user.save()
+    
+    log_activity(
+        user=request.user,
+        activity_type='user_updated',
+        message=f'Approved admin account: {user.username}',
+        target_user=user.auth_user
+    )
+    
+    from django.http import JsonResponse
+    return JsonResponse({'success': True, 'message': f'Admin {user.username} approved successfully'})
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def reject_admin(request, user_id):
+    # "Reject pending admin account (superuser only).
+    if not request.user.is_superuser:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Superuser access only'}, status=403)
+    
+    user = get_object_or_404(User, id=user_id)
+    if user.user_role != 'admin':
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Not an admin account'}, status=400)
+    
+    user.admin_approval_status = 'rejected'
+    user.save()
+    
+    if user.auth_user:
+        user.auth_user.is_staff = False
+        user.auth_user.is_active = False
+        user.auth_user.save()
+    
+    log_activity(
+        user=request.user,
+        activity_type='user_updated',
+        message=f'Rejected admin account: {user.username}',
+        target_user=user.auth_user
+    )
+    
+    from django.http import JsonResponse
+    return JsonResponse({'success': True, 'message': f'Admin {user.username} rejected'})
 
 
 @login_required(login_url='signin')

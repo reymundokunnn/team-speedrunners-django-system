@@ -31,6 +31,9 @@ class PresentaBackend(BaseBackend):
         try:
             p_user = PresentaUser.objects.filter(email=username).first() or PresentaUser.objects.filter(username=username).first()
             if p_user and p_user.check_password(password):
+                if p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                    return None  # Block login for pending/rejected admin accounts
+                
                 # if linked to Django user, return it
                 if p_user.auth_user:
                     return p_user.auth_user

@@ -37,6 +37,14 @@ class User(models.Model):
     
     # Profile info
     user_role = models.CharField(max_length=20, choices=USER_ROLE_CHOICES, default='user')
+    
+    ADMIN_APPROVAL_STATUS_CHOICES = [
+        ('pending', 'Pending Superuser Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    admin_approval_status = models.CharField(max_length=20, choices=ADMIN_APPROVAL_STATUS_CHOICES, default='approved')
+    
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
@@ -67,6 +75,9 @@ class User(models.Model):
 
     def get_user_role_display(self):
         return dict(self.USER_ROLE_CHOICES).get(self.user_role, 'User')
+    
+    def get_admin_approval_status_display(self):
+        return dict(self.ADMIN_APPROVAL_STATUS_CHOICES).get(self.admin_approval_status, self.admin_approval_status.title())
     
     def set_password(self, raw_password):
         """Hash and set the password."""
