@@ -1,22 +1,63 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import User, Profile, DesignRequest
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'first_name', 'last_name', 'email', 'user_role', 'admin_approval_status', 'joined_date')
-    list_filter = ('user_role', 'admin_approval_status', 'joined_date')
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+    list_display = ('username', 'full_name', 'email', 'get_user_role', 'get_admin_approval_status', 'get_joined_date', 'get_auth_user_link')
+    list_filter = ('user_role', 'admin_approval_status', 'created_at')
     search_fields = ('username', 'first_name', 'last_name', 'email')
-    readonly_fields = ('joined_date', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def full_name(self, obj):
+        return f"{obj.first_name or ''} {obj.last_name or ''}".strip() or obj.username or "N/A"
+    full_name.short_description = 'Name'
+    
+    def get_user_role(self, obj):
+        return obj.user_role or "N/A"
+    get_user_role.short_description = 'Role'
+    get_user_role.admin_order_field = 'user_role'
+    
+    def get_admin_approval_status(self, obj):
+        return obj.get_admin_approval_status_display() or "N/A"
+    get_admin_approval_status.short_description = 'Admin Status'
+    get_admin_approval_status.admin_order_field = 'admin_approval_status'
+    
+    def get_joined_date(self, obj):
+        if obj.created_at:
+            return obj.created_at.date().strftime('%Y-%m-%d')
+        return "N/A"
+    get_joined_date.short_description = 'Joined'
+    get_joined_date.admin_order_field = 'created_at'
+    
+    def get_auth_user_link(self, obj):
+        if hasattr(obj, 'auth_user') and obj.auth_user:
+            url = f"/admin/auth/user/{obj.auth_user.id}/change/"
+            return format_html('<a href="{}">Yes</a>', mark_safe(url))
+        return "No"
+    get_auth_user_link.short_description = 'Django User'
     
     def approve_admins(self, request, queryset):
         updated = 0
         for user in queryset.filter(user_role='admin', admin_approval_status='pending'):
             user.admin_approval_status = 'approved'
             user.save()
-            if user.auth_user:
-                user.auth_user.is_staff = True
-                user.auth_user.is_active = True
-                user.auth_user.save()
+            try:
+                if hasattr(user, 'auth_user') and user.auth_user:
+                    user.auth_user.is_staff = True
+                    user.auth_user.is_active = True
+                    user.auth_user.save()
+            except:
+                pass  # auth_user may be null
             updated += 1
         self.message_user(request, f'{updated} admin accounts approved.')
     
@@ -25,10 +66,13 @@ class UserAdmin(admin.ModelAdmin):
         for user in queryset.filter(user_role='admin'):
             user.admin_approval_status = 'rejected'
             user.save()
-            if user.auth_user:
-                user.auth_user.is_staff = False
-                user.auth_user.is_active = False
-                user.auth_user.save()
+            try:
+                if hasattr(user, 'auth_user') and user.auth_user:
+                    user.auth_user.is_staff = False
+                    user.auth_user.is_active = False
+                    user.auth_user.save()
+            except:
+                pass  # auth_user may be null
             updated += 1
         self.message_user(request, f'{updated} admin accounts rejected.')
     
@@ -56,7 +100,7 @@ class UserAdmin(admin.ModelAdmin):
             'fields': ('profile_picture',)
         }),
         ('Timestamps', {
-            'fields': ('joined_date', 'created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )

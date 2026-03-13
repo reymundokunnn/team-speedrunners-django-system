@@ -919,6 +919,7 @@ def is_admin_user(request):
 def create_user(request):
     """Create a new user by admin."""
     from django.http import JsonResponse
+    from .models import User
     
     if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1003,17 +1004,9 @@ def create_user(request):
 def view_user(request, user_id):
     """API endpoint to get user details as JSON."""
     from django.http import JsonResponse
+    from .models import User
     
-    # Check if user is admin
-    is_admin = request.user.is_superuser
-    if not is_admin:
-        try:
-            profile = request.user.profile
-            is_admin = profile.user_role == 'admin'
-        except (Profile.DoesNotExist, AttributeError):
-            pass
-    
-    if not is_admin:
+    if not is_admin_user(request):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get the user
@@ -1038,7 +1031,7 @@ def view_user(request, user_id):
         'company': user.company or '',
         'location': user.location or '',
         'bio': user.bio or '',
-        'joined_date': user.joined_date.strftime('%Y-%m-%d') if user.joined_date else '',
+        'joined_date': user.created_at.strftime('%Y-%m-%d') if hasattr(user, 'created_at') and user.created_at else '',
         'design_requests_count': design_requests_count,
         'profile_picture': user.profile_picture.url if user.profile_picture else None,
     })
@@ -1049,17 +1042,9 @@ def view_user(request, user_id):
 def edit_user(request, user_id):
     """Edit user by admin."""
     from django.http import JsonResponse
+    from .models import User
     
-    # Check if user is admin
-    is_admin = request.user.is_superuser
-    if not is_admin:
-        try:
-            profile = request.user.profile
-            is_admin = profile.user_role == 'admin'
-        except (Profile.DoesNotExist, AttributeError):
-            pass
-    
-    if not is_admin:
+    if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
@@ -1136,17 +1121,9 @@ def edit_user(request, user_id):
 def delete_user(request, user_id):
     """Delete user by admin."""
     from django.http import JsonResponse
+    from .models import User
     
-    # Check if user is admin
-    is_admin = request.user.is_superuser
-    if not is_admin:
-        try:
-            profile = request.user.profile
-            is_admin = profile.user_role == 'admin'
-        except (Profile.DoesNotExist, AttributeError):
-            pass
-    
-    if not is_admin:
+    if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
@@ -1198,7 +1175,7 @@ def approve_admin(request, user_id):
         from django.http import JsonResponse
         return JsonResponse({'error': 'Superuser access only'}, status=403)
     
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(PresentaUser, id=user_id)
     if user.user_role != 'admin':
         from django.http import JsonResponse
         return JsonResponse({'error': 'Not an admin account'}, status=400)
@@ -1224,12 +1201,12 @@ def approve_admin(request, user_id):
 @login_required(login_url='signin')
 @require_http_methods(["POST"])
 def reject_admin(request, user_id):
-    # "Reject pending admin account (superuser only).
+    # Reject pending admin account (superuser only).
     if not request.user.is_superuser:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Superuser access only'}, status=403)
     
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(PresentaUser, id=user_id)
     if user.user_role != 'admin':
         from django.http import JsonResponse
         return JsonResponse({'error': 'Not an admin account'}, status=400)
