@@ -9899,3 +9899,9 @@ body.has-announcement-banner header {
 body.has-announcement-banner main {
     margin-top: 90px;
 }
+
+#messageModalTitle {
+    width: 100%;
+    font-size: 22pt;
+    margin: 0 0 10px;
+}

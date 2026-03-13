@@ -116,7 +116,7 @@ function toggleSidebar() {
     const sidebar = document.querySelector('.side-panel');
     if (sidebar) {
         sidebar.classList.toggle('collapsed');
-        
+
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed);
     } else {
@@ -124,10 +124,10 @@ function toggleSidebar() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.querySelector('.side-panel');
     const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-    
+
     if (sidebar && sidebarCollapsed === 'true') {
         sidebar.classList.add('collapsed');
     }
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 const originalToggleForms = toggleForms;
-toggleForms = function(event) {
+toggleForms = function (event) {
     originalToggleForms(event);
     // Small delay to ensure DOM is updated
     setTimeout(initPasswordStrengthMeter, 100);
@@ -344,17 +344,17 @@ function submitForgotPassword(event) {
     const identifier = document.getElementById('forgotPasswordIdentifier').value.trim();
     const messageEl = document.getElementById('forgotPasswordMessage');
     const submitBtn = document.getElementById('forgotPasswordSubmit');
-    
+
     if (!identifier) {
         messageEl.textContent = 'Please enter your email or username';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     // Show loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
-    
+
     // Call the lookup endpoint
     fetch('/password-reset/lookup/', {
         method: 'POST',
@@ -363,30 +363,30 @@ function submitForgotPassword(event) {
         },
         body: new URLSearchParams({ identifier: identifier })
     })
-    .then(response => response.json())
-    .then(data => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        
-        if (data.found) {
-            // Store user ID and show reset form
-            document.getElementById('resetUserId').value = data.user_id;
-            document.getElementById('resetPasswordUserInfo').textContent = 
-                'Create a new password for ' + (data.email || data.username);
-            closeForgotPasswordModal();
-            openResetPasswordFormModal();
-        } else {
-            messageEl.textContent = data.error || 'No account found with that email or username.';
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+
+            if (data.found) {
+                // Store user ID and show reset form
+                document.getElementById('resetUserId').value = data.user_id;
+                document.getElementById('resetPasswordUserInfo').textContent =
+                    'Create a new password for ' + (data.email || data.username);
+                closeForgotPasswordModal();
+                openResetPasswordFormModal();
+            } else {
+                messageEl.textContent = data.error || 'No account found with that email or username.';
+                messageEl.className = 'form-error-text';
+            }
+        })
+        .catch(error => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            messageEl.textContent = 'An error occurred. Please try again.';
             messageEl.className = 'form-error-text';
-        }
-    })
-    .catch(error => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        messageEl.textContent = 'An error occurred. Please try again.';
-        messageEl.className = 'form-error-text';
-        console.error('Forgot password error:', error);
-    });
+            console.error('Forgot password error:', error);
+        });
 }
 
 /* Reset Password Form Modal */
@@ -499,30 +499,30 @@ function submitResetPassword(event) {
     const confirmPassword = document.getElementById('confirmNewPassword').value;
     const messageEl = document.getElementById('resetPasswordFormMessage');
     const submitBtn = document.getElementById('resetPasswordSubmit');
-    
+
     // Validation
     if (!newPassword || !confirmPassword) {
         messageEl.textContent = 'Please fill in both password fields';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         messageEl.textContent = 'Passwords do not match';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     if (newPassword.length < 8) {
         messageEl.textContent = 'Password must be at least 8 characters long';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     // Show loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
-    
+
     // Submit the new password
     fetch('/password-reset/confirm/' + userId + '/', {
         method: 'POST',
@@ -534,41 +534,41 @@ function submitResetPassword(event) {
             confirm_password: confirmPassword
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        
-        if (data.success) {
-            messageEl.textContent = 'Password reset successfully! Redirecting to login...';
-            messageEl.className = 'form-success-text';
-            setTimeout(() => {
-                closeResetPasswordFormModal();
-                // Show success message on login form
-                const loginForm = document.getElementById('login-form');
-                if (loginForm) {
-                    // Create or update success message
-                    let successDiv = loginForm.querySelector('.form-success');
-                    if (!successDiv) {
-                        successDiv = document.createElement('div');
-                        successDiv.className = 'form-success';
-                        loginForm.insertBefore(successDiv, loginForm.firstChild);
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+
+            if (data.success) {
+                messageEl.textContent = 'Password reset successfully! Redirecting to login...';
+                messageEl.className = 'form-success-text';
+                setTimeout(() => {
+                    closeResetPasswordFormModal();
+                    // Show success message on login form
+                    const loginForm = document.getElementById('login-form');
+                    if (loginForm) {
+                        // Create or update success message
+                        let successDiv = loginForm.querySelector('.form-success');
+                        if (!successDiv) {
+                            successDiv = document.createElement('div');
+                            successDiv.className = 'form-success';
+                            loginForm.insertBefore(successDiv, loginForm.firstChild);
+                        }
+                        successDiv.textContent = 'Password reset successfully! Please sign in with your new password.';
                     }
-                    successDiv.textContent = 'Password reset successfully! Please sign in with your new password.';
-                }
-            }, 2000);
-        } else {
-            messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                }, 2000);
+            } else {
+                messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                messageEl.className = 'form-error-text';
+            }
+        })
+        .catch(error => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            messageEl.textContent = 'An error occurred. Please try again.';
             messageEl.className = 'form-error-text';
-        }
-    })
-    .catch(error => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        messageEl.textContent = 'An error occurred. Please try again.';
-        messageEl.className = 'form-error-text';
-        console.error('Reset password error:', error);
-    });
+            console.error('Reset password error:', error);
+        });
 }
 
 // Close modal when clicking outside of modal content
@@ -1773,13 +1773,13 @@ function openCompletionModal(requestId) {
         })
         .then(data => {
             console.log('Received data:', data);
-            
+
             // Set project title
             var titleEl = document.getElementById('completionTitle');
             if (titleEl) {
                 titleEl.textContent = data.title || 'Unknown Project';
             }
-            
+
             // Set completion date
             var dateEl = document.getElementById('completionDate');
             if (dateEl) {
@@ -1790,14 +1790,14 @@ function openCompletionModal(requestId) {
             var designerSection = document.getElementById('designerSection');
             var designerAvatar = document.getElementById('designerAvatar');
             var designerName = document.getElementById('designerName');
-            
+
             console.log('Designer data:', data.designer);
             console.log('Elements:', { designerSection, designerAvatar, designerName });
-            
+
             if (data.designer && designerSection && designerAvatar && designerName) {
                 designerSection.style.display = 'block';
                 designerName.textContent = data.designer.name;
-                
+
                 // Set avatar - either profile picture or initials
                 if (data.designer.profile_picture) {
                     designerAvatar.innerHTML = '<img src="' + data.designer.profile_picture + '" alt="' + data.designer.name + '">';
@@ -1842,17 +1842,17 @@ function closeCompletionModal() {
 function showDashboardSection(sectionId) {
     console.log('=== showDashboardSection called ===');
     console.log('Target section ID:', sectionId);
-    
+
     // Hide all sections - use both class and direct style
     var allSections = document.querySelectorAll('.dashboard-section-content');
     console.log('Found sections:', allSections.length);
-    allSections.forEach(function(section, index) {
+    allSections.forEach(function (section, index) {
         console.log('Hiding section', index, ':', section.id);
         section.classList.remove('active');
         // Direct style manipulation as fallback
         section.style.display = 'none';
     });
-    
+
     // Show the selected section - use both class and direct style
     var targetSection = document.getElementById(sectionId + '-section');
     console.log('Target element found:', targetSection);
@@ -1869,21 +1869,21 @@ function showDashboardSection(sectionId) {
     } else {
         console.error('Section not found:', sectionId + '-section');
     }
-    
+
     // Update sidebar active state
     var sidebarItems = document.querySelectorAll('.side-item[data-section]');
-    sidebarItems.forEach(function(item) {
+    sidebarItems.forEach(function (item) {
         item.classList.remove('active');
         if (item.getAttribute('data-section') === sectionId) {
             item.classList.add('active');
         }
     });
-    
+
     // Save current section to localStorage based on which dashboard we're on
     var isDesignerDashboard = document.getElementById('available-requests-section') !== null;
     var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
     var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
-    
+
     if (isDesignerDashboard) {
         localStorage.setItem('designerDashboardSection', sectionId);
     } else if (isUserDashboard) {
@@ -1894,7 +1894,7 @@ function showDashboardSection(sectionId) {
 }
 
 // Initialize dashboard section on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Check if we're on a dashboard with section content
     var dashboardSections = document.querySelectorAll('.dashboard-section-content');
     if (dashboardSections.length > 0) {
@@ -1902,11 +1902,11 @@ document.addEventListener('DOMContentLoaded', function() {
         var isDesignerDashboard = document.getElementById('available-requests-section') !== null;
         var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
         var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
-        
+
         // Check if there's a hash in the URL (from sidebar navigation)
         var hash = window.location.hash.replace('#', '');
         var initialSection = 'dashboard'; // Default section
-        
+
         // If there's a hash, check if the section exists before using it
         if (hash) {
             var targetSection = document.getElementById(hash + '-section');
@@ -1914,15 +1914,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 initialSection = hash;
             }
         }
-        
+
         // Show the initial section
         showDashboardSection(initialSection);
-        
+
         // Add click handlers for sidebar navigation
         var sidebarItems = document.querySelectorAll('.side-item[data-section]');
-        sidebarItems.forEach(function(item) {
+        sidebarItems.forEach(function (item) {
             item.style.cursor = 'pointer';
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
                 var sectionId = this.getAttribute('data-section');
                 if (sectionId) {
@@ -1970,7 +1970,7 @@ function openAddUserModal() {
 function saveNewUser() {
     var firstName = document.getElementById('addFirstName').value.trim();
     var lastName = document.getElementById('addLastName').value.trim();
-    
+
     // Client-side validation
     if (!firstName || !lastName) {
         showMessageModal('Error', 'First name and last name are required.', 'error');
@@ -1998,7 +1998,7 @@ function saveNewUser() {
         body: formData
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2006,7 +2006,7 @@ function saveNewUser() {
             if (result.ok && result.data.success) {
                 closeModal('addUserModal');
                 showMessageModal('Success', 'User created successfully!', 'success');
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1500);
             } else {
@@ -2143,7 +2143,7 @@ function saveUser() {
         body: formData
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2151,7 +2151,7 @@ function saveUser() {
             if (result.ok && result.data.success) {
                 closeModal('editUserModal');
                 showMessageModal('Success', 'User updated successfully!', 'success');
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1500);
             } else {
@@ -2209,7 +2209,7 @@ function confirmDeleteUser() {
         }
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2217,7 +2217,7 @@ function confirmDeleteUser() {
             if (result.ok && result.data.success) {
                 closeModal('deleteUserModal');
                 showMessageModal('Success', 'User deleted successfully!', 'success');
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1500);
             } else {
@@ -2233,7 +2233,7 @@ function confirmDeleteUser() {
 function showMessageModal(title, message, type, callback) {
     var modalId = 'messageModal';
     var modal = document.getElementById(modalId);
-    
+
     if (!modal) {
         modal = document.createElement('div');
         modal.id = modalId;
@@ -2241,11 +2241,11 @@ function showMessageModal(title, message, type, callback) {
         modal.innerHTML = '<div class="modal-content message-modal-content"><button class="close-btn" onclick="closeMessageModal()" aria-label="Close modal"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><div class="message-modal-icon" id="messageModalIcon"></div><h2 id="messageModalTitle"></h2><p id="messageModalText" class="message-modal-text"></p><div class="modal-actions"><button type="button" class="btn btn-primary" onclick="closeMessageModal(true)">OK</button></div></div>';
         document.body.appendChild(modal);
     }
-    
+
     // Set content
     document.getElementById('messageModalTitle').textContent = title;
     document.getElementById('messageModalText').textContent = message;
-    
+
     // Set icon based on type
     var iconContainer = document.getElementById('messageModalIcon');
     if (type === 'success') {
@@ -2258,10 +2258,10 @@ function showMessageModal(title, message, type, callback) {
         iconContainer.innerHTML = 'ℹ';
         iconContainer.className = 'message-modal-icon info';
     }
-    
+
     // Store callback
     modal.callback = callback;
-    
+
     // Show modal
     modal.classList.add('show');
 }
@@ -2279,7 +2279,7 @@ function closeMessageModal(triggerCallback) {
 function toggleSelectAllUsers() {
     var selectAllCheckbox = document.getElementById('selectAllUsers');
     var userCheckboxes = document.querySelectorAll('.user-checkbox');
-    userCheckboxes.forEach(function(checkbox) {
+    userCheckboxes.forEach(function (checkbox) {
         checkbox.checked = selectAllCheckbox.checked;
     });
     updateBulkActions();
@@ -2289,14 +2289,14 @@ function updateBulkActions() {
     var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
     var bulkActionsBar = document.querySelector('.bulk-actions-bar');
     var selectedCount = document.getElementById('selectedCount');
-    
+
     if (checkedBoxes.length > 0) {
         bulkActionsBar.classList.add('show');
         selectedCount.textContent = checkedBoxes.length + ' user' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
     } else {
         bulkActionsBar.classList.remove('show');
     }
-    
+
     // Update select all checkbox state
     var allCheckboxes = document.querySelectorAll('.user-checkbox');
     var selectAllCheckbox = document.getElementById('selectAllUsers');
@@ -2309,13 +2309,13 @@ function updateBulkActions() {
 
 function bulkDeleteUsers() {
     var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-    var userIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
-    
+    var userIds = Array.from(checkedBoxes).map(function (cb) { return cb.value; });
+
     if (userIds.length === 0) {
         showMessageModal('Error', 'No users selected.', 'error');
         return;
     }
-    
+
     // Show confirmation modal
     document.getElementById('bulkDeleteUserIds').value = userIds.join(',');
     document.getElementById('bulkDeleteCount').textContent = userIds.length;
@@ -2325,7 +2325,7 @@ function bulkDeleteUsers() {
 function confirmBulkDeleteUsers() {
     var userIds = document.getElementById('bulkDeleteUserIds').value.split(',');
     var csrfToken = getCSRFToken();
-    var deletePromises = userIds.map(function(userId) {
+    var deletePromises = userIds.map(function (userId) {
         return fetch('/manage/user/' + userId + '/delete/', {
             method: 'POST',
             headers: {
@@ -2334,16 +2334,16 @@ function confirmBulkDeleteUsers() {
             }
         });
     });
-    
+
     Promise.all(deletePromises)
-        .then(function() {
+        .then(function () {
             closeModal('bulkDeleteUserModal');
             showMessageModal('Success', userIds.length + ' users deleted successfully!', 'success');
-            setTimeout(function() {
+            setTimeout(function () {
                 location.reload();
             }, 1500);
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.error('Error deleting users:', error);
             showMessageModal('Error', 'Error deleting some users. Please try again.', 'error');
         });
@@ -2359,46 +2359,46 @@ function toggleFilterDropdown() {
 function applyFilters() {
     // Get selected roles
     var roleCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:first-child input:checked');
-    var selectedRoles = Array.from(roleCheckboxes).map(function(cb) { return cb.value; });
-    
+    var selectedRoles = Array.from(roleCheckboxes).map(function (cb) { return cb.value; });
+
     // Get selected statuses
     var statusCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:nth-child(2) input:checked');
-    var selectedStatuses = Array.from(statusCheckboxes).map(function(cb) { return cb.value; });
-    
+    var selectedStatuses = Array.from(statusCheckboxes).map(function (cb) { return cb.value; });
+
     console.log('Selected roles:', selectedRoles);
     console.log('Selected statuses:', selectedStatuses);
-    
+
     // Filter table rows
     var tableBody = document.querySelector('.users-table tbody');
     if (!tableBody) {
         console.error('Table body not found');
         return;
     }
-    
+
     var rows = tableBody.querySelectorAll('tr');
     console.log('Total rows found:', rows.length);
-    
+
     var visibleRowCount = 0;
     var emptyStateRow = document.getElementById('emptyStateRow');
-    
-    rows.forEach(function(row, index) {
+
+    rows.forEach(function (row, index) {
         // Skip empty state row
         if (row.id === 'emptyStateRow') {
             row.style.display = 'none';
             return;
         }
-        
+
         var roleBadge = row.querySelector('.role-badge');
         var roleClass = roleBadge ? roleBadge.className : '';
         var roleMatch = roleClass.match(/role-(user|designer|admin)\b/);
         var roleValue = roleMatch ? roleMatch[1] : '';
-        
+
         console.log('Row', index, 'role class:', roleClass, 'extracted role:', roleValue);
-        
+
         // Show row if no filters selected OR if role matches
         var showByRole = selectedRoles.length === 0 || selectedRoles.indexOf(roleValue) !== -1;
         var showByStatus = true;
-        
+
         if (showByRole && showByStatus) {
             row.style.display = '';
             visibleRowCount++;
@@ -2408,9 +2408,9 @@ function applyFilters() {
             console.log('Row', index, 'HIDDEN');
         }
     });
-    
+
     console.log('Visible rows:', visibleRowCount);
-    
+
     // Show empty state if needed
     if (emptyStateRow) {
         if (visibleRowCount === 0 && selectedRoles.length > 0) {
@@ -2431,13 +2431,13 @@ function applyFilters() {
 
 function clearFilters() {
     var checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
-    checkboxes.forEach(function(cb) { cb.checked = false; });
+    checkboxes.forEach(function (cb) { cb.checked = false; });
     applyFilters();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Close filter dropdown when clicking outside
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         var container = document.querySelector('.filter-dropdown-container');
         var dropdown = document.getElementById('filterDropdown');
         if (container && !container.contains(event.target)) {
@@ -2491,10 +2491,10 @@ function closeCancelConfirmModal() {
     currentCancelDesignId = null;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Add click handlers for view and edit buttons in project modal
-    document.querySelectorAll('.btn-view, .btn-edit').forEach(function(button) {
-        button.addEventListener('click', function() {
+    document.querySelectorAll('.btn-view, .btn-edit').forEach(function (button) {
+        button.addEventListener('click', function () {
             var designId = this.getAttribute('data-design-id');
             if (designId && typeof openProjectModal === 'function') {
                 openProjectModal(parseInt(designId));
@@ -2510,13 +2510,13 @@ function closeCropperModal() {
     }
     document.body.classList.remove('cropper-modal-open');
     document.documentElement.classList.remove('cropper-modal-open');
-    
+
     // Destroy cropper if it exists (global variable from script.js)
     if (typeof cropper !== 'undefined' && cropper) {
         cropper.destroy();
         cropper = null;
     }
-    
+
     // Reset file input
     const profilePictureInput = document.getElementById('profile_picture');
     if (profilePictureInput) {
@@ -2525,30 +2525,30 @@ function closeCropperModal() {
 }
 
 // Settings page initialization - runs on unified_settings.html page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Only run this on the settings page
     if (!document.querySelector('.settings-unified-nav-item')) {
         return;
     }
-    
+
     // ========== Section Navigation ==========
     const navItems = document.querySelectorAll('.settings-unified-nav-item');
     const sections = document.querySelectorAll('.settings-unified-section');
-    
+
     if (navItems.length === 0 || sections.length === 0) {
         return;
     }
-    
+
     // Get initial section from URL hash or default to account
     const hash = window.location.hash.replace('#', '');
     let activeSection = hash || 'account';
-    
+
     // Validate activeSection exists
     const validSections = Array.from(navItems).map(item => item.dataset.section);
     if (!validSections.includes(activeSection)) {
         activeSection = 'account';
     }
-    
+
     // Set initial active state
     navItems.forEach(item => {
         if (item.dataset.section === activeSection) {
@@ -2557,7 +2557,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.classList.remove('active');
         }
     });
-    
+
     sections.forEach(section => {
         if (section.id === 'section-' + activeSection) {
             section.classList.add('active');
@@ -2565,33 +2565,33 @@ document.addEventListener('DOMContentLoaded', function() {
             section.classList.remove('active');
         }
     });
-    
+
     // Handle navigation clicks
     navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+        item.addEventListener('click', function (e) {
             e.preventDefault();
-            
+
             const section = this.dataset.section;
-            
+
             // Update nav active state
             navItems.forEach(nav => nav.classList.remove('active'));
             this.classList.add('active');
-            
+
             // Show corresponding section
             sections.forEach(sec => {
                 sec.classList.remove('active');
             });
             document.getElementById('section-' + section).classList.add('active');
-            
+
             // Update URL hash
             window.location.hash = section;
         });
     });
-    
+
     // ========== Account Settings - Notification Toggle ==========
     const emailNotificationsCheckbox = document.getElementById('id_email_notifications_enabled');
     const notificationOptions = document.getElementById('notification-options');
-    
+
     function toggleNotificationOptions() {
         if (emailNotificationsCheckbox && notificationOptions) {
             if (emailNotificationsCheckbox.checked) {
@@ -2601,43 +2601,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     if (emailNotificationsCheckbox) {
         emailNotificationsCheckbox.addEventListener('change', toggleNotificationOptions);
         toggleNotificationOptions();
     }
-    
+
     // ========== Close Alert Messages ==========
     const closeButtons = document.querySelectorAll('.settings-unified-alert-close');
     closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             this.parentElement.style.display = 'none';
         });
     });
-    
+
     // ========== Change Password Modal ==========
     const changePasswordForm = document.getElementById('changePasswordForm');
     if (changePasswordForm) {
-        changePasswordForm.addEventListener('submit', function(e) {
+        changePasswordForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const currentPassword = document.getElementById('modal_current_password').value;
             const newPassword = document.getElementById('modal_new_password').value;
             const confirmPassword = document.getElementById('modal_confirm_password').value;
             const messageEl = document.getElementById('password_change_message');
             const submitBtn = document.getElementById('changePasswordSubmit');
-            
+
             // Clear previous errors
             document.getElementById('current_password_error').textContent = '';
             document.getElementById('new_password_error').textContent = '';
             document.getElementById('confirm_password_error').textContent = '';
             messageEl.textContent = '';
             messageEl.className = 'change-password-form-message';
-            
+
             // Show loading state
             submitBtn.classList.add('loading');
             submitBtn.disabled = true;
-            
+
             // Submit via AJAX
             fetch('/settings/change-password/', {
                 method: 'POST',
@@ -2651,49 +2651,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirm_password: confirmPassword
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                
-                if (data.success) {
-                    messageEl.textContent = data.message || 'Password changed successfully!';
-                    messageEl.className = 'change-password-form-message change-password-form-success-text';
-                    
-                    // Close modal and reset form after success
-                    setTimeout(() => {
-                        closeModal('changePasswordModal');
-                        changePasswordForm.reset();
-                    }, 1500);
-                } else {
-                    if (data.errors) {
-                        if (data.errors.current_password) {
-                            document.getElementById('current_password_error').textContent = data.errors.current_password;
+                .then(response => response.json())
+                .then(data => {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+
+                    if (data.success) {
+                        messageEl.textContent = data.message || 'Password changed successfully!';
+                        messageEl.className = 'change-password-form-message change-password-form-success-text';
+
+                        // Close modal and reset form after success
+                        setTimeout(() => {
+                            closeModal('changePasswordModal');
+                            changePasswordForm.reset();
+                        }, 1500);
+                    } else {
+                        if (data.errors) {
+                            if (data.errors.current_password) {
+                                document.getElementById('current_password_error').textContent = data.errors.current_password;
+                            }
+                            if (data.errors.new_password) {
+                                document.getElementById('new_password_error').textContent = data.errors.new_password;
+                            }
+                            if (data.errors.confirm_password) {
+                                document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
+                            }
                         }
-                        if (data.errors.new_password) {
-                            document.getElementById('new_password_error').textContent = data.errors.new_password;
-                        }
-                        if (data.errors.confirm_password) {
-                            document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
-                        }
+                        messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                        messageEl.className = 'change-password-form-message change-password-form-error-text';
                     }
-                    messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                })
+                .catch(error => {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    messageEl.textContent = 'An error occurred. Please try again.';
                     messageEl.className = 'change-password-form-message change-password-form-error-text';
-                }
-            })
-            .catch(error => {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                messageEl.textContent = 'An error occurred. Please try again.';
-                messageEl.className = 'change-password-form-message change-password-form-error-text';
-                console.error('Password change error:', error);
-            });
+                    console.error('Password change error:', error);
+                });
         });
     }
 });
 
 // Close modals when clicking outside (window-level handler)
-window.onclick = function(event) {
+window.onclick = function (event) {
     if (event.target.classList.contains('change-password-modal')) {
         closeModal('changePasswordModal');
     }
@@ -2711,7 +2711,7 @@ window.onclick = function(event) {
 function initializeStatusBadge() {
     const statusBadge = document.getElementById('user-status-badge');
     if (!statusBadge) return;
-    
+
     const status = statusBadge.getAttribute('data-status') || 'online';
     updateStatusBadgeAppearance(status, statusBadge);
 }
@@ -2722,10 +2722,10 @@ function updateStatusBadgeAppearance(status, badge = null) {
         badge = document.getElementById('user-status-badge');
     }
     if (!badge) return;
-    
+
     // Remove all status classes
     badge.classList.remove('online', 'idle', 'do_not_disturb');
-    
+
     // Add the appropriate class
     badge.classList.add(status);
 }
@@ -2736,13 +2736,13 @@ function openStatusModal() {
     const overlay = document.getElementById('status-modal-overlay');
     const statusBadge = document.getElementById('user-status-badge');
     const currentStatus = statusBadge ? statusBadge.getAttribute('data-status') : 'online';
-    
+
     if (!modal || !overlay) return;
-    
+
     // Show modal and overlay
     modal.classList.add('active');
     overlay.classList.add('active');
-    
+
     // Mark the current status as selected
     const statusOptions = modal.querySelectorAll('.status-option');
     statusOptions.forEach(option => {
@@ -2757,7 +2757,7 @@ function openStatusModal() {
 function closeStatusModal() {
     const modal = document.getElementById('status-modal');
     const overlay = document.getElementById('status-modal-overlay');
-    
+
     if (modal) {
         modal.classList.remove('active');
     }
@@ -2776,36 +2776,36 @@ function updateUserStatus(status) {
         },
         body: JSON.stringify({ status: status })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the badge
-            const badge = document.getElementById('user-status-badge');
-            if (badge) {
-                badge.setAttribute('data-status', status);
-                updateStatusBadgeAppearance(status, badge);
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the badge
+                const badge = document.getElementById('user-status-badge');
+                if (badge) {
+                    badge.setAttribute('data-status', status);
+                    updateStatusBadgeAppearance(status, badge);
+                }
+
+                // Close the modal
+                closeStatusModal();
+
+                // Close the dropdown menu
+                const dropdown = document.getElementById('user-dropdown-menu');
+                if (dropdown) {
+                    dropdown.classList.remove('active');
+                }
+
+                // Show success message (optional)
+                console.log('Status updated successfully');
+            } else {
+                console.error('Failed to update status:', data.error);
+                alert('Failed to update status. Please try again.');
             }
-            
-            // Close the modal
-            closeStatusModal();
-            
-            // Close the dropdown menu
-            const dropdown = document.getElementById('user-dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-            }
-            
-            // Show success message (optional)
-            console.log('Status updated successfully');
-        } else {
-            console.error('Failed to update status:', data.error);
-            alert('Failed to update status. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating status:', error);
-        alert('An error occurred while updating status.');
-    });
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+            alert('An error occurred while updating status.');
+        });
 }
 
 // Get CSRF token from cookie
@@ -2820,41 +2820,99 @@ function getCookie(name) {
                 break;
             }
         }
+    } return cookieValue;
+}
+
+function confirmAdminAction(userId, action) {
+    if (!confirm(`Are you sure you want to ${action} this admin account? This action cannot be undone.`)) {
+        return;
     }
-    return cookieValue;
+
+    const url = `/manage/admin/${userId}/${action}/`;
+    fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: new FormData(),
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 403) {
+                return response.json().then(data => Promise.reject({
+                    message: 'Superuser access required', error: data.error
+                }));
+            }
+            return response.json().then(data => Promise.reject(data));
+        } return response.json();
+    })
+    .then(data => {
+        showAdminActionModal(data.message, 'success');
+        setTimeout(() => location.reload(), 1000);
+    })
+    .catch(error => {
+        const msg = error.message || error.error || 'An error occurred';
+        showAdminActionModal(msg, 'error');
+        console.error('Admin action error:', error);
+    });
+}
+
+function showAdminActionModal(message, type = 'success') { 
+    const modal = document.createElement('div'); 
+    modal.className = 'add-new-design-modal admin-action-modal'; 
+    modal.innerHTML = `        
+    <div class="modal-content">            
+        <button class="close-btn" onclick="this.closest('.add-new-design-modal').remove()" aria-label="Close">                
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    
+                <line x1="18" y1="6" x2="6" y2="18"></line>                    
+                <line x1="6" y1="6" x2="18" y2="18"></line>                
+            </svg>            
+        </button>            
+        <div class="modal-icon modal-${type}">                  
+            ${type === 'success' ? '✓' : '✗'}            
+        </div>            
+        <h2>${type === 'success' ? 'Success' : 'Error'}</h2>            
+        <p>${message}</p>            
+        <div class="modal-actions">                
+            <button class="btn btn-primary" onclick="this.closest('.add-new-design-modal').remove(); location.reload();">OK</button>            
+        </div>        
+    </div>    `; 
+    document.body.appendChild(modal); modal.querySelector('button').focus(); 
 }
 
 // Status modal event listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize status badge on page load
     initializeStatusBadge();
-    
+
     // Set Status button in dropdown
     const setStatusBtn = document.getElementById('set-status-btn');
     if (setStatusBtn) {
-        setStatusBtn.addEventListener('click', function(e) {
+        setStatusBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             openStatusModal();
         });
     }
-    
+
     // Status modal close button
     const statusModalClose = document.getElementById('status-modal-close');
     if (statusModalClose) {
         statusModalClose.addEventListener('click', closeStatusModal);
     }
-    
+
     // Status options click handlers
     const statusOptions = document.querySelectorAll('.status-option');
     statusOptions.forEach(option => {
-        option.addEventListener('click', function() {
+        option.addEventListener('click', function () {
             const status = this.getAttribute('data-status');
-            
+
             // Update UI to show this is selected
             statusOptions.forEach(opt => opt.classList.remove('selected'));
             this.classList.add('selected');
-            
+
             // Update status via API
             updateUserStatus(status);
         });

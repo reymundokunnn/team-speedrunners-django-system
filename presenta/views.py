@@ -1121,19 +1121,31 @@ def edit_user(request, user_id):
 def delete_user(request, user_id):
     """Delete user by admin."""
     from django.http import JsonResponse
-    from .models import User
+    from .models import User, Profile
     
     if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': 'Access denied'}, status=403)
+            return JsonResponse({'success': False, 'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
     
     user = get_object_or_404(User, id=user_id)
     
-    # Prevent admin from deleting themselves
-    if user.auth_user == request.user:
+# Prevent admin from deleting themselves - universal check (username/email primary)
+    current_presenta = None
+    try:
+        current_presenta = get_presenta_user_safe(request.user)
+    except:
+        pass
+    
+    is_self = (user.id == current_presenta.id if current_presenta else False) or \
+              (user.username == current_presenta.username if current_presenta else False) or \
+              (user.email.lower() == current_presenta.email.lower() if current_presenta else False) or \
+              (user.auth_user == request.user if user.auth_user else False)
+    
+    if is_self:
+        error_msg = "You are trying to delete yourself. The system has decided this is a terrible life choice."
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': 'You cannot delete your own account'}, status=400)
+            return JsonResponse({'success': False, 'error': error_msg})
         return redirect('admin_dashboard')
     
     # Store username for success message
