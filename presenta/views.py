@@ -6,14 +6,47 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User, DesignRequestFile, Activity, UserSettings
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings
+from django.utils import timezone
+import uuid
 from PIL import Image
 from io import BytesIO
 import base64
 
 
+def get_presenta_user_safe(django_user):
+    # Safely get or create PresentaUser for a DjangoUser (handles superusers).
+    from .models import Profile, User as PresentaUser
+    
+    # Check if already exists
+    try:
+        return django_user.presenta_user
+    except PresentaUser.RelatedObjectDoesNotExist:
+        pass
+    
+    # Create PresentaUser
+    username = django_user.username or django_user.email
+    presenta_user = PresentaUser.objects.create(
+        auth_user=django_user,
+        username=username,
+        email=django_user.email or '',
+        first_name=django_user.first_name or '',
+        last_name=django_user.last_name or '',
+        user_role='admin' if django_user.is_superuser else 'user',
+        admin_approval_status='approved',
+        online_status='online'
+    )
+    
+    # Ensure Profile bridge exists
+    profile, created = Profile.objects.get_or_create(user=django_user)
+    profile.presenta_user = presenta_user
+    profile.save()
+    
+    return presenta_user
+
+
 def log_activity(user, activity_type, message, related_request=None, target_user=None):
-    """Helper function to create activity logs."""
+    # Helper function to create activity logs.\"\"\"
     Activity.objects.create(
         user=user,
         activity_type=activity_type,
@@ -29,6 +62,16 @@ def index(request):
         # Get user profile and redirect based on role
         try:
             profile = request.user.profile
+            # Block pending admins
+            try:
+                presenta_user = profile.presenta_user
+                if profile.user_role == 'admin' and presenta_user.admin_approval_status != 'approved':
+                    logout(request)
+                    return render(request, 'signin.html', {
+                        'login_error': 'Your admin account is pending superuser approval. Please contact the site administrator.',
+                    })
+            except AttributeError:
+                pass
             if request.user.is_superuser or profile.user_role == 'admin':
                 return redirect('admin_dashboard')
             elif profile.user_role == 'designer':
@@ -100,6 +143,19 @@ def login_view(request):
                 message="User logged in."
             )
             
+            # Block pending admins (defense in depth, though backend should block)
+            try:
+                profile = user.profile
+                presenta_user = profile.presenta_user
+                if profile.user_role == 'admin' and presenta_user.admin_approval_status != 'approved':
+                    logout(request)
+                    return render(request, 'signin.html', {
+                        'login_error': 'Your admin account is pending superuser approval. Please contact the site administrator.',
+                        'username': username
+                    })
+            except (Profile.DoesNotExist, AttributeError):
+                pass
+            
             # Handle "Remember me" checkbox
             if remember_me:
                 # Session will last for SESSION_COOKIE_AGE (2 weeks)
@@ -125,7 +181,19 @@ def login_view(request):
                 # If no profile exists, redirect to home
                 return redirect('index')
         else:
-            # Authentication failed
+            # Check if pending admin
+            from .models import User as PresentaUser
+            try:
+                p_user = PresentaUser.objects.filter(email=username).first() or PresentaUser.objects.filter(username=username).first()
+                if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status == 'pending':
+                    return render(request, 'signin.html', {
+                        'login_error': 'Your admin account is pending superuser approval. Please contact the site administrator.',
+                        'username': username
+                    })
+            except:
+                pass
+            
+            # Generic auth failure
             return render(request, 'signin.html', {
                 'login_error': 'Invalid username or password.',
                 'username': username
@@ -140,13 +208,32 @@ def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user, backend='presenta.auth_backend.PresentaBackend')
-            # Redirect to appropriate dashboard based on user role
-            profile = user.profile
-            if profile.user_role == 'designer':
+            django_user = form.save()
+            
+            # Get the linked PresentaUser safely
+            try:
+                presenta_user = django_user.presenta_user
+                if not presenta_user:
+                    # Fallback lookup
+                    presenta_user = PresentaUser.objects.filter(auth_user=django_user).first()
+                user_role = presenta_user.user_role if presenta_user else 'user'
+                print(f"[DEBUG] Registration: DjangoUser={django_user.username}, PresentaUser={presenta_user}, role={user_role}")
+            except Exception as e:
+                print(f"[DEBUG] Registration error: {e}")
+                user_role = 'user'
+            
+            # Handle admin approval
+            if user_role == 'admin':
+                if presenta_user:
+                    presenta_user.auth_user.is_active = False
+                    presenta_user.auth_user.save()
+            
+            login(request, django_user, backend='presenta.auth_backend.PresentaBackend')
+            
+            # Redirect based on role
+            if user_role == 'designer':
                 return redirect('designer_dashboard')
-            elif profile.user_role == 'admin':
+            elif user_role == 'admin':
                 return redirect('admin_dashboard')
             else:
                 return redirect('user_dashboard')
@@ -256,6 +343,17 @@ def admin_dashboard(request):
         except Profile.DoesNotExist:
             pass
     
+    # Check if approved admin before allowing access
+    try:
+        profile_obj = user.profile
+        presenta_user = profile_obj.presenta_user
+        if profile_obj.user_role == 'admin' and presenta_user.admin_approval_status != 'approved':
+            return render(request, 'signin.html', {
+                'login_error': 'Your admin account is pending superuser approval. Please contact the site administrator.',
+            })
+    except (Profile.DoesNotExist, AttributeError):
+        pass
+    
     # Redirect non-admin users to their correct dashboard
     if not is_admin:
         try:
@@ -270,11 +368,11 @@ def admin_dashboard(request):
     # get all design requests
     all_requests = DesignRequest.objects.all().order_by('-created_at')
     
-    # get all users
-    all_users = User.objects.all()
+# get all users
+    all_users = PresentaUser.objects.all()
     
-    # get pending admin approvals
-    pending_admins = User.objects.filter(user_role='admin', admin_approval_status='pending')
+# get pending admin approvals
+    pending_admins = PresentaUser.objects.filter(user_role='admin', admin_approval_status='pending')
     
     # Get admin's recent activities (not cleared) - admins see ALL platform activities
     activities = Activity.objects.filter(
@@ -598,10 +696,7 @@ def edit_profile(request):
     user = request.user
     
     # get the Presenta User profile
-    try:
-        presenta_user = user.presenta_user
-    except User.DoesNotExist:
-        return redirect('index')
+    presenta_user = get_presenta_user_safe(user)
     
     if request.method == 'POST':
         form = EditProfileForm(request.POST, instance=presenta_user)
@@ -878,6 +973,7 @@ def create_user(request):
             password=password,
             first_name=first_name,
             last_name=last_name,
+            is_active=False if user_role == 'admin' else True
         )
         
         # Link them together
@@ -1388,7 +1484,7 @@ def unified_settings(request):
     import json
     
     user = request.user
-    presenta_user = user.presenta_user
+    presenta_user = get_presenta_user_safe(user)
     
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
@@ -1719,7 +1815,7 @@ def account_settings(request):
     from django.contrib import messages
     
     user = request.user
-    presenta_user = user.presenta_user
+    presenta_user = get_presenta_user_safe(user)
     
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
@@ -1800,7 +1896,7 @@ def designer_settings(request):
     from django.contrib import messages
     
     user = request.user
-    presenta_user = user.presenta_user
+    presenta_user = get_presenta_user_safe(user)
     
     # Check if user is a designer
     if user.profile.user_role != 'designer':
@@ -1855,7 +1951,7 @@ def admin_settings(request):
     from django.contrib import messages
     
     user = request.user
-    presenta_user = user.presenta_user
+    presenta_user = get_presenta_user_safe(user)
     
     # Check if user is an admin
     if not (user.is_superuser or user.profile.user_role == 'admin'):

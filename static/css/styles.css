@@ -3042,9 +3042,8 @@ body.dark-mode .request-meta {
     height: 20px;
 }
 
-.btn-approve svg,
-.btn-approve * {
-    stroke: green; !important;
+.btn-approve svg, .btn-approve * {
+    stroke: green !important;
     fill: none !important;
 }
 

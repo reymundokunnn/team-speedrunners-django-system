@@ -15,6 +15,7 @@ class UserAdmin(admin.ModelAdmin):
             user.save()
             if user.auth_user:
                 user.auth_user.is_staff = True
+                user.auth_user.is_active = True
                 user.auth_user.save()
             updated += 1
         self.message_user(request, f'{updated} admin accounts approved.')

@@ -15,6 +15,16 @@ class PresentaBackend(BaseBackend):
         try:
             auth_user = DjangoUser.objects.filter(username=username).first()
             if auth_user and auth_user.check_password(password):
+                # Check if linked to pending/rejected PresentaUser admin
+                try:
+                    p_user = auth_user.presenta_user
+                    if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                        return None
+                except:
+                    pass
+                # Ensure profile exists for successful auth
+                from .views import get_presenta_user_safe
+                get_presenta_user_safe(auth_user)
                 return auth_user
         except Exception:
             pass
@@ -23,6 +33,16 @@ class PresentaBackend(BaseBackend):
         try:
             auth_user = DjangoUser.objects.filter(email=username).first()
             if auth_user and auth_user.check_password(password):
+                # Check if linked to pending/rejected PresentaUser admin
+                try:
+                    p_user = auth_user.presenta_user
+                    if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                        return None
+                except:
+                    pass
+                # Ensure profile exists for successful auth
+                from .views import get_presenta_user_safe
+                get_presenta_user_safe(auth_user)
                 return auth_user
         except Exception:
             pass
