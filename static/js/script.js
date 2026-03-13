@@ -2878,7 +2878,7 @@ function showAdminActionModal(message, type = 'success') {
         <div class="modal-actions">                
             <button class="btn btn-primary" onclick="this.closest('.add-new-design-modal').remove(); location.reload();">OK</button>            
         </div>        
-    </div>    `; 
+    </div>`; 
     document.body.appendChild(modal); modal.querySelector('button').focus(); 
 }
 
