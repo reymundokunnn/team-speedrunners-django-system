@@ -1143,7 +1143,7 @@ def delete_user(request, user_id):
               (user.auth_user == request.user if user.auth_user else False)
     
     if is_self:
-        error_msg = "You are trying to delete yourself. The system has decided this is a terrible life choice."
+        error_msg = "You cannot delete yourself. That would leave the system supervised by nobody, which sounds like a terrible reality show."
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': error_msg})
         return redirect('admin_dashboard')
