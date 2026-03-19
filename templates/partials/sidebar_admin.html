@@ -1,21 +1,21 @@
 {% load static %}
-<div class="side-panel">
-    <div class="side-item-wrapper">
-        <div class="side-item active" data-section="dashboard">
-            <img src="{% static 'img/dashboard/side-0.png' %}" class="dashboard-sidebar-icon">
-            <a href="{% url 'admin_dashboard' %}">Dashboard</a>
-        </div>
-        <div class="side-item" data-section="requests">
-            <img src="{% static 'img/dashboard/side-2.png' %}" class="dashboard-sidebar-icon">
-            <a href="{% url 'admin_dashboard' %}#requests">All Requests</a>
-        </div>
-        <div class="side-item" data-section="users">
-            <img src="{% static 'img/dashboard/side-6.png' %}" class="dashboard-sidebar-icon">
-            <a href="{% url 'admin_dashboard' %}#users">Users</a>
-        </div>
-        <div class="side-item">
-            <img src="{% static 'img/dashboard/side-7.png' %}" class="dashboard-sidebar-icon">
-            <a href="{% url 'admin_dashboard' %}">Reports</a>
+    <div class="side-panel">
+        <div class="side-item-wrapper">
+            <div class="side-item active" data-section="dashboard">
+                <img src="{% static 'img/dashboard/side-0.png' %}" class="dashboard-sidebar-icon">
+                <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+            </div>
+            <div class="side-item" data-section="requests">
+                <img src="{% static 'img/dashboard/side-2.png' %}" class="dashboard-sidebar-icon">
+                <a href="{% url 'admin_dashboard' %}#requests">All Requests</a>
+            </div>
+            <div class="side-item" data-section="users">
+                <img src="{% static 'img/dashboard/side-6.png' %}" class="dashboard-sidebar-icon">
+                <a href="{% url 'admin_dashboard' %}#users">Users</a>
+            </div>
+            <div class="side-item">
+                <img src="{% static 'img/dashboard/side-7.png' %}" class="dashboard-sidebar-icon">
+                <a href="{% url 'admin_dashboard' %}">Reports</a>
+            </div>
         </div>
     </div>
-</div>
