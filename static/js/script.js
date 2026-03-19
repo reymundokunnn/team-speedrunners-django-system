@@ -2920,33 +2920,38 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+
     function clock() {
         let now = new Date();
+
         let hours = now.getHours();
         let minutes = now.getMinutes();
         let seconds = now.getSeconds();
+        let ms = now.getMilliseconds();
 
-        let months = ["Jan", "Feb", "Mar", "Apr", "May",
-            "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
-        let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        let date = now.getDate();
-        let year = now.getFullYear();
+        let smoothSeconds = seconds + ms / 1000;
+        let smoothMinutes = minutes + smoothSeconds / 60;
+        let smoothHours = (hours % 12) + smoothMinutes / 60;
 
-        if (minutes < 10) {
-            minutes = "0" + minutes;
-        }
+        const secDeg = smoothSeconds * 6;
+        const minDeg = smoothMinutes * 6;
+        const hourDeg = smoothHours * 30;
 
-        if (seconds < 10) {
-            seconds = "0" + seconds;
-        }
+        document.getElementById('second-hand').setAttribute("transform", `rotate(${secDeg} 12 12)`);
+        document.getElementById('minute-hand').setAttribute("transform", `rotate(${minDeg} 12 12)`);
+        document.getElementById('hour-hand').setAttribute("transform", `rotate(${hourDeg} 12 12)`);
 
-        const clockDisplay = document.getElementsByClassName('clock')[0];
-        const dateDisplay = document.getElementsByClassName('date')[0];
-        clockDisplay.innerHTML = `${hours}:${minutes}:${seconds}`;
-        dateDisplay.innerHTML = `${weekday[now.getDay()]}, ${months[now.getMonth()]} ${date}, ${year}`;
+        let displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+        let displaySeconds = seconds < 10 ? "0" + seconds : seconds;
 
+        let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        let weekday = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+        document.getElementsByClassName('clock')[0].innerHTML = `${hours}:${displayMinutes}:${displaySeconds}`;
+
+        document.getElementsByClassName('date')[0].innerHTML = `${weekday[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        requestAnimationFrame(clock);
     }
 
-    setInterval(clock, 1000);
-})
+    clock(); // start
+});
