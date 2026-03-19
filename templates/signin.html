@@ -31,7 +31,6 @@
 				<div class="form-group">
 					<label for="id_username">Username or Email <span class="required">*</span></label>
 					<div class="input-wrapper">
-						<span class="input-icon">👤</span>
 						<input type="text" name="username" id="id_username" value="{{ username|default_if_none:'' }}" placeholder="Enter your username or email" required>
 					</div>
 				</div>
@@ -39,7 +38,6 @@
 				<div class="form-group">
 					<label for="id_password">Password <span class="required">*</span></label>
 					<div class="input-wrapper">
-						<span class="input-icon">🔒</span>
 						<input type="password" name="password" id="id_password" placeholder="Enter your password" required autocomplete="off">
 						<button type="button" class="password-toggle" onclick="togglePassword('id_password', this)">
 							<span class="eye-icon">👁️</span>
@@ -235,7 +233,6 @@
             <div class="form-group">
                 <label for="forgotPasswordIdentifier">Email or Username <span class="required">*</span></label>
                 <div class="input-wrapper">
-                    <span class="input-icon">👤</span>
                     <input type="text" id="forgotPasswordIdentifier" class="form-control" placeholder="Enter your email or username" required>
                 </div>
             </div>
@@ -268,7 +265,6 @@
             <div class="form-group">
                 <label for="newPassword">New Password <span class="required">*</span></label>
                 <div class="input-wrapper">
-                    <span class="input-icon">🔒</span>
                     <input type="password" id="newPassword" class="form-control" placeholder="Enter new password" required minlength="8">
                     <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">
                         <span class="eye-icon">👁️</span>
@@ -284,7 +280,6 @@
             <div class="form-group">
                 <label for="confirmNewPassword">Confirm Password <span class="required">*</span></label>
                 <div class="input-wrapper">
-                    <span class="input-icon">🔒</span>
                     <input type="password" id="confirmNewPassword" class="form-control" placeholder="Confirm new password" required minlength="8">
                     <button type="button" class="password-toggle" onclick="togglePassword('confirmNewPassword', this)">
                         <span class="eye-icon">👁️</span>

@@ -1154,7 +1154,7 @@ body.dark-mode .form-group label {
 .input-wrapper input,
 .input-wrapper select {
     width: 100%;
-    padding: 10px 40px 10px 40px;
+    padding: 10px 12px 10px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     font-size: clamp(0.85rem, 1.5vw, 0.95rem);
