@@ -1726,7 +1726,7 @@ body.dark-mode .offered-3 .text-wrapper h1 {
 }
 
 h1#greeting {
-    font-size: clamp(3rem, 5vw, 4rem);
+    font-size: clamp(2.5rem, 5vw, 3rem);
     margin-bottom: 20px;
 }
 
@@ -6633,12 +6633,11 @@ body.dark-mode .activity-text {
 .quick-action-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 5px;
     width: 100%;
-    padding: 8px 15px;
+    padding: 8px 25px;
     margin-bottom: 10px;
     border: none;
-    border-left: 2px solid #00000025;
     border-radius: 0;
     color: #374151;
     font-size: 1rem;
@@ -6652,10 +6651,6 @@ body.dark-mode .activity-text {
     min-height: 100px;
     justify-content: center;
     background-color: transparent;
-}
-
-.quick-action-btn:first-child {
-    border-left: none;
 }
 
 .quick-action-btn:last-child {
@@ -9892,4 +9887,42 @@ body.has-announcement-banner main {
     width: 100%;
     font-size: 22pt;
     margin: 0 0 10px;
+}
+
+.wrapper-greeting {
+    display: flex;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+.wrapper-greeting #main-greeting {
+    max-width: 80%;
+    flex-grow: 1;
+    font-size: clamp(3rem, 5vw, 4rem);
+    font-weight: bold;
+}
+
+.wrapper-greeting .date-and-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-and-time .clock-svg {
+    color: #e87f14;
+}
+
+body .date-and-time .clock-svg {
+    color: #e87f14;
+}
+
+.date-and-time .display {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-and-time .display .clock {
+    font-size: 24pt;
+    font-weight: bold;
+    color: #e87f14;
 }

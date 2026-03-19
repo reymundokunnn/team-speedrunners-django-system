@@ -9,7 +9,24 @@
         <div class="main">
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="dashboard-section-content active">
-                <h1 id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</h1>
+                <div class="wrapper-greeting">
+                    <div id="main-greeting">
+                        <span id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</span>
+                    </div>
+                    <div class="date-and-time">
+                        <div class="clock-icon">
+                            <svg id="clock-svg" width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="#FF5733" stroke-width="2"/>
+                                <line x1="12" y1="12" x2="12" y2="7" stroke="#FF5733" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="12" y1="12" x2="16" y2="12" stroke="#FF5733" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="display">
+                            <span class="clock">23:59:59</span>
+                            <span class="date">Thu, Jan 1, 1970</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="dashboard-stats">
                     <div class="stat-card">
                         <div class="number pending">{{ pending_requests }}</div>

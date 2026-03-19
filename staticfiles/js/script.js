@@ -595,7 +595,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // update greeting based on time of day.
 document.addEventListener('DOMContentLoaded', function () {
-    const greetingElement = document.getElementById('greeting');
+    const greetingWrapper = document.getElementById("wrapper-greeting");
+    const greetingElement = greetingWrapper.querySelector('#greeting');
     if (greetingElement) {
         const hour = new Date().getHours();
         let greeting = 'Good day';

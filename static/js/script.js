@@ -2918,3 +2918,35 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    function clock() {
+        let now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        let seconds = now.getSeconds();
+
+        let months = ["Jan", "Feb", "Mar", "Apr", "May",
+            "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+        let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let date = now.getDate();
+        let year = now.getFullYear();
+
+        if (minutes < 10) {
+            minutes = "0" + minutes;
+        }
+
+        if (seconds < 10) {
+            seconds = "0" + seconds;
+        }
+
+        const clockDisplay = document.getElementsByClassName('clock')[0];
+        const dateDisplay = document.getElementsByClassName('date')[0];
+        clockDisplay.innerHTML = `${hours}:${minutes}:${seconds}`;
+        dateDisplay.innerHTML = `${weekday[now.getDay()]}, ${months[now.getMonth()]} ${date}, ${year}`;
+
+    }
+
+    setInterval(clock, 1000);
+})
