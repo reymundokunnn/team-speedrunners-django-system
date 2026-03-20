@@ -411,6 +411,7 @@ body.dark-mode header .right .user-info {
 header .right .user-info-wrapper {
     position: relative;
     user-select: none;
+    margin-right: 15px;
 }
 
 header .right .user-info {
@@ -9898,7 +9899,7 @@ body.has-announcement-banner main {
 .wrapper-greeting #main-greeting {
     max-width: 80%;
     flex-grow: 1;
-    font-size: clamp(3rem, 5vw, 4rem);
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
     font-weight: bold;
 }
 
@@ -9925,4 +9926,9 @@ body .date-and-time .clock-svg {
     font-size: 24pt;
     font-weight: bold;
     color: #e87f14;
+}
+
+.other-icons {
+    display: flex;
+    gap: 15px;
 }

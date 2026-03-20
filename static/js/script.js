@@ -2949,7 +2949,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementsByClassName('clock')[0].innerHTML = `${hours}:${displayMinutes}:${displaySeconds}`;
 
-        document.getElementsByClassName('date')[0].innerHTML = `${weekday[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        document.getElementsByClassName('date')[0].innerHTML = `<b>${months[now.getMonth()]}. ${now.getDate()}, ${now.getFullYear()}</b> (${weekday[now.getDay()]})`;
         requestAnimationFrame(clock);
     }
 
