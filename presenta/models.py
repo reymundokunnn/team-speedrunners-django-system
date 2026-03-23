@@ -10,7 +10,10 @@ class User(models.Model):
         ('user', 'Client'),
         ('designer', 'Designer'),
         ('admin', 'Administrator'),
+        ('banned', 'Banned'),
     ]
+    
+    is_banned = models.BooleanField(default=False, help_text="User is banned from platform")
     
     GENDER_CHOICES = [
         ('M', 'Male'),
@@ -87,6 +90,44 @@ class User(models.Model):
         """Check if the provided password matches the stored hash."""
         from django.contrib.auth.hashers import check_password
         return check_password(raw_password, self.password)
+
+
+class Report(models.Model):
+    """User reports for moderation."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('under_review', 'Under Review'),
+        ('resolved', 'Resolved'),
+        ('dismissed', 'Dismissed'),
+    ]
+    
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_made')
+    target_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_received')
+    reason = models.TextField()
+    category = models.CharField(max_length=100, blank=True, help_text="e.g., spam, harassment")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['reporter', 'target_user']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.reporter.username} reported {self.target_user.username}: {self.reason[:50]}"
+
+
+class Block(models.Model):
+    """User blocks (one-way blocking)."""
+    blocker = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocks_made')
+    blocked_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocks_received')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['blocker', 'blocked_user']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.blocker.username} blocked {self.blocked_user.username}"
 
 
 class Profile(models.Model):
@@ -371,3 +412,63 @@ class UserSettings(models.Model):
     class Meta:
         verbose_name = 'User Settings'
         verbose_name_plural = 'User Settings'
+
+
+class SampleCategory(models.Model):
+    """Category for organizing sample items (Presentations, Infographics, Posters, etc.)"""
+    
+    name = models.CharField(max_length=100, help_text="Category name (e.g., Presentations, Infographics, Posters)")
+    slug = models.SlugField(max_length=100, unique=True, help_text="URL-friendly slug")
+    description = models.TextField(blank=True, help_text="Description of this category")
+    icon = models.CharField(max_length=50, blank=True, help_text="Icon emoji or class name")
+    order = models.IntegerField(default=0, help_text="Display order")
+    is_active = models.BooleanField(default=True, help_text="Show this category on the samples page")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Sample Category'
+        verbose_name_plural = 'Sample Categories'
+    
+    def __str__(self):
+        return self.name
+
+
+class SampleItem(models.Model):
+    """Individual sample item within a category (image with metadata)"""
+    
+    category = models.ForeignKey(SampleCategory, on_delete=models.CASCADE, related_name='items', help_text="Category this sample belongs to")
+    
+    # Content
+    title = models.CharField(max_length=200, help_text="Title of the sample")
+    description = models.TextField(blank=True, help_text="Description of the sample")
+    image = models.ImageField(upload_to='samples/', help_text="Sample image")
+    
+    # Metadata
+    client_name = models.CharField(max_length=200, blank=True, help_text="Client name (optional)")
+    project_date = models.DateField(null=True, blank=True, help_text="Date of the project")
+    tags = models.CharField(max_length=500, blank=True, help_text="Comma-separated tags")
+    link = models.URLField(blank=True, help_text="External link to view more")
+    
+    # Display settings
+    order = models.IntegerField(default=0, help_text="Display order within category")
+    is_active = models.BooleanField(default=True, help_text="Show this sample on the samples page")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = 'Sample Item'
+        verbose_name_plural = 'Sample Items'
+    
+    def __str__(self):
+        return f"{self.title} ({self.category.name})"
+    
+    def get_tags_list(self):
+        """Return tags as a list"""
+        if self.tags:
+            return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+        return []

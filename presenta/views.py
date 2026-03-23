@@ -5,8 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem
 from django.utils import timezone
 import uuid
 from PIL import Image
@@ -105,7 +106,26 @@ def pricing(request):
     return render(request, 'pricing.html')
 
 def samples(request):
-    return render(request, 'samples.html')
+    """Samples page - displays portfolio samples organized by category"""
+    from .models import SampleCategory, SampleItem
+    
+    # Get active categories with their active items
+    categories = SampleCategory.objects.filter(
+        is_active=True
+    ).prefetch_related(
+        models.Prefetch(
+            'items',
+            queryset=SampleItem.objects.filter(is_active=True),
+            to_attr='active_items'
+        )
+    ).order_by('order', 'name')
+    
+    # Filter out categories with no active items
+    categories_with_items = [cat for cat in categories if cat.active_items]
+    
+    return render(request, 'samples.html', {
+        'categories': categories_with_items
+    })
 
 
 @require_http_methods(["GET", "POST"])
@@ -272,6 +292,17 @@ def user_dashboard(request):
         is_cleared=False
     ).select_related('related_request', 'user').order_by('-created_at')[:10]
     
+    # Get user timezone, default to browser timezone or UTC
+    user_tz = 'UTC'
+    try:
+        if hasattr(user, 'user_settings') and user.user_settings.timezone:
+            user_tz = user.user_settings.timezone
+        else:
+            # Try to get from browser via JavaScript fallback
+            user_tz = 'UTC'
+    except Exception:
+        user_tz = 'UTC'
+    
     context = {
         'profile': user.profile,
         'design_requests': design_requests,
@@ -280,6 +311,7 @@ def user_dashboard(request):
         'in_progress': design_requests.filter(status='in_progress').count(),
         'for_payment': design_requests.filter(status='for_payment').count(),
         'completed': design_requests.filter(status='completed').count(),
+        'user_timezone': user_tz,
     }
     return render(request, 'dashboard/user_dashboard.html', context)
 
@@ -313,6 +345,14 @@ def designer_dashboard(request):
         is_cleared=False
     ).select_related('related_request', 'user').order_by('-created_at')[:10]
     
+    # Get user timezone
+    user_tz = 'UTC'
+    try:
+        if hasattr(user, 'user_settings') and user.user_settings.timezone:
+            user_tz = user.user_settings.timezone
+    except Exception:
+        user_tz = 'UTC'
+    
     context = {
         'profile': user.profile,
         'assigned_designs': assigned_designs,
@@ -323,6 +363,7 @@ def designer_dashboard(request):
         'for_payment': assigned_designs.filter(status='for_payment').count(),
         'completed': assigned_designs.filter(status='completed').count(),
         'pending': assigned_designs.filter(status='pending').count(),
+        'user_timezone': user_tz,
     }
     return render(request, 'dashboard/designer_dashboard.html', context)
 
@@ -379,6 +420,14 @@ def admin_dashboard(request):
         is_cleared=False
     ).select_related('related_request', 'user').order_by('-created_at')[:20]
     
+    # Get user timezone
+    user_tz = 'UTC'
+    try:
+        if hasattr(user, 'user_settings') and user.user_settings.timezone:
+            user_tz = user.user_settings.timezone
+    except Exception:
+        user_tz = 'UTC'
+    
     context = {
         'profile': profile,
         'all_requests': all_requests,
@@ -389,6 +438,7 @@ def admin_dashboard(request):
         'pending_requests': all_requests.filter(status='pending').count(),
         'in_progress': all_requests.filter(status='in_progress').count(),
         'completed': all_requests.filter(status='completed').count(),
+        'user_timezone': user_tz,
     }
     return render(request, 'dashboard/admin_dashboard.html', context)
 
@@ -1213,7 +1263,7 @@ def approve_admin(request, user_id):
 @login_required(login_url='signin')
 @require_http_methods(["POST"])
 def reject_admin(request, user_id):
-    # Reject pending admin account (superuser only).
+    # Reject and delete pending admin account (superuser only).
     if not request.user.is_superuser:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Superuser access only'}, status=403)
@@ -1223,23 +1273,26 @@ def reject_admin(request, user_id):
         from django.http import JsonResponse
         return JsonResponse({'error': 'Not an admin account'}, status=400)
     
-    user.admin_approval_status = 'rejected'
-    user.save()
+    # Store username for log message before deletion
+    username = user.username
+    auth_user = user.auth_user
     
-    if user.auth_user:
-        user.auth_user.is_staff = False
-        user.auth_user.is_active = False
-        user.auth_user.save()
+    # Delete the Presenta User
+    user.delete()
+    
+    # Also delete the Django auth user if it exists
+    if auth_user:
+        auth_user.delete()
     
     log_activity(
         user=request.user,
-        activity_type='user_updated',
-        message=f'Rejected admin account: {user.username}',
-        target_user=user.auth_user
+        activity_type='user_deleted',
+        message=f'Rejected and deleted pending admin account: {username}',
+        target_user=None
     )
     
     from django.http import JsonResponse
-    return JsonResponse({'success': True, 'message': f'Admin {user.username} rejected'})
+    return JsonResponse({'success': True, 'message': f'Admin {username} has been deleted'})
 
 
 @login_required(login_url='signin')
@@ -1769,6 +1822,11 @@ def unified_settings(request):
         'show_user_status': user_settings.show_user_status,
     })
     
+    # Get sample categories for admin
+    sample_categories = []
+    if user.is_superuser or user.profile.user_role == 'admin':
+        sample_categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
+    
     context = {
         'form': account_form,
         'profile_form': profile_form,
@@ -1778,6 +1836,7 @@ def unified_settings(request):
         'presenta_user': presenta_user,
         'settings_section': 'unified',
         'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username,
+        'sample_categories': sample_categories,
     }
     return render(request, 'settings/unified_settings.html', context)
 
@@ -2051,7 +2110,149 @@ def edit_profile_settings(request):
 
 
 @login_required
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
+def profile_view(request, username=None):
+    """View user profile (self or others)."""
+    from django.http import Http404, JsonResponse
+    from django.db.models import Q, Count
+    from .models import Block, Report, User as PresentaUser
+
+    if not request.user.is_authenticated:
+        return redirect('signin')
+
+    # Get target user
+    if username is None:
+        # Self profile
+        target_presenta = get_presenta_user_safe(request.user)
+        is_self = True
+    else:
+        target_presenta = get_object_or_404(PresentaUser, username__iexact=username)
+        is_self = (target_presenta.auth_user == request.user)
+
+    target_django = target_presenta.auth_user
+    viewer_is_admin = is_admin_user(request)
+
+    # Check if viewer blocked target
+    is_blocked = Block.objects.filter(
+        blocker=request.user, 
+        blocked_user=target_django
+    ).exists()
+
+    # Privacy check - simplified
+    try:
+        target_settings, _ = UserSettings.objects.get_or_create(user=target_django)
+        is_private = (target_settings.profile_visibility == 'private' and not is_self)
+    except:
+        is_private = False
+
+    if is_blocked or (is_private and not viewer_is_admin):
+        # Show limited/blocked view or 404
+        if is_blocked:
+            context = {'message': 'You have blocked this user.', 'is_blocked': True}
+        else:
+            raise Http404("Profile not found or private.")
+        return render(request, 'profile.html', context)
+
+    # Stats
+    stats = {}
+    if target_django:
+        stats['requests'] = DesignRequest.objects.filter(
+            Q(requester=target_django) | Q(designer=target_django)
+        ).aggregate(total=Count('id'))['total'] or 0
+        stats['completed'] = DesignRequest.objects.filter(
+            Q(requester=target_django) | Q(designer=target_django),
+            status='completed'
+        ).count()
+
+    # Recent activities (public)
+    activities = Activity.objects.filter(
+        user=target_django,
+        is_cleared=False
+    ).select_related('related_request').order_by('-created_at')[:5]
+
+    context = {
+        'target': target_presenta,
+        'target_django': target_django,
+        'is_self': is_self,
+        'is_blocked': is_blocked,
+        'viewer_is_admin': viewer_is_admin,
+        'stats': stats,
+        'activities': activities,
+        'can_ban': viewer_is_admin,
+        'can_delete': viewer_is_admin,
+    }
+    return render(request, 'profile.html', context)
+
+
+def block_user(request):
+    """Block a user (POST)."""
+    if request.method == 'POST' and request.user.is_authenticated:
+        user_id = request.POST.get('user_id')
+        if user_id:
+            target_django = get_object_or_404(DjangoUser, id=user_id)
+            if target_django != request.user:  # Can't block self
+                Block.objects.get_or_create(
+                    blocker=request.user,
+                    blocked_user=target_django
+                )
+                log_activity(
+                    user=request.user,
+                    activity_type='user_updated',
+                    message=f"Blocked user {target_django.username}",
+                    target_user=target_django
+                )
+                from django.http import JsonResponse
+                return JsonResponse({'success': True, 'message': 'User blocked'})
+    from django.http import JsonResponse
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+
+def report_user(request):
+    """Report a user (POST)."""
+    if request.method == 'POST' and request.user.is_authenticated:
+        user_id = request.POST.get('user_id')
+        reason = request.POST.get('reason', '').strip()
+        if user_id and reason:
+            target_django = get_object_or_404(DjangoUser, id=user_id)
+            if target_django != request.user:
+                Report.objects.create(
+                    reporter=request.user,
+                    target_user=target_django,
+                    reason=reason[:500]
+                )
+                log_activity(
+                    user=request.user,
+                    activity_type='user_updated',
+                    message=f'Reported user {target_django.username}',
+                    target_user=target_django
+                )
+                from django.http import JsonResponse
+                return JsonResponse({'success': True, 'message': 'Report submitted'})
+    from django.http import JsonResponse
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+
+def ban_user(request):
+    """Ban user (admin POST)."""
+    if request.method == 'POST' and is_admin_user(request):
+        user_id = request.POST.get('user_id')
+        if user_id:
+            target_presenta = get_object_or_404(PresentaUser, id=user_id)
+            target_presenta.is_banned = True
+            target_presenta.user_role = 'banned'
+            target_presenta.save()
+            log_activity(
+                user=request.user,
+                activity_type='user_updated',
+                message=f'Banned user {target_presenta.username}',
+                target_user=target_presenta.auth_user
+            )
+            from django.http import JsonResponse
+            return JsonResponse({'success': True, 'message': 'User banned'})
+    from django.http import JsonResponse
+    return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+
 def update_user_status(request):
     """Update the user's online status via AJAX."""
     from django.http import JsonResponse
@@ -2096,3 +2297,593 @@ def update_user_status(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+# ============ Sample Management Views ============
+
+@login_required
+def manage_samples(request):
+    """Main page for managing samples - categories and items"""
+    from django.contrib import messages
+    
+    user = request.user
+    presenta_user = get_presenta_user_safe(user)
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
+    
+    context = {
+        'categories': categories,
+        'settings_section': 'samples',
+        'display_name': f"{presenta_user.first_name} {presenta_user.last_name}".strip() or presenta_user.username if presenta_user else user.username,
+    }
+    return render(request, 'settings/manage_samples.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def add_sample_category(request):
+    """Add a new sample category"""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    
+    user = request.user
+    presenta_user = get_presenta_user_safe(user)
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        slug = request.POST.get('slug', '').strip()
+        description = request.POST.get('description', '').strip()
+        icon = request.POST.get('icon', '').strip()
+        order = int(request.POST.get('order', 0))
+        
+        if not name:
+            messages.error(request, 'Category name is required.')
+            return redirect('manage_samples')
+        
+        if not slug:
+            # Auto-generate slug from name
+            from django.utils.text import slugify
+            slug = slugify(name)
+        
+        # Check for duplicate slug
+        if SampleCategory.objects.filter(slug=slug).exists():
+            messages.error(request, 'A category with this slug already exists.')
+            return redirect('manage_samples')
+        
+        category = SampleCategory.objects.create(
+            name=name,
+            slug=slug,
+            description=description,
+            icon=icon,
+            order=order
+        )
+        
+        messages.success(request, f'Category "{category.name}" created successfully.')
+        return redirect('manage_samples')
+    
+    return redirect('manage_samples')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def edit_sample_category(request, category_id):
+    """Edit an existing sample category"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    
+    user = request.user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    category = get_object_or_404(SampleCategory, id=category_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        slug = request.POST.get('slug', '').strip()
+        description = request.POST.get('description', '').strip()
+        icon = request.POST.get('icon', '').strip()
+        order = int(request.POST.get('order', 0))
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not name:
+            messages.error(request, 'Category name is required.')
+            return redirect('manage_samples')
+        
+        # Check for duplicate slug (excluding current category)
+        if SampleCategory.objects.filter(slug=slug).exclude(id=category_id).exists():
+            messages.error(request, 'A category with this slug already exists.')
+            return redirect('manage_samples')
+        
+        category.name = name
+        category.slug = slug
+        category.description = description
+        category.icon = icon
+        category.order = order
+        category.is_active = is_active
+        category.save()
+        
+        messages.success(request, f'Category "{category.name}" updated successfully.')
+        return redirect('manage_samples')
+    
+    return redirect('manage_samples')
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_sample_category(request, category_id):
+    """Delete a sample category and all its items"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    
+    user = request.user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    category = get_object_or_404(SampleCategory, id=category_id)
+    
+    # Delete all items in this category first
+    category.items.all().delete()
+    category_name = category.name
+    category.delete()
+    
+    messages.success(request, f'Category "{category_name}" and all its items have been deleted.')
+    return redirect('manage_samples')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def add_sample_item(request):
+    """Add a new sample item"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    
+    user = request.user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    if request.method == 'POST':
+        category_id = request.POST.get('category')
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        image = request.FILES.get('image')
+        client_name = request.POST.get('client_name', '').strip()
+        project_date = request.POST.get('project_date')
+        tags = request.POST.get('tags', '').strip()
+        link = request.POST.get('link', '').strip()
+        order = int(request.POST.get('order', 0))
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not category_id:
+            messages.error(request, 'Please select a category.')
+            return redirect('manage_samples')
+        
+        if not title:
+            messages.error(request, 'Sample title is required.')
+            return redirect('manage_samples')
+        
+        if not image:
+            messages.error(request, 'Sample image is required.')
+            return redirect('manage_samples')
+        
+        category = get_object_or_404(SampleCategory, id=category_id)
+        
+        # Parse project date
+        from django.utils.dateparse import parse_date
+        parsed_date = None
+        if project_date:
+            parsed_date = parse_date(project_date)
+        
+        item = SampleItem.objects.create(
+            category=category,
+            title=title,
+            description=description,
+            image=image,
+            client_name=client_name,
+            project_date=parsed_date,
+            tags=tags,
+            link=link,
+            order=order,
+            is_active=is_active
+        )
+        
+        messages.success(request, f'Sample "{item.title}" created successfully.')
+        return redirect('manage_samples')
+    
+    return redirect('manage_samples')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def edit_sample_item(request, item_id):
+    """Edit an existing sample item"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    
+    user = request.user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    item = get_object_or_404(SampleItem, id=item_id)
+    
+    if request.method == 'POST':
+        category_id = request.POST.get('category')
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        image = request.FILES.get('image')
+        client_name = request.POST.get('client_name', '').strip()
+        project_date = request.POST.get('project_date')
+        tags = request.POST.get('tags', '').strip()
+        link = request.POST.get('link', '').strip()
+        order = int(request.POST.get('order', 0))
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not category_id:
+            messages.error(request, 'Please select a category.')
+            return redirect('manage_samples')
+        
+        if not title:
+            messages.error(request, 'Sample title is required.')
+            return redirect('manage_samples')
+        
+        category = get_object_or_404(SampleCategory, id=category_id)
+        
+        # Parse project date
+        from django.utils.dateparse import parse_date
+        parsed_date = None
+        if project_date:
+            parsed_date = parse_date(project_date)
+        
+        item.category = category
+        item.title = title
+        item.description = description
+        if image:
+            item.image = image
+        item.client_name = client_name
+        item.project_date = parsed_date
+        item.tags = tags
+        item.link = link
+        item.order = order
+        item.is_active = is_active
+        item.save()
+        
+        messages.success(request, f'Sample "{item.title}" updated successfully.')
+        return redirect('manage_samples')
+    
+    return redirect('manage_samples')
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_sample_item(request, item_id):
+    """Delete a sample item"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    
+    user = request.user
+    
+    # Check if user is an admin
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        messages.error(request, 'You do not have permission to manage samples.')
+        return redirect('account_settings')
+    
+    item = get_object_or_404(SampleItem, id=item_id)
+    item_title = item.title
+    item.delete()
+    
+    messages.success(request, f'Sample "{item_title}" has been deleted.')
+    return redirect('manage_samples')
+
+
+# =====================================================
+# API Endpoints for Sample Management (AJAX Modal)
+# =====================================================
+
+@login_required
+def api_sample_categories(request):
+    """API endpoint to get all sample categories with their items (JSON)"""
+    from django.http import JsonResponse
+    from django.views.decorators.http import require_http_methods
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
+    
+    data = {
+        'categories': [
+            {
+                'id': cat.id,
+                'name': cat.name,
+                'slug': cat.slug,
+                'description': cat.description,
+                'icon': cat.icon,
+                'order': cat.order,
+                'is_active': cat.is_active,
+                'items': [
+                    {
+                        'id': item.id,
+                        'title': item.title,
+                        'description': item.description,
+                        'image_url': item.image.url if item.image else None,
+                        'client_name': item.client_name,
+                        'project_date': item.project_date.isoformat() if item.project_date else None,
+                        'tags': item.tags,
+                        'link': item.link,
+                        'order': item.order,
+                        'is_active': item.is_active,
+                    }
+                    for item in cat.items.all()
+                ]
+            }
+            for cat in categories
+        ]
+    }
+    
+    return JsonResponse(data)
+
+
+@login_required
+@require_http_methods(["GET", "POST", "DELETE"])
+def api_sample_category_detail(request, category_id):
+    """API endpoint to get, create, or delete a sample category"""
+    from django.http import JsonResponse
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'GET':
+        # Get category detail
+        category = get_object_or_404(SampleCategory, id=category_id)
+        data = {
+            'id': category.id,
+            'name': category.name,
+            'slug': category.slug,
+            'description': category.description,
+            'icon': category.icon,
+            'order': category.order,
+            'is_active': category.is_active,
+        }
+        return JsonResponse(data)
+    
+    elif request.method == 'POST':
+        # Update category
+        import json
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        category = get_object_or_404(SampleCategory, id=category_id)
+        category.name = data.get('name', category.name)
+        category.description = data.get('description', category.description)
+        category.icon = data.get('icon', category.icon)
+        category.order = data.get('order', category.order)
+        category.is_active = data.get('is_active', category.is_active)
+        
+        # Handle slug
+        if 'slug' in data and data['slug'] != category.slug:
+            from django.utils.text import slugify
+            category.slug = data['slug']
+        else:
+            from django.utils.text import slugify
+            category.slug = slugify(category.name)
+        
+        category.save()
+        return JsonResponse({'success': True, 'message': 'Category updated successfully'})
+    
+    elif request.method == 'DELETE':
+        # Delete category
+        category = get_object_or_404(SampleCategory, id=category_id)
+        category_name = category.name
+        category.delete()
+        return JsonResponse({'success': True, 'message': f'Category "{category_name}" deleted successfully'})
+
+
+@login_required
+@require_http_methods(["GET", "POST", "DELETE"])
+def api_sample_item_detail(request, item_id):
+    """API endpoint to get, create, or delete a sample item"""
+    from django.http import JsonResponse
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404
+    import json
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'GET':
+        # Get item detail
+        item = get_object_or_404(SampleItem, id=item_id)
+        data = {
+            'id': item.id,
+            'category_id': item.category.id,
+            'title': item.title,
+            'description': item.description,
+            'image_url': item.image.url if item.image else None,
+            'client_name': item.client_name,
+            'project_date': item.project_date.isoformat() if item.project_date else None,
+            'tags': item.tags,
+            'link': item.link,
+            'order': item.order,
+            'is_active': item.is_active,
+        }
+        return JsonResponse(data)
+    
+    elif request.method == 'POST':
+        # Update item
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        item = get_object_or_404(SampleItem, id=item_id)
+        
+        if 'category_id' in data:
+            item.category = get_object_or_404(SampleCategory, id=data['category_id'])
+        
+        item.title = data.get('title', item.title)
+        item.description = data.get('description', item.description)
+        item.client_name = data.get('client_name', item.client_name or '')
+        item.tags = data.get('tags', item.tags or '')
+        item.link = data.get('link', item.link or '')
+        item.order = data.get('order', item.order)
+        item.is_active = data.get('is_active', item.is_active)
+        
+        if 'project_date' in data and data['project_date']:
+            from datetime import datetime
+            try:
+                item.project_date = datetime.strptime(data['project_date'], '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # Handle image upload
+        if 'image' in request.FILES:
+            item.image = request.FILES['image']
+        
+        item.save()
+        return JsonResponse({'success': True, 'message': 'Item updated successfully'})
+    
+    elif request.method == 'DELETE':
+        # Delete item
+        item = get_object_or_404(SampleItem, id=item_id)
+        item_title = item.title
+        item.delete()
+        return JsonResponse({'success': True, 'message': f'Item "{item_title}" deleted successfully'})
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_sample_item_create(request):
+    """API endpoint to create a new sample item"""
+    from django.http import JsonResponse
+    from django.shortcuts import get_object_or_404
+    import json
+    from datetime import datetime
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    # Validate required fields
+    if not data.get('title'):
+        return JsonResponse({'error': 'Title is required'}, status=400)
+    
+    if not data.get('category_id'):
+        return JsonResponse({'error': 'Category is required'}, status=400)
+    
+    category = get_object_or_404(SampleCategory, id=data['category_id'])
+    
+    item = SampleItem(
+        category=category,
+        title=data['title'],
+        description=data.get('description', ''),
+        client_name=data.get('client_name', ''),
+        tags=data.get('tags', ''),
+        link=data.get('link', ''),
+        order=data.get('order', 0),
+        is_active=data.get('is_active', True),
+    )
+    
+    if 'project_date' in data and data['project_date']:
+        try:
+            item.project_date = datetime.strptime(data['project_date'], '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    
+    # Handle image upload
+    if 'image' in request.FILES:
+        item.image = request.FILES['image']
+    
+    item.save()
+    
+    return JsonResponse({
+        'success': True, 
+        'message': 'Item created successfully',
+        'item': {
+            'id': item.id,
+            'title': item.title,
+            'category_id': item.category.id,
+        }
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_sample_category_create(request):
+    """API endpoint to create a new sample category"""
+    from django.http import JsonResponse
+    from django.utils.text import slugify
+    import json
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    # Validate required fields
+    if not data.get('name'):
+        return JsonResponse({'error': 'Name is required'}, status=400)
+    
+    # Generate slug
+    slug = data.get('slug') or slugify(data['name'])
+    
+    # Check for duplicate slug
+    if SampleCategory.objects.filter(slug=slug).exists():
+        return JsonResponse({'error': 'A category with this slug already exists'}, status=400)
+    
+    category = SampleCategory(
+        name=data['name'],
+        slug=slug,
+        description=data.get('description', ''),
+        icon=data.get('icon', ''),
+        order=data.get('order', 0),
+        is_active=data.get('is_active', True),
+    )
+    
+    category.save()
+    
+    return JsonResponse({
+        'success': True, 
+        'message': 'Category created successfully',
+        'category': {
+            'id': category.id,
+            'name': category.name,
+            'slug': category.slug,
+        }
+    })

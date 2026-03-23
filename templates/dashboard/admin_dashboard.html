@@ -3,7 +3,7 @@
 {% load file_filters %}
 {% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
 {% block content %}
-
+<script>window.userTimezone = "{{ user_timezone|default:'UTC' }}";</script>
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_admin.html" %}
@@ -27,9 +27,10 @@
                             </svg>
                         </div>
                         <div class="display">
-                            <span class="clock">23:59:59</span>
-                            <span class="date">Thu, Jan 1, 1970</span>
+                            <span class="clock">--:--:--</span>
+                            <span class="date">Loading...</span>
                         </div>
+                        <button type="button" class="clock-format-toggle" title="Toggle between 12-hour and 24-hour format">24h</button>
                     </div>
                 </div>
                 <div class="dashboard-stats">
@@ -374,9 +375,13 @@
                                             Pending Approval
                                         </span>
                                         {% else %}
+                                        {% if user.auth_user and user.auth_user.is_superuser %}
+                                        <span class="role-badge role-owner">Owner</span>
+                                        {% else %}
                                         <span class="role-badge role-{{ user.user_role }}">
                                             {{ user.get_user_role_display }}
                                         </span>
+                                        {% endif %}
                                         {% endif %}
                                     </td>
                                     <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>

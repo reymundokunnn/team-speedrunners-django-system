@@ -7,76 +7,532 @@
 		<p class="samples-subtitle">Explore our collection of professional design work across multiple domains</p>
 	</div>
 
-	<!-- Presentations Section -->
-	<div class="samples-category">
-		<div class="category-header">
-			<h2 class="category-title">📊 Presentations</h2>
-			<p class="category-desc">Professional presentation decks and business slides</p>
+	{% if categories %}
+	<!-- Side-by-side layout for categories -->
+	<div class="samples-categories-grid">
+		{% for category in categories %}
+		<!-- {{ category.name }} Column -->
+		<div class="samples-category-column">
+			<div class="category-header">
+				<h2 class="category-title">{{ category.icon }} {{ category.name }}</h2>
+				<p class="category-desc">{{ category.description }}</p>
+			</div>
+			
+			<div class="carousel-container">
+				<!-- Carousel Navigation Buttons -->
+				<button class="carousel-btn carousel-prev" data-category="{{ category.slug }}" aria-label="Previous">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polyline points="15 18 9 12 15 6"></polyline>
+					</svg>
+				</button>
+				<button class="carousel-btn carousel-next" data-category="{{ category.slug }}" aria-label="Next">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</button>
+				
+				<!-- Carousel Track -->
+				<div class="carousel-track" data-category="{{ category.slug }}">
+					<div class="carousel-slides">
+						{% for item in category.active_items %}
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								{% if item.image %}
+								<img src="{{ item.image.url }}" alt="{{ item.title }}" class="samples-img">
+								{% else %}
+								<img src="{% static 'img/samples/1.jpg' %}" alt="{{ item.title }}" class="samples-img">
+								{% endif %}
+								<!-- Hover Overlay with Title and Metadata -->
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">{{ item.title }}</h3>
+										{% if item.description %}
+										<p class="sample-description">{{ item.description }}</p>
+										{% endif %}
+										<div class="sample-metadata">
+											{% if item.client_name %}
+											<span class="sample-client"><i class="fas fa-user"></i> {{ item.client_name }}</span>
+											{% endif %}
+											{% if item.project_date %}
+											<span class="sample-date"><i class="fas fa-calendar"></i> {{ item.project_date|date:"M Y" }}</span>
+											{% endif %}
+											{% if item.get_tags_list %}
+											<div class="sample-tags">
+												{% for tag in item.get_tags_list %}
+												<span class="sample-tag">{{ tag }}</span>
+												{% endfor %}
+											</div>
+											{% endif %}
+										</div>
+										{% if item.link %}
+										<a href="{{ item.link }}" target="_blank" class="sample-link-btn">View Project</a>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+						</div>
+						{% endfor %}
+					</div>
+				</div>
+				
+				<!-- Carousel Indicators -->
+				<div class="carousel-indicators" data-category="{{ category.slug }}">
+					{% for item in category.active_items %}
+					<button class="carousel-indicator {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" aria-label="Slide {{ forloop.counter }}"></button>
+					{% endfor %}
+				</div>
+			</div>
 		</div>
-		<div class="samples-parent">
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/1.jpg' %}" alt="Presentation Sample 1" class="samples-img">
-			</div>
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/2.jpg' %}" alt="Presentation Sample 2" class="samples-img">
-			</div>
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/3.jpg' %}" alt="Presentation Sample 2" class="samples-img">
-			</div>
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/4.jpg' %}" alt="Presentation Sample 2" class="samples-img">
-			</div>
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/5.jpg' %}" alt="Presentation Sample 2" class="samples-img">
-			</div>
-			<div class="samples-div-item">
-				<img src="{% static 'img/samples/6.jpg' %}" alt="Presentation Sample 2" class="samples-img">
-			</div>
-		</div>
+		{% endfor %}
 	</div>
+	{% else %}
+		<!-- Fallback content if no categories exist -->
+		<div class="samples-category">
+			<div class="category-header">
+				<h2 class="category-title">📊 Presentations</h2>
+				<p class="category-desc">Professional presentation decks and business slides</p>
+			</div>
+			<div class="carousel-container">
+				<button class="carousel-btn carousel-prev" data-category="presentations" aria-label="Previous">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polyline points="15 18 9 12 15 6"></polyline>
+					</svg>
+				</button>
+				<button class="carousel-btn carousel-next" data-category="presentations" aria-label="Next">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</button>
+				<div class="carousel-track" data-category="presentations">
+					<div class="carousel-slides">
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/1.jpg' %}" alt="Presentation Sample 1" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Business Presentation</h3>
+										<p class="sample-description">Professional business deck</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/2.jpg' %}" alt="Presentation Sample 2" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Marketing Deck</h3>
+										<p class="sample-description">Marketing strategy presentation</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/3.jpg' %}" alt="Presentation Sample 3" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Annual Report</h3>
+										<p class="sample-description">Corporate annual report</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/4.jpg' %}" alt="Presentation Sample 4" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Product Launch</h3>
+										<p class="sample-description">New product presentation</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/5.jpg' %}" alt="Presentation Sample 5" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Pitch Deck</h3>
+										<p class="sample-description">Investor pitch presentation</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="carousel-slide">
+							<div class="samples-div-item">
+								<img src="{% static 'img/samples/6.jpg' %}" alt="Presentation Sample 6" class="samples-img">
+								<div class="sample-overlay">
+									<div class="sample-overlay-content">
+										<h3 class="sample-title">Training Slides</h3>
+										<p class="sample-description">Employee training deck</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="carousel-indicators" data-category="presentations">
+					<button class="carousel-indicator active" data-index="0" aria-label="Slide 1"></button>
+					<button class="carousel-indicator" data-index="1" aria-label="Slide 2"></button>
+					<button class="carousel-indicator" data-index="2" aria-label="Slide 3"></button>
+					<button class="carousel-indicator" data-index="3" aria-label="Slide 4"></button>
+					<button class="carousel-indicator" data-index="4" aria-label="Slide 5"></button>
+					<button class="carousel-indicator" data-index="5" aria-label="Slide 6"></button>
+				</div>
+			</div>
+		</div>
 
-	<!-- Infographics Section -->
-	<div class="samples-category">
-		<div class="category-header">
-			<h2 class="category-title">📈 Infographics</h2>
-			<p class="category-desc">Data visualization and informative graphics</p>
-		</div>
-		<div class="samples-parent">
-			<div class="samples-div-item samples-placeholder">
-				<div class="placeholder-content">
-					<span class="placeholder-icon">+</span>
-					<p class="placeholder-text">Stuff will be added here soon</p>
+		<!-- Infographics Section -->
+		<div class="samples-category">
+			<div class="category-header">
+				<h2 class="category-title">📈 Infographics</h2>
+				<p class="category-desc">Data visualization and informative graphics</p>
+			</div>
+			<div class="samples-parent">
+				<div class="samples-div-item samples-placeholder">
+					<div class="placeholder-content">
+						<span class="placeholder-icon">+</span>
+						<p class="placeholder-text">Stuff will be added here soon</p>
+					</div>
+				</div>
+				<div class="samples-div-item samples-placeholder">
+					<div class="placeholder-content">
+						<span class="placeholder-icon">+</span>
+						<p class="placeholder-text">Stuff will be added here soon</p>
+					</div>
 				</div>
 			</div>
-			<div class="samples-div-item samples-placeholder">
-				<div class="placeholder-content">
-					<span class="placeholder-icon">+</span>
-					<p class="placeholder-text">Stuff will be added here soon</p>
-				</div>
-			</div>
 		</div>
-	</div>
 
-	<!-- Posters Section -->
-	<div class="samples-category">
-		<div class="category-header">
-			<h2 class="category-title">🎨 Posters</h2>
-			<p class="category-desc">Eye-catching poster designs and promotional materials</p>
-		</div>
-		<div class="samples-parent">
-			<div class="samples-div-item samples-placeholder">
-				<div class="placeholder-content">
-					<span class="placeholder-icon">+</span>
-					<p class="placeholder-text">Stuff will be added here soon</p>
+		<!-- Posters Section -->
+		<div class="samples-category">
+			<div class="category-header">
+				<h2 class="category-title">🎨 Posters</h2>
+				<p class="category-desc">Eye-catching poster designs and promotional materials</p>
+			</div>
+			<div class="samples-parent">
+				<div class="samples-div-item samples-placeholder">
+					<div class="placeholder-content">
+						<span class="placeholder-icon">+</span>
+						<p class="placeholder-text">Stuff will be added here soon</p>
+					</div>
+				</div>
+				<div class="samples-div-item samples-placeholder">
+					<div class="placeholder-content">
+						<span class="placeholder-icon">+</span>
+						<p class="placeholder-text">Stuff will be added here soon</p>
+					</div>
 				</div>
 			</div>
-			<div class="samples-div-item samples-placeholder">
-				<div class="placeholder-content">
-					<span class="placeholder-icon">+</span>
-					<p class="placeholder-text">Stuff will be added here soon</p>
-				</div>
-			</div>
 		</div>
-	</div>
+	{% endif %}
 </section>
+
+<style>
+/* Side-by-side Categories Grid */
+.samples-categories-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+	gap: 40px;
+	padding: 20px 0;
+}
+
+.samples-category-column {
+	background: #fff;
+	border-radius: 16px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.category-header {
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.category-header .category-title {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0 0 8px 0;
+}
+
+.category-header .category-desc {
+	font-size: 0.9rem;
+	color: #6b7280;
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* Carousel Styles */
+.carousel-container {
+	position: relative;
+	width: 100%;
+	padding: 0 40px;
+}
+
+.carousel-track {
+	overflow: hidden;
+	width: 100%;
+}
+
+.carousel-slides {
+	display: flex;
+	transition: transform 0.5s ease-in-out;
+}
+
+.carousel-slide {
+	flex: 0 0 100%;
+	max-width: 100%;
+	padding: 10px;
+	box-sizing: border-box;
+}
+
+.carousel-slide .samples-div-item {
+	position: relative;
+	overflow: hidden;
+	border-radius: 12px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-slide .samples-img {
+	width: 100%;
+	height: 250px;
+	object-fit: cover;
+	display: block;
+	transition: transform 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.samples-categories-grid {
+		grid-template-columns: 1fr;
+		gap: 24px;
+	}
+	
+	.samples-category-column {
+		padding: 16px;
+	}
+	
+	.carousel-slide .samples-img {
+		height: 200px;
+	}
+}
+
+/* Hover Overlay Styles */
+.sample-overlay {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 50%, transparent 100%);
+	padding: 60px 16px 16px;
+	transform: translateY(100%);
+	transition: transform 0.3s ease-in-out;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+
+.carousel-slide .samples-div-item:hover .sample-overlay {
+	transform: translateY(0);
+}
+
+.carousel-slide .samples-div-item:hover .samples-img {
+	transform: scale(1.05);
+}
+
+.sample-overlay-content {
+	color: white;
+}
+
+.sample-title {
+	font-size: 1.1rem;
+	font-weight: 600;
+	margin: 0 0 6px 0;
+	color: #fff;
+}
+
+.sample-description {
+	font-size: 0.85rem;
+	margin: 0 0 10px 0;
+	color: rgba(255, 255, 255, 0.9);
+	line-height: 1.4;
+}
+
+.sample-metadata {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 10px;
+	font-size: 0.75rem;
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.sample-metadata span {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.sample-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	width: 100%;
+}
+
+.sample-tag {
+	background: rgba(255, 255, 255, 0.2);
+	padding: 3px 8px;
+	border-radius: 20px;
+	font-size: 0.7rem;
+}
+
+.sample-link-btn {
+	display: inline-block;
+	background: #4F46E5;
+	color: white;
+	padding: 8px 20px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-weight: 500;
+	transition: background 0.2s ease;
+}
+
+.sample-link-btn:hover {
+	background: #4338CA;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-btn {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 44px;
+	height: 44px;
+	border: none;
+	background: rgba(255, 255, 255, 0.9);
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+	transition: all 0.2s ease;
+}
+
+.carousel-btn:hover {
+	background: #4F46E5;
+	color: white;
+}
+
+.carousel-prev {
+	left: 5px;
+}
+
+.carousel-next {
+	right: 5px;
+}
+
+/* Carousel Indicators */
+.carousel-indicators {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 20px;
+}
+
+.carousel-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	border: none;
+	background: rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.carousel-indicator.active {
+	background: #4F46E5;
+	transform: scale(1.2);
+}
+
+.carousel-indicator:hover {
+	background: rgba(79, 70, 229, 0.6);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.carousel-slide .samples-img {
+		height: 300px;
+	}
+	
+	.carousel-container {
+		padding: 0 40px;
+	}
+	
+	.sample-title {
+		font-size: 1.25rem;
+	}
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	// Initialize carousels
+	const carousels = document.querySelectorAll('.carousel-track');
+	
+	carousels.forEach(track => {
+		const category = track.dataset.category;
+		const slides = track.querySelectorAll('.carousel-slide');
+		const prevBtn = document.querySelector(`.carousel-prev[data-category="${category}"]`);
+		const nextBtn = document.querySelector(`.carousel-next[data-category="${category}"]`);
+		const indicators = document.querySelectorAll(`.carousel-indicators[data-category="${category}"] .carousel-indicator`);
+		
+		let currentIndex = 0;
+		const totalSlides = slides.length;
+		
+		// Function to update carousel position
+		function updateCarousel(index) {
+			const offset = -index * 100;
+			track.querySelector('.carousel-slides').style.transform = `translateX(${offset}%)`;
+			
+			// Update indicators
+			indicators.forEach((indicator, i) => {
+				indicator.classList.toggle('active', i === index);
+			});
+			
+			currentIndex = index;
+		}
+		
+		// Previous button click
+		prevBtn.addEventListener('click', () => {
+			const newIndex = currentIndex === 0 ? totalSlides - 1 : currentIndex - 1;
+			updateCarousel(newIndex);
+		});
+		
+		// Next button click
+		nextBtn.addEventListener('click', () => {
+			const newIndex = currentIndex === totalSlides - 1 ? 0 : currentIndex + 1;
+			updateCarousel(newIndex);
+		});
+		
+		// Indicator clicks
+		indicators.forEach((indicator, index) => {
+			indicator.addEventListener('click', () => {
+				updateCarousel(index);
+			});
+		});
+		
+		// Auto-advance every 5 seconds (optional)
+		setInterval(() => {
+			const newIndex = currentIndex === totalSlides - 1 ? 0 : currentIndex + 1;
+			updateCarousel(newIndex);
+		}, 5000);
+	});
+});
+</script>
 {% endblock %}

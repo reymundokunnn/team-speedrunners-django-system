@@ -3,6 +3,7 @@
 {% load static %}
 {% load file_filters %}
 {% block content %}
+<script>window.userTimezone = "{{ user_timezone|default:'UTC' }}";</script>
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_user.html" %}
@@ -26,9 +27,10 @@
                             </svg>
                         </div>
                         <div class="display">
-                            <span class="clock">23:59:59</span>
-                            <span class="date">Thu, Jan 1, 1970</span>
+                            <span class="clock">--:--:--</span>
+                            <span class="date">Loading...</span>
                         </div>
+                        <button type="button" class="clock-format-toggle" title="Toggle between 12-hour and 24-hour format">24h</button>
                     </div>
                 </div>
                 <div class="dashboard-stats">

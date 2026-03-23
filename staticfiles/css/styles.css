@@ -411,6 +411,7 @@ body.dark-mode header .right .user-info {
 header .right .user-info-wrapper {
     position: relative;
     user-select: none;
+    margin-right: 15px;
 }
 
 header .right .user-info {
@@ -5437,6 +5438,18 @@ body.dark-mode .edit-profile-form select#id_gender {
     color: #991b1b;
 }
 
+.role-owner {
+    background-color: #6f42c1;
+    color: white;
+    font-weight: bold;
+}
+
+/* Dark Mode Role Badges */
+body.dark-mode .role-owner {
+    background-color: #8b5cf6;
+    color: white;
+}
+
 /* Dark Mode Role Badges */
 body.dark-mode .role-user {
     background-color: #3a3a3a;
@@ -6633,12 +6646,11 @@ body.dark-mode .activity-text {
 .quick-action-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 5px;
     width: 100%;
-    padding: 8px 15px;
+    padding: 8px 25px;
     margin-bottom: 10px;
     border: none;
-    border-left: 2px solid #00000025;
     border-radius: 0;
     color: #374151;
     font-size: 1rem;
@@ -6652,10 +6664,6 @@ body.dark-mode .activity-text {
     min-height: 100px;
     justify-content: center;
     background-color: transparent;
-}
-
-.quick-action-btn:first-child {
-    border-left: none;
 }
 
 .quick-action-btn:last-child {
@@ -9896,4 +9904,43 @@ body.has-announcement-banner main {
 
 .wrapper-greeting {
     display: flex;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+.wrapper-greeting #main-greeting {
+    max-width: 80%;
+    flex-grow: 1;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: bold;
+}
+
+.wrapper-greeting .date-and-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-and-time .clock-svg {
+    color: #e87f14;
+}
+
+body .date-and-time .clock-svg {
+    color: #e87f14;
+}
+
+.date-and-time .display {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-and-time .display .clock {
+    font-size: 24pt;
+    font-weight: bold;
+    color: #e87f14;
+}
+
+.other-icons {
+    display: flex;
+    gap: 15px;
 }

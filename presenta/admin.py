@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import User, Profile, DesignRequest
+from .models import User, Profile, DesignRequest, SampleCategory, SampleItem
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -23,9 +23,25 @@ class UserAdmin(admin.ModelAdmin):
     full_name.short_description = 'Name'
     
     def get_user_role(self, obj):
-        return obj.user_role or "N/A"
+        from django.contrib.auth import get_user_model
+        AuthUser = get_user_model()
+        
+        if obj.auth_user and obj.auth_user.is_superuser:
+            return format_html(
+                '<span class="badge" style="background-color: #6f42c1; color: white; font-weight: bold; padding: 0.375rem 0.75rem;">Owners</span>'
+            )
+        elif hasattr(obj, 'get_user_role_display'):
+            role_display = obj.get_user_role_display()
+        else:
+            role_display = dict(obj.USER_ROLE_CHOICES).get(obj.user_role, obj.user_role.title() if obj.user_role else 'N/A')
+        
+        return format_html(
+            '<span class="badge" style="background-color: #6c757d; color: white; font-weight: bold; padding: 0.375rem 0.75rem;">{}</span>',
+            role_display
+        )
     get_user_role.short_description = 'Role'
     get_user_role.admin_order_field = 'user_role'
+    get_user_role.allow_tags = True
     
     def get_admin_approval_status(self, obj):
         return obj.get_admin_approval_status_display() or "N/A"
@@ -138,3 +154,44 @@ class DesignRequestAdmin(admin.ModelAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(DesignRequest, DesignRequestAdmin)
+
+
+class SampleItemInline(admin.TabularInline):
+    model = SampleItem
+    extra = 1
+    fields = ('title', 'image', 'order', 'is_active')
+    prepopulated_fields = {}
+
+
+@admin.register(SampleCategory)
+class SampleCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'icon', 'order', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('order', 'name')
+    inlines = [SampleItemInline]
+
+
+@admin.register(SampleItem)
+class SampleItemAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'client_name', 'order', 'is_active', 'created_at')
+    list_filter = ('category', 'is_active', 'project_date')
+    search_fields = ('title', 'description', 'client_name', 'tags')
+    ordering = ('category', 'order', '-created_at')
+    fieldsets = (
+        ('Content', {
+            'fields': ('category', 'title', 'description', 'image')
+        }),
+        ('Metadata', {
+            'fields': ('client_name', 'project_date', 'tags', 'link')
+        }),
+        ('Display', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')

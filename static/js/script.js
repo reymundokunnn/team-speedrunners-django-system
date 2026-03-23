@@ -2921,36 +2921,124 @@ document.addEventListener('DOMContentLoaded', function () {
 
 document.addEventListener('DOMContentLoaded', function () {
 
+    // Get user timezone from Django template or browser
+    let userTimezone = window.userTimezone;
+    if (!userTimezone || userTimezone === '') {
+        try {
+            userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch (e) {
+            userTimezone = 'UTC';
+        }
+    }
+    
+    // Get 12/24 format preference (default to 24-hour)
+    let is24HourFormat = localStorage.getItem('clock24HourFormat') !== 'false';
+
     function clock() {
-        let now = new Date();
+        // Get current local time
+        const now = new Date();
+        
+        // Convert to user's selected timezone
+        let userDate;
+        try {
+            // Get time string in target timezone
+            const tzTimeStr = now.toLocaleString('en-US', { timeZone: userTimezone });
+            userDate = new Date(tzTimeStr);
+        } catch (e) {
+            userDate = now;
+        }
+        
+        const hours = userDate.getHours();
+        const minutes = userDate.getMinutes();
+        const seconds = userDate.getSeconds();
+        const ms = userDate.getMilliseconds();
 
-        let hours = now.getHours();
-        let minutes = now.getMinutes();
-        let seconds = now.getSeconds();
-        let ms = now.getMilliseconds();
-
-        let smoothSeconds = seconds + ms / 1000;
-        let smoothMinutes = minutes + smoothSeconds / 60;
-        let smoothHours = (hours % 12) + smoothMinutes / 60;
+        const smoothSeconds = seconds + ms / 1000;
+        const smoothMinutes = minutes + smoothSeconds / 60;
+        const smoothHours = (hours % 12) + smoothMinutes / 60;
 
         const secDeg = smoothSeconds * 6;
         const minDeg = smoothMinutes * 6;
         const hourDeg = smoothHours * 30;
 
-        document.getElementById('second-hand').setAttribute("transform", `rotate(${secDeg} 12 12)`);
-        document.getElementById('minute-hand').setAttribute("transform", `rotate(${minDeg} 12 12)`);
-        document.getElementById('hour-hand').setAttribute("transform", `rotate(${hourDeg} 12 12)`);
+        const secondHand = document.getElementById('second-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const hourHand = document.getElementById('hour-hand');
+        
+        if (secondHand) secondHand.setAttribute("transform", "rotate(" + secDeg + " 12 12)");
+        if (minuteHand) minuteHand.setAttribute("transform", "rotate(" + minDeg + " 12 12)");
+        if (hourHand) hourHand.setAttribute("transform", "rotate(" + hourDeg + " 12 12)");
 
-        let displayMinutes = minutes < 10 ? "0" + minutes : minutes;
-        let displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+        const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+        const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
 
-        let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-        let weekday = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        // Format time based on 12/24 preference
+        let timeStr;
+        if (!is24HourFormat) {
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            timeStr = displayHours + ":" + displayMinutes + ":" + displaySeconds + " " + period;
+        } else {
+            timeStr = hours + ":" + displayMinutes + ":" + displaySeconds;
+        }
 
-        document.getElementsByClassName('clock')[0].innerHTML = `${hours}:${displayMinutes}:${displaySeconds}`;
+        // Format date
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const weekday = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        
+        // Get timezone offset for the target timezone
+        let tzOffsetStr = '';
+        try {
+            // Get a reference date formatted in the target timezone to extract offset
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: userTimezone,
+                timeZoneName: 'shortOffset'
+            });
+            const parts = formatter.formatToParts(userDate);
+            const tzPart = parts.find(p => p.type === 'timeZoneName');
+            if (tzPart) {
+                tzOffsetStr = ' ' + tzPart.value;
+            } else {
+                // Fallback: calculate offset from UTC time in target timezone
+                const utcDate = new Date(userDate.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const targetDate = new Date(userDate.toLocaleString('en-US', { timeZone: userTimezone }));
+                const tzOffset = Math.round((targetDate - utcDate) / 60000);
+                const tzHours = Math.floor(Math.abs(tzOffset) / 60);
+                const tzMins = Math.abs(tzOffset) % 60;
+                const tzSign = tzOffset >= 0 ? '+' : '-';
+                tzOffsetStr = ' UTC' + tzSign + tzHours + (tzMins ? ':' + tzMins.toString().padStart(2, '0') : '');
+            }
+        } catch (e) {
+            // Use userTimezone name as fallback
+            tzOffsetStr = ' (' + userTimezone + ')';
+        }
 
-        document.getElementsByClassName('date')[0].innerHTML = `<b>${months[now.getMonth()]}. ${now.getDate()}, ${now.getFullYear()}</b> (${weekday[now.getDay()]})`;
+        const clockElements = document.getElementsByClassName('clock');
+        const dateElements = document.getElementsByClassName('date');
+        
+        if (clockElements.length > 0) {
+            clockElements[0].innerHTML = timeStr;
+        }
+        if (dateElements.length > 0) {
+            dateElements[0].innerHTML = '<b>' + months[userDate.getMonth()] + '. ' + userDate.getDate() + ', ' + userDate.getFullYear() + '</b> (' + weekday[userDate.getDay()] + ')' + tzOffsetStr;
+        }
+        
+        // Update toggle button text
+        const toggleBtn = document.querySelector('.clock-format-toggle');
+        if (toggleBtn) {
+            toggleBtn.textContent = is24HourFormat ? '12h' : '24h';
+        }
+        
         requestAnimationFrame(clock);
+    }
+
+    // Add toggle button handler
+    const toggleBtn = document.querySelector('.clock-format-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            is24HourFormat = !is24HourFormat;
+            localStorage.setItem('clock24HourFormat', is24HourFormat);
+        });
     }
 
     clock(); // start

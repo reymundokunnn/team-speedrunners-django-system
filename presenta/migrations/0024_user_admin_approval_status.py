@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='admin_approval_status',
-            field=models.CharField(choices=[('pending', 'Pending Superuser Approval'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='approved', max_length=20),
+            field=models.CharField(choices=[('pending', 'Pending Owner Approval'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='approved', max_length=20),
         ),
     ]

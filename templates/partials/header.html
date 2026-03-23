@@ -96,6 +96,10 @@ function closeAnnouncementBanner() {
                     </svg>
                     <span><b>Set Status</b></span>
                 </button>
+                <a href="{% url 'profile' %}" class="dropdown-item">
+                    <img src="{% static 'img/user-icon.svg' %}" alt="Profile" class="dropdown-icon">
+                    <span>View Profile</span>
+                </a>
                 <a href="{% url 'settings' %}" class="dropdown-item">
                     <img src="{% static 'img/dashboard-icon.svg' %}" alt="Settings" class="dropdown-icon">
                     <span>Settings</span>

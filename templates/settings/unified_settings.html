@@ -1093,14 +1093,27 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Manage Samples Button -->
+                    <div class="settings-unified-group" style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #e5e7eb;">
+                        <h3 class="settings-unified-group-title">Portfolio Samples</h3>
+                        <p class="settings-unified-description" style="margin-bottom: 16px;">Manage the samples displayed on the Samples page (presentations, infographics, posters)</p>
+                        <button type="button" class="settings-unified-btn settings-unified-btn-primary" onclick="openSamplesModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                                <path d="M2 2l7.586 7.586"></path>
+                                <circle cx="11" cy="11" r="2"></circle>
+                            </svg>
+                            Manage Portfolio Samples
+                        </button>
                     </div>
-
                     <!-- Form Actions -->
                     <div class="settings-unified-actions">
                         <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Changes</button>
                         <a href="{% url 'admin_dashboard' %}" class="settings-unified-btn settings-unified-btn-secondary">Cancel</a>
                     </div>
                 </form>
+                
             </section>
             {% endif %}
         </main>
@@ -1242,5 +1255,1141 @@
         </div>
     </div>
 </section>
+
+<!-- Floating Modal for Portfolio Samples Management -->
+<div id="samplesModal" class="samples-modal-overlay" style="display: none;">
+    <div class="samples-modal-container">
+        <div class="samples-modal-header">
+            <h2>Manage Portfolio Samples</h2>
+            <button type="button" class="samples-modal-close" onclick="closeSamplesModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="samples-modal-tabs">
+            <div class="left">
+                <button type="button" class="samples-tab-btn active" data-category="all" onclick="switchSamplesTab('all')">
+                    All Categories
+                </button>
+                <button type="button" class="samples-tab-btn" data-category="presentations" onclick="switchSamplesTab('presentations')">
+                    Presentations
+                </button>
+                <button type="button" class="samples-tab-btn" data-category="infographics" onclick="switchSamplesTab('infographics')">
+                    Infographics
+                </button>
+                <button type="button" class="samples-tab-btn" data-category="posters" onclick="switchSamplesTab('posters')">
+                    Posters
+                </button>
+            </div>
+            <div class="right">
+                <button type="button" class="settings-unified-btn settings-unified-btn-primary" onclick="openSampleItemForm()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add New Sample
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Content -->
+        <div class="samples-modal-content">            
+            <!-- Items List -->
+            <div id="samplesItemsList" class="samples-items-list">
+                <!-- Items will be loaded dynamically -->
+                <div class="samples-loading">Loading samples...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sample Item Form Modal -->
+<div id="sampleItemFormModal" class="samples-modal-overlay" style="display: none;">
+    <div class="samples-modal-container samples-modal-form-container">
+        <div class="samples-modal-header">
+            <h2 id="sampleItemFormTitle">Add New Sample</h2>
+            <button type="button" class="samples-modal-close" onclick="closeSampleItemForm()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="sampleItemForm" class="samples-item-form" onsubmit="saveSampleItem(event)">
+            <input type="hidden" id="sampleItemId" value="">
+            
+            <div class="form-group">
+                <label for="sampleCategory">Category *</label>
+                <select id="sampleCategory" required>
+                    <option value="">Select a category</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleTitle">Title *</label>
+                <input type="text" id="sampleTitle" required placeholder="Enter sample title">
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleDescription">Description</label>
+                <textarea id="sampleDescription" rows="3" placeholder="Enter description (optional)"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleImage">Image</label>
+                <input type="file" id="sampleImage" accept="image/*">
+                <small>Recommended size: 1200x800px</small>
+                <div id="sampleImagePreview" class="image-preview"></div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sampleClient">Client Name</label>
+                    <input type="text" id="sampleClient" placeholder="Client name (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="sampleDate">Project Date</label>
+                    <input type="date" id="sampleDate">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleTags">Tags</label>
+                <input type="text" id="sampleTags" placeholder="Comma-separated tags (e.g., business, marketing, corporate)">
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleLink">External Link</label>
+                <input type="url" id="sampleLink" placeholder="https://example.com (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleOrder">Display Order</label>
+                <input type="number" id="sampleOrder" value="0" min="0">
+            </div>
+            
+            <div class="form-group-checkbox">
+                <label>
+                    <input type="checkbox" id="sampleIsActive" checked>
+                    <span>Active (show on samples page)</span>
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="settings-unified-btn settings-unified-btn-secondary" onclick="closeSampleItemForm()">Cancel</button>
+                <button type="submit" class="settings-unified-btn settings-unified-btn-primary">Save Sample</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   Portfolio Samples Modal Styles
+   ============================================ */
+
+/* Modal Overlay */
+.samples-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal Container */
+.samples-modal-container {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+    overflow: hidden;
+}
+
+.samples-modal-form-container {
+    max-width: 600px;
+    max-height: 90vh;
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal Header */
+.samples-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-radius: 12px 12px 0 0;
+}
+
+.samples-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+    font-weight: 600;
+}
+
+.samples-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    color: #6b7280;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.samples-modal-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* Tabs */
+.samples-modal-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.samples-modal-tabs .left {
+    display: flex;
+    flex-grow: 1;
+    gap: 12px;
+}
+
+.samples-tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.samples-tab-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.samples-tab-btn.active {
+    background: #e87f14;
+    color: #fff;
+}
+
+/* Modal Content */
+.samples-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    overflow-x: hidden;
+}
+
+.samples-modal-actions {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Items List */
+.samples-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.samples-loading {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.samples-empty {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+/* Sample Item Card */
+.samples-item-card {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.samples-item-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.samples-item-card.inactive {
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.samples-item-image {
+    width: 120px;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f3f4f6;
+}
+
+.samples-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.samples-item-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 2rem;
+}
+
+.samples-item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.samples-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.samples-item-category {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.samples-item-description {
+    font-size: 0.85rem;
+    color: #4b5563;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.samples-item-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.samples-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.samples-action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.samples-action-btn.edit {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.samples-action-btn.edit:hover {
+    background: #dbeafe;
+}
+
+.samples-action-btn.delete {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.samples-action-btn.delete:hover {
+    background: #fee2e2;
+}
+
+/* Form Styles */
+.samples-item-form {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group input[type="date"],
+.form-group input[type="number"],
+.form-group input[type="file"],
+.form-group select,
+.form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #111827;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-group small {
+    font-size: 0.75rem;
+    color: #6b7280;
+    display: block;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+}
+
+.form-group-checkbox {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.form-group-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #4F46E5;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+/* Image Preview */
+.image-preview {
+    margin-top: 10px;
+    max-width: 200px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.image-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Tab Content Indicator */
+.samples-category-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-left: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .samples-modal-container {
+        max-height: 90vh;
+    }
+    
+    .samples-item-card {
+        flex-direction: column;
+    }
+    
+    .samples-item-image {
+        width: 100%;
+        height: 120px;
+    }
+    
+    .samples-item-actions {
+        flex-direction: row;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Portfolio Samples Section Styles */
+.portfolio-sample-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.portfolio-sample-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #374151;
+}
+
+.portfolio-sample-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.portfolio-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.portfolio-category-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.portfolio-category-icon {
+    font-size: 1.25rem;
+}
+
+.portfolio-category-info h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.portfolio-category-slug {
+    color: #6b7280;
+    font-size: 0.8rem;
+    background: #e5e7eb;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.portfolio-category-status {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.portfolio-category-status.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.portfolio-category-status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.portfolio-category-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.portfolio-category-desc {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 8px 0 4px;
+}
+
+.portfolio-category-count {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.portfolio-edit-form {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.portfolio-add-item {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.portfolio-add-item h5 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+    color: #374151;
+}
+
+.portfolio-items-list {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.portfolio-items-list h5 {
+    margin: 0 0 12px 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.portfolio-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.portfolio-item-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.portfolio-item-image {
+    position: relative;
+    height: 100px;
+    overflow: hidden;
+}
+
+.portfolio-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.portfolio-item-status {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.portfolio-item-status.active {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+.portfolio-item-status.inactive {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+}
+
+.portfolio-item-details {
+    padding: 10px;
+}
+
+.portfolio-item-details h6 {
+    margin: 0 0 4px 0;
+    font-size: 0.9rem;
+}
+
+.portfolio-item-details p {
+    margin: 0 0 4px 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.portfolio-item-client {
+    font-size: 0.75rem !important;
+    color: #9ca3af !important;
+}
+
+.portfolio-item-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.portfolio-no-items {
+    text-align: center;
+    color: #6b7280;
+    padding: 16px;
+}
+
+.settings-unified-btn-small {
+    background: #3b82f6;
+    color: white;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-unified-btn-small:hover {
+    background: #2563eb;
+}
+
+.settings-unified-btn-danger {
+    background: #ef4444;
+}
+
+.settings-unified-btn-danger:hover {
+    background: #dc2626;
+}
+</style>
+
+<script>
+function togglePortfolioForm(id) {
+    const form = document.getElementById(id);
+    if (form) {
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+        } else {
+            form.style.display = 'none';
+        }
+    }
+}
+
+// ============================================
+// Portfolio Samples Modal Functions
+// ============================================
+
+let currentSamplesData = [];
+let currentTab = 'all';
+
+// Open the samples modal
+function openSamplesModal() {
+    const modal = document.getElementById('samplesModal');
+    modal.style.display = 'flex';
+    loadSamplesData();
+}
+
+// Close the samples modal
+function closeSamplesModal() {
+    const modal = document.getElementById('samplesModal');
+    modal.style.display = 'none';
+}
+
+// Load samples data from API
+async function loadSamplesData() {
+    const itemsList = document.getElementById('samplesItemsList');
+    itemsList.innerHTML = '<div class="samples-loading">Loading samples...</div>';
+    
+    try {
+        const response = await fetch('/api/samples/categories/');
+        if (!response.ok) throw new Error('Failed to load samples');
+        
+        const data = await response.json();
+        currentSamplesData = data.categories;
+        renderSamplesItems();
+    } catch (error) {
+        itemsList.innerHTML = '<div class="samples-empty">Error loading samples. Please try again.</div>';
+        console.error('Error loading samples:', error);
+    }
+}
+
+// Render samples items based on current tab
+function renderSamplesItems() {
+    const itemsList = document.getElementById('samplesItemsList');
+    
+    // Filter items based on tab
+    let filteredItems = [];
+    if (currentTab === 'all') {
+        currentSamplesData.forEach(cat => {
+            cat.items.forEach(item => {
+                filteredItems.push({ ...item, categoryName: cat.name, categorySlug: cat.slug });
+            });
+        });
+    } else {
+        const category = currentSamplesData.find(c => c.slug === currentTab);
+        if (category) {
+            filteredItems = category.items.map(item => ({ ...item, categoryName: category.name, categorySlug: category.slug }));
+        }
+    }
+    
+    if (filteredItems.length === 0) {
+        itemsList.innerHTML = '<div class="samples-empty">No samples found. Click "Add New Sample" to create one.</div>';
+        return;
+    }
+    
+    itemsList.innerHTML = filteredItems.map(item => `
+        <div class="samples-item-card ${item.is_active ? '' : 'inactive'}">
+            <div class="samples-item-image">
+                ${item.image_url 
+                    ? `<img src="${item.image_url}" alt="${item.title}">`
+                    : `<div class="samples-item-image-placeholder">🖼️</div>`
+                }
+            </div>
+            <div class="samples-item-details">
+                <h4 class="samples-item-title">${escapeHtml(item.title)}</h4>
+                <div class="samples-item-category">${escapeHtml(item.categoryName)}</div>
+                ${item.description ? `<p class="samples-item-description">${escapeHtml(item.description)}</p>` : ''}
+                <div class="samples-item-meta">
+                    ${item.client_name ? `<span>👤 ${escapeHtml(item.client_name)}</span>` : ''}
+                    ${item.project_date ? `<span>📅 ${item.project_date}</span>` : ''}
+                    ${item.tags ? `<span>🏷️ ${escapeHtml(item.tags)}</span>` : ''}
+                </div>
+            </div>
+            <div class="samples-item-actions">
+                <button class="samples-action-btn edit" onclick="editSampleItem(${item.id})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Edit
+                </button>
+                <button class="samples-action-btn delete" onclick="deleteSampleItem(${item.id}, '${escapeHtml(item.title)}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Switch tabs
+function switchSamplesTab(categorySlug) {
+    currentTab = categorySlug;
+    
+    // Update tab buttons
+    document.querySelectorAll('.samples-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === categorySlug);
+    });
+    
+    renderSamplesItems();
+}
+
+// Open sample item form (add new)
+async function openSampleItemForm() {
+    // Reset form
+    document.getElementById('sampleItemForm').reset();
+    document.getElementById('sampleItemId').value = '';
+    document.getElementById('sampleItemFormTitle').textContent = 'Add New Sample';
+    document.getElementById('sampleImagePreview').innerHTML = '';
+    
+    // Load categories
+    const categorySelect = document.getElementById('sampleCategory');
+    categorySelect.innerHTML = '<option value="">Select a category</option>';
+    
+    currentSamplesData.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name;
+        categorySelect.appendChild(option);
+    });
+    
+    // If no categories, show message
+    if (currentSamplesData.length === 0) {
+        categorySelect.innerHTML = '<option value="">No categories available</option>';
+    }
+    
+    // Set current tab as selected category
+    if (currentTab !== 'all') {
+        const currentCategory = currentSamplesData.find(c => c.slug === currentTab);
+        if (currentCategory) {
+            categorySelect.value = currentCategory.id;
+        }
+    }
+    
+    // Show modal
+    document.getElementById('sampleItemFormModal').style.display = 'flex';
+}
+
+// Edit sample item
+async function editSampleItem(itemId) {
+    // Find item in data
+    let item = null;
+    let categoryName = '';
+    
+    for (const cat of currentSamplesData) {
+        const found = cat.items.find(i => i.id === itemId);
+        if (found) {
+            item = found;
+            categoryName = cat.name;
+            break;
+        }
+    }
+    
+    if (!item) {
+        alert('Sample item not found');
+        return;
+    }
+    
+    // Set form values
+    document.getElementById('sampleItemId').value = item.id;
+    document.getElementById('sampleItemFormTitle').textContent = 'Edit Sample';
+    
+    // Load categories
+    const categorySelect = document.getElementById('sampleCategory');
+    categorySelect.innerHTML = '<option value="">Select a category</option>';
+    
+    currentSamplesData.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name;
+        categorySelect.appendChild(option);
+    });
+    
+    categorySelect.value = item.category_id || '';
+    document.getElementById('sampleTitle').value = item.title || '';
+    document.getElementById('sampleDescription').value = item.description || '';
+    document.getElementById('sampleClient').value = item.client_name || '';
+    document.getElementById('sampleDate').value = item.project_date || '';
+    document.getElementById('sampleTags').value = item.tags || '';
+    document.getElementById('sampleLink').value = item.link || '';
+    document.getElementById('sampleOrder').value = item.order || 0;
+    document.getElementById('sampleIsActive').checked = item.is_active !== false;
+    
+    // Show image preview if exists
+    const imagePreview = document.getElementById('sampleImagePreview');
+    if (item.image_url) {
+        imagePreview.innerHTML = `<img src="${item.image_url}" alt="Current image">`;
+    } else {
+        imagePreview.innerHTML = '';
+    }
+    
+    // Show modal
+    document.getElementById('sampleItemFormModal').style.display = 'flex';
+}
+
+// Close sample item form
+function closeSampleItemForm() {
+    document.getElementById('sampleItemFormModal').style.display = 'none';
+}
+
+// Save sample item (create or update)
+async function saveSampleItem(event) {
+    event.preventDefault();
+    
+    const itemId = document.getElementById('sampleItemId').value;
+    const formData = {
+        category_id: parseInt(document.getElementById('sampleCategory').value),
+        title: document.getElementById('sampleTitle').value,
+        description: document.getElementById('sampleDescription').value,
+        client_name: document.getElementById('sampleClient').value,
+        project_date: document.getElementById('sampleDate').value,
+        tags: document.getElementById('sampleTags').value,
+        link: document.getElementById('sampleLink').value,
+        order: parseInt(document.getElementById('sampleOrder').value) || 0,
+        is_active: document.getElementById('sampleIsActive').checked
+    };
+    
+    if (!formData.category_id) {
+        alert('Please select a category');
+        return;
+    }
+    
+    if (!formData.title) {
+        alert('Please enter a title');
+        return;
+    }
+    
+    try {
+        let url = '/api/samples/item/create/';
+        let method = 'POST';
+        
+        if (itemId) {
+            url = `/api/samples/item/${itemId}/`;
+            method = 'POST';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to save sample');
+        }
+        
+        const result = await response.json();
+        alert(result.message || 'Sample saved successfully!');
+        
+        closeSampleItemForm();
+        loadSamplesData();
+    } catch (error) {
+        alert(error.message);
+        console.error('Error saving sample:', error);
+    }
+}
+
+// Delete sample item
+async function deleteSampleItem(itemId, itemTitle) {
+    if (!confirm(`Are you sure you want to delete "${itemTitle}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/samples/item/${itemId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to delete sample');
+        }
+        
+        const result = await response.json();
+        alert(result.message || 'Sample deleted successfully!');
+        
+        loadSamplesData();
+    } catch (error) {
+        alert(error.message);
+        console.error('Error deleting sample:', error);
+    }
+}
+
+// Helper: Escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Helper: Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(event) {
+    const samplesModal = document.getElementById('samplesModal');
+    const itemFormModal = document.getElementById('sampleItemFormModal');
+    
+    if (event.target === samplesModal) {
+        closeSamplesModal();
+    }
+    
+    if (event.target === itemFormModal) {
+        closeSampleItemForm();
+    }
+});
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeSamplesModal();
+        closeSampleItemForm();
+    }
+});
+</script>
 
 {% endblock %}
