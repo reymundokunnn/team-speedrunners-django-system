@@ -135,6 +135,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom user model
+AUTH_USER_MODEL = 'presenta.User'
+
 # Authentication backends: try presenta backend first, then default model backend
 AUTHENTICATION_BACKENDS = [
     'presenta.auth_backend.PresentaBackend',

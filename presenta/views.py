@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User, DesignRequestFile, Activity, UserSettings
+from .forms import RegistrationForm, EditProfileForm, RevisionRequestForm
+from .models import Profile, DesignRequest, User, DesignRequestFile, Activity, UserSettings, RevisionRequest
 from PIL import Image
 from io import BytesIO
 import base64
@@ -1944,3 +1944,78 @@ def update_user_status(request):
             'success': False,
             'error': str(e)
         }, status=500)
+    
+# :3
+
+@login_required
+@require_http_methods(["POST"])
+def complete_revision(request, revision_id):
+    revision = get_object_or_404(RevisionRequest, id=revision_id)
+    if request.user == revision.design_request.designer or request.user.is_superuser:
+        revision.is_completed = True
+        revision.save()
+        log_activity(user=request.user, activity_type='revision_completed')
+    return redirect('designer_revisions')
+
+# urls.py: path('revision/<int:revision_id>/complete/', views.complete_revision, name='complete_revision')
+    
+@login_required
+def request_revision(request):
+    if request.method == 'POST':
+        form = RevisionRequestForm(request.POST)
+        if form.is_valid():
+            design_request_id = request.POST.get('design_request')
+            design_request = get_object_or_404(DesignRequest, id=design_request_id, requester=request.user)
+            revision_request.design_request = design_request
+            revision_request = form.save(commit=False)
+            revision_request.user = request.user.presenta_user  # Fix: use custom User model
+            revision_request.save()
+            log_activity(
+            user=request.user,
+            activity_type='revision_requested',
+            message=f"Revision requested for '{revision_request.file_name}'",
+            related_request=revision_request.design_request  # after FK added
+            )
+            return redirect('revision_request_success')
+    else:
+        form = RevisionRequestForm()
+    return render(request, 'revision/request_revision.html', {'form': form})
+
+# Update revision_requests_list:
+def get_revision_requests(request):
+    presenta_user = request.user.presenta_user
+    if request.user.is_superuser or presenta_user.user_role == 'admin':
+        revisions = RevisionRequest.objects.all().order_by('-requested_at')
+    else:
+        revisions = RevisionRequest.objects.filter(user=presenta_user)
+    return render(request, 'revision/revision_list.html', {'revision_requests': revisions})
+
+@login_required
+def revision_requests_list(request):
+    """List user's revision requests."""
+    presenta_user = request.user.presenta_user
+    revision_requests = RevisionRequest.objects.filter(user=presenta_user).order_by('-requested_at')
+    context = {
+        'revision_requests': revision_requests,
+    }
+    return render(request, 'revision/revision_list.html', context)
+
+def revision_request_success(request):
+    return render(request, 'revision/revision_success.html')
+
+@login_required
+def designer_revisions(request):
+    user = request.user
+    if user.profile.user_role != 'designer':
+        return redirect('user_dashboard')
+    
+    # Get revisions for user's assigned designs
+    assigned_requests = DesignRequest.objects.filter(designer=user)
+    revisions = RevisionRequest.objects.filter(
+        design_request__in=assigned_requests
+    ).order_by('-requested_at')
+    return render(request, 'revision/designer_revisions.html', {'revisions': revisions})
+
+
+
+

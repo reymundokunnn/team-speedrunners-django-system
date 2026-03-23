@@ -66,6 +66,38 @@
                                         <span class="action-desc">View all requests</span>
                                     </div>
                                 </button>
+                                            <div class="widget-content quick-actions-grid">
+                                                
+                                                <!-- 4. YOUR Request Revision (KEEP) -->
+                                                <a href="{% url 'request_revision' %}" class="quick-action-btn">
+                                                    <div class="action-icon">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div class="action-label-wrapper">
+                                                        <span class="action-label">Request Revision</span>
+                                                        <span class="action-desc">Request changes to design</span>
+                                                    </div>
+                                                </a>
+                                                
+                                                <!-- 5. YOUR My Revisions (KEEP) -->
+                                                <a href="{% url 'revision_requests_list' %}" class="quick-action-btn">
+                                                    <div class="action-icon">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M9 11l3 3L22 9"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div class="action-label-wrapper">
+                                                        <span class="action-label">My Revisions</span>
+                                                        <span class="action-desc">View revision requests</span>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

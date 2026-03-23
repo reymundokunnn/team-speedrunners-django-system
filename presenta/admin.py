@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Profile, DesignRequest
+from .models import User, Profile, DesignRequest, RevisionRequest
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -29,8 +29,8 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'presenta_user', 'account_type')
-    search_fields = ('user__username', 'presenta_user__username')
+    list_display = ('user', 'account_type')
+    search_fields = ('user__username', 'user__email')
     readonly_fields = ('created_at', 'updated_at')
 
 
@@ -60,3 +60,11 @@ class DesignRequestAdmin(admin.ModelAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(DesignRequest, DesignRequestAdmin)
+
+@admin.register(RevisionRequest)
+class RevisionRequestAdmin(admin.ModelAdmin):
+    list_display = ('file_name', 'user', 'is_completed', 'requested_at')
+    list_filter = ('is_completed', 'requested_at')
+    search_fields = ('file_name', 'description', 'user__username')
+    date_hierarchy = 'requested_at'
+    readonly_fields = ('requested_at',)

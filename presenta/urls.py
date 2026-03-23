@@ -59,4 +59,9 @@ urlpatterns = [
     
     # User status
     path('api/update-status/', views.update_user_status, name='update_user_status'),
+    
+    # RevisionRequest URLs
+    path('revision/request/', views.request_revision, name='request_revision'),
+    path('revision/requests/', views.revision_requests_list, name='revision_requests_list'),
+    # path('revision/<int:revision_id>/complete/', views.complete_revision, name='complete_revision'),  # TODO: Add view first
 ]

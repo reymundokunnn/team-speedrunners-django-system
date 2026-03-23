@@ -2,9 +2,33 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-class User(models.Model):
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        return self.create_user(username, email, password, **extra_fields)
+
+    def get_by_natural_key(self, username):
+        return self.get(username=username)
+
+class User(PermissionsMixin, AbstractBaseUser):
+    objects = CustomUserManager()
     """Primary user model for Presenta. All user data should be stored here."""
     USER_ROLE_CHOICES = [
         ('user', 'Client'),
@@ -18,19 +42,19 @@ class User(models.Model):
         ('O', 'Other'),
         ('P', 'Prefer not to say'),
     ]
-    
+
     ONLINE_STATUS_CHOICES = [
         ('online', 'Online'),
         ('idle', 'Idle'),
         ('do_not_disturb', 'Do Not Disturb'),
     ]
+
+    @property
+    def presenta_user(self):
+        return self
     
-    # Auth link
-    auth_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='presenta_user', null=True, blank=True)
-    
-    # Basic info
-    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
-    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150, unique=True, blank=True, null=True, db_index=True)
+    email = models.EmailField(unique=True, db_index=True)
     password = models.CharField(max_length=128)
     first_name = models.CharField(max_length=30, blank=True, null=True)
     last_name = models.CharField(max_length=30, blank=True, null=True)
@@ -48,6 +72,7 @@ class User(models.Model):
     
     # Status
     online_status = models.CharField(max_length=20, choices=ONLINE_STATUS_CHOICES, default='online')
+    is_anonymous = models.BooleanField(default=False)
     
     # Verification
     email_verified = models.BooleanField(default=False)
@@ -61,29 +86,36 @@ class User(models.Model):
     class Meta:
         ordering = ['-joined_date']
 
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
+
+    class Meta:
+        ordering = ['-joined_date']
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
     def __str__(self):
         name = f"{self.first_name or ''} {self.last_name or ''}".strip()
-        return name or self.email
+        return name or self.email or self.username
 
     def get_user_role_display(self):
         return dict(self.USER_ROLE_CHOICES).get(self.user_role, 'User')
     
-    def set_password(self, raw_password):
-        """Hash and set the password."""
-        self.password = make_password(raw_password)
-    
-    def check_password(self, raw_password):
-        """Check if the provided password matches the stored hash."""
-        from django.contrib.auth.hashers import check_password
-        return check_password(raw_password, self.password)
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def get_short_name(self):
+        return self.first_name or self.username
+
+    def get_by_natural_key(self, username):
+        """For natural key lookup (ModelBackend compatibility)"""
+        return self.objects.get(username=username)
 
 
 class Profile(models.Model):
-    # kept for backward compatibility sa nakaraang model na gawa ko. pwede na siguro tanggalin eventually.
+    # Bridge model for backward compatibility
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
-    presenta_user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='django_profile')
     account_type = models.CharField(max_length=50, blank=True, null=True)
-    presenta_id = models.IntegerField(blank=True, null=True, help_text='Optional id of the original presenta.User')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -91,12 +123,16 @@ class Profile(models.Model):
         return getattr(self.user, 'username', 'profile')
     
     @property
+    def presenta_user(self):
+        return self.user
+    
+    @property
     def user_role(self):
-        return self.presenta_user.user_role if self.presenta_user else 'user'
+        return self.presenta_user.user_role if hasattr(self.presenta_user, 'user_role') else 'user'
     
     @property
     def get_user_role_display(self):
-        return self.presenta_user.get_user_role_display() if self.presenta_user else 'User'
+        return getattr(self.presenta_user, 'get_user_role_display', lambda: 'User')() if self.presenta_user else 'User'
 
 
 class DesignRequest(models.Model):    
@@ -360,3 +396,16 @@ class UserSettings(models.Model):
     class Meta:
         verbose_name = 'User Settings'
         verbose_name_plural = 'User Settings'
+
+# My changes :3
+
+class RevisionRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    design_request = models.ForeignKey(DesignRequest, on_delete=models.CASCADE, related_name='revisions', null=True, blank=True)
+    file_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    requested_at = models.DateTimeField(default=timezone.now)
+    is_completed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.file_name} - {self.user.username}"

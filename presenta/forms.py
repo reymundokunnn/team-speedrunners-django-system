@@ -1,6 +1,6 @@
 from django import forms
-from django.contrib.auth.models import User as DjangoUser
 from .models import User as PresentaUser
+from .models import RevisionRequest
 import pytz
 
 # Get timezone choices
@@ -71,15 +71,11 @@ class RegistrationForm(forms.ModelForm):
         username = self.cleaned_data.get('username')
         if PresentaUser.objects.filter(username=username).exists():
             raise forms.ValidationError('This username is already taken.')
-        if DjangoUser.objects.filter(username=username).exists():
-            raise forms.ValidationError('This username is already taken.')
         return username
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if PresentaUser.objects.filter(email=email).exists():
-            raise forms.ValidationError('This email address is already registered.')
-        if DjangoUser.objects.filter(email=email).exists():
             raise forms.ValidationError('This email address is already registered.')
         return email
 
@@ -115,30 +111,14 @@ class RegistrationForm(forms.ModelForm):
             user.set_password(password)
             user.save()
             
-            # Also create Django User for authentication
-            django_user, created = DjangoUser.objects.get_or_create(
-                username=user.username,
-                defaults={
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                }
-            )
-            django_user.set_password(password)
-            django_user.save()
-            
-            # Link them together
-            user.auth_user = django_user
-            user.save()
-            
-            # Create profile linking both
+            # Create Profile linking to custom User (AUTH_USER_MODEL)
             from .models import Profile
-            profile, _ = Profile.objects.get_or_create(user=django_user)
-            profile.presenta_user = user
+            profile, _ = Profile.objects.get_or_create(user=user)
+            # profile.presenta_user = user
             profile.save()
             
-            # Return the Django user for login purposes
-            return django_user
+            # Return the custom user for login (handled by custom auth backend)
+            return user
         
         return None
 
@@ -677,3 +657,10 @@ class ChangePasswordForm(forms.Form):
             raise forms.ValidationError('Passwords do not match.')
         
         return cleaned_data
+
+# :3
+
+class RevisionRequestForm(forms.ModelForm):
+    class Meta:
+        model = RevisionRequest
+        fields = ['file_name', 'description']
