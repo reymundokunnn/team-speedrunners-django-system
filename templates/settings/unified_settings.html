@@ -1400,6 +1400,13 @@
                 <button type="button" class="samples-tab-btn" data-category="posters" onclick="switchSamplesTab('posters')">
                     Posters
                 </button>
+                <button type="button" class="samples-tab-btn" data-category="preview" onclick="switchSamplesTab('preview')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Preview
+                </button>
             </div>
             <div class="right">
                 <button type="button" class="settings-unified-btn settings-unified-btn-primary" onclick="openSampleItemForm()">
@@ -1413,11 +1420,22 @@
         </div>
         
         <!-- Modal Content -->
-        <div class="samples-modal-content">            
+        <div class="samples-modal-content">
             <!-- Items List -->
             <div id="samplesItemsList" class="samples-items-list">
                 <!-- Items will be loaded dynamically -->
                 <div class="samples-loading">Loading samples...</div>
+            </div>
+            
+            <!-- Preview Section (Carousel View) -->
+            <div id="samplesPreviewSection" class="samples-preview-section" style="display: none;">
+                <div class="samples-preview-header">
+                    <h3>Preview: How samples appear on the public page</h3>
+                    <p class="samples-preview-description">This preview shows how your portfolio samples will be displayed to visitors on the Samples page.</p>
+                </div>
+                <div id="samplesPreviewContent" class="samples-preview-content">
+                    <!-- Preview content will be loaded dynamically -->
+                </div>
             </div>
         </div>
     </div>
@@ -2515,6 +2533,297 @@ body.dark-mode .sample-cropper-controls-bottom .btn-secondary:hover {
 .settings-unified-btn-danger:hover {
     background: #dc2626;
 }
+
+/* ============================================
+   Samples Preview Section Styles
+   ============================================ */
+
+.samples-preview-section {
+    padding: 20px;
+}
+
+.samples-preview-header {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.samples-preview-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    color: #1f2937;
+}
+
+.samples-preview-description {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.samples-preview-content {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Preview Category Card */
+.preview-category-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.preview-category-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.preview-category-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    color: #1f2937;
+}
+
+.preview-category-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Preview Carousel */
+.preview-carousel-wrapper {
+    position: relative;
+    padding: 20px;
+}
+
+.preview-carousel-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.preview-carousel-track {
+    display: flex;
+    transition: transform 0.3s ease;
+}
+
+.preview-carousel-slide {
+    min-width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+/* Preview Sample Card */
+.preview-sample-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f9fafb;
+    aspect-ratio: 16/10;
+}
+
+.preview-sample-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-sample-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+    padding: 20px;
+    color: #fff;
+}
+
+.preview-sample-title {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.preview-sample-description {
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preview-sample-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.preview-sample-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.preview-sample-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.preview-sample-tag {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* Preview Carousel Navigation */
+.preview-carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.preview-carousel-nav:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.preview-carousel-nav.prev {
+    left: 10px;
+}
+
+.preview-carousel-nav.next {
+    right: 10px;
+}
+
+.preview-carousel-nav svg {
+    width: 18px;
+    height: 18px;
+    stroke: #374151;
+}
+
+/* Preview Carousel Indicators */
+.preview-carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+}
+
+.preview-carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.preview-carousel-dot.active {
+    background: #e87f14;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* Preview Empty State */
+.preview-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.preview-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.preview-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Dark Mode - Preview Section */
+body.dark-mode .samples-preview-header h3 {
+    color: #f9fafb;
+}
+
+body.dark-mode .samples-preview-description {
+    color: #9ca3af;
+}
+
+body.dark-mode .preview-category-card {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.dark-mode .preview-category-header {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-bottom-color: #374151;
+}
+
+body.dark-mode .preview-category-info h4 {
+    color: #f9fafb;
+}
+
+body.dark-mode .preview-category-info p {
+    color: #9ca3af;
+}
+
+body.dark-mode .preview-sample-card {
+    background: #374151;
+}
+
+body.dark-mode .preview-carousel-nav {
+    background: rgba(31, 41, 55, 0.95);
+}
+
+body.dark-mode .preview-carousel-nav:hover {
+    background: #1f2937;
+}
+
+body.dark-mode .preview-carousel-nav svg {
+    stroke: #f9fafb;
+}
+
+body.dark-mode .preview-carousel-dot {
+    background: #4b5563;
+}
+
+body.dark-mode .preview-empty {
+    color: #9ca3af;
+}
 </style>
 
 <script>
@@ -2560,7 +2869,13 @@ async function loadSamplesData() {
         
         const data = await response.json();
         currentSamplesData = data.categories;
-        renderSamplesItems();
+        
+        // Render based on current tab
+        if (currentTab === 'preview') {
+            renderSamplesPreview();
+        } else {
+            renderSamplesItems();
+        }
     } catch (error) {
         itemsList.innerHTML = '<div class="samples-empty">Error loading samples. Please try again.</div>';
         console.error('Error loading samples:', error);
@@ -2638,7 +2953,184 @@ function switchSamplesTab(categorySlug) {
         btn.classList.toggle('active', btn.dataset.category === categorySlug);
     });
     
-    renderSamplesItems();
+    // Show/hide appropriate sections
+    const itemsList = document.getElementById('samplesItemsList');
+    const previewSection = document.getElementById('samplesPreviewSection');
+    
+    if (categorySlug === 'preview') {
+        itemsList.style.display = 'none';
+        previewSection.style.display = 'block';
+        renderSamplesPreview();
+    } else {
+        itemsList.style.display = 'flex';
+        previewSection.style.display = 'none';
+        renderSamplesItems();
+    }
+}
+
+// Render samples preview in carousel format
+function renderSamplesPreview() {
+    const previewContent = document.getElementById('samplesPreviewContent');
+    
+    // Filter categories with active items
+    const categoriesWithItems = currentSamplesData.filter(cat =>
+        cat.items && cat.items.some(item => item.is_active)
+    );
+    
+    if (categoriesWithItems.length === 0) {
+        previewContent.innerHTML = `
+            <div class="preview-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>No active samples to preview. Add samples and mark them as active to see them here.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    previewContent.innerHTML = categoriesWithItems.map(category => {
+        const activeItems = category.items.filter(item => item.is_active);
+        
+        return `
+            <div class="preview-category-card">
+                <div class="preview-category-header">
+                    <span class="preview-category-icon">${category.icon || '📊'}</span>
+                    <div class="preview-category-info">
+                        <h4>${escapeHtml(category.name)}</h4>
+                        <p>${escapeHtml(category.description || '')}</p>
+                    </div>
+                </div>
+                
+                <div class="preview-carousel-wrapper">
+                    <div class="preview-carousel-container">
+                        <button class="preview-carousel-nav prev" onclick="previewCarouselPrev('${category.slug}')" aria-label="Previous">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="preview-carousel-nav next" onclick="previewCarouselNext('${category.slug}')" aria-label="Next">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <div class="preview-carousel-track" data-category="${category.slug}">
+                            ${activeItems.map(item => `
+                                <div class="preview-carousel-slide">
+                                    <div class="preview-sample-card">
+                                        ${item.image_url
+                                            ? `<img src="${item.image_url}" alt="${escapeHtml(item.title)}" class="preview-sample-image">`
+                                            : `<div class="preview-sample-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>`
+                                        }
+                                        <div class="preview-sample-overlay">
+                                            <h5 class="preview-sample-title">${escapeHtml(item.title)}</h5>
+                                            ${item.description
+                                                ? `<p class="preview-sample-description">${escapeHtml(item.description)}</p>`
+                                                : ''
+                                            }
+                                            <div class="preview-sample-meta">
+                                                ${item.client_name
+                                                    ? `<span>👤 ${escapeHtml(item.client_name)}</span>`
+                                                    : ''
+                                                }
+                                                ${item.project_date
+                                                    ? `<span>📅 ${formatDate(item.project_date)}</span>`
+                                                    : ''
+                                                }
+                                            </div>
+                                            ${item.tags
+                                                ? `<div class="preview-sample-tags">
+                                                    ${item.tags.split(',').map(tag =>
+                                                        `<span class="preview-sample-tag">${escapeHtml(tag.trim())}</span>`
+                                                    ).join('')}
+                                                </div>`
+                                                : ''
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="preview-carousel-indicators" data-category="${category.slug}">
+                        ${activeItems.map((_, index) =>
+                            `<button class="preview-carousel-dot ${index === 0 ? 'active' : ''}"
+                                data-index="${index}"
+                                onclick="previewCarouselGoTo('${category.slug}', ${index})"
+                                aria-label="Slide ${index + 1}"></button>`
+                        ).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Initialize carousel positions
+    categoriesWithItems.forEach(category => {
+        const track = document.querySelector(`.preview-carousel-track[data-category="${category.slug}"]`);
+        if (track) {
+            track.dataset.currentIndex = '0';
+        }
+    });
+}
+
+// Preview carousel navigation functions
+function previewCarouselPrev(categorySlug) {
+    const track = document.querySelector(`.preview-carousel-track[data-category="${categorySlug}"]`);
+    if (!track) return;
+    
+    const slides = track.querySelectorAll('.preview-carousel-slide');
+    const totalSlides = slides.length;
+    if (totalSlides === 0) return;
+    
+    let currentIndex = parseInt(track.dataset.currentIndex || '0');
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    updatePreviewCarousel(categorySlug, currentIndex);
+}
+
+function previewCarouselNext(categorySlug) {
+    const track = document.querySelector(`.preview-carousel-track[data-category="${categorySlug}"]`);
+    if (!track) return;
+    
+    const slides = track.querySelectorAll('.preview-carousel-slide');
+    const totalSlides = slides.length;
+    if (totalSlides === 0) return;
+    
+    let currentIndex = parseInt(track.dataset.currentIndex || '0');
+    currentIndex = (currentIndex + 1) % totalSlides;
+    updatePreviewCarousel(categorySlug, currentIndex);
+}
+
+function previewCarouselGoTo(categorySlug, index) {
+    updatePreviewCarousel(categorySlug, index);
+}
+
+function updatePreviewCarousel(categorySlug, index) {
+    const track = document.querySelector(`.preview-carousel-track[data-category="${categorySlug}"]`);
+    const indicators = document.querySelectorAll(`.preview-carousel-indicators[data-category="${categorySlug}"] .preview-carousel-dot`);
+    
+    if (!track) return;
+    
+    const offset = -index * 100;
+    track.style.transform = `translateX(${offset}%)`;
+    track.dataset.currentIndex = index.toString();
+    
+    // Update indicators
+    indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === index);
+    });
+}
+
+// Helper function to format date
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 // Open sample item form (add new)

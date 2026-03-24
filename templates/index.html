@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% block body_class %}class="has-sticky-footer"{% endblock %}
 {% block content %}
 {% if user.is_authenticated %}
 <section class="dashboard-section">
@@ -133,4 +134,7 @@
         </div>
 </section>
 {% endif %}
+{% endblock %}
+{% block footer %}
+{% include "partials/footer.html" %}
 {% endblock %}

@@ -1,10 +1,37 @@
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
 from .models import User as PresentaUser
-import pytz
 
-# Get timezone choices
-TIMEZONE_CHOICES = [(tz, tz) for tz in pytz.common_timezones]
+# Get timezone choices - GMT offsets from GMT-13 to GMT+13 with city names
+TIMEZONE_CHOICES = [
+    ('Etc/GMT+13', 'GMT-13 (Pago Pago, Apia)'),
+    ('Etc/GMT+12', 'GMT-12 (Honolulu, Papeete)'),
+    ('Etc/GMT+11', 'GMT-11 (Niue, Midway)'),
+    ('Etc/GMT+10', 'GMT-10 (Anchorage, Tahiti)'),
+    ('Etc/GMT+9', 'GMT-9 (Los Angeles, Vancouver)'),
+    ('Etc/GMT+8', 'GMT-8 (Denver, Edmonton)'),
+    ('Etc/GMT+7', 'GMT-7 (Chicago, Mexico City)'),
+    ('Etc/GMT+6', 'GMT-6 (New York, Toronto)'),
+    ('Etc/GMT+5', 'GMT-5 (Halifax, Santiago)'),
+    ('Etc/GMT+4', 'GMT-4 (Sao Paulo, Buenos Aires)'),
+    ('Etc/GMT+3', 'GMT-3 (Rio de Janeiro, Montevideo)'),
+    ('Etc/GMT+2', 'GMT-2 (Mid-Atlantic)'),
+    ('Etc/GMT+1', 'GMT-1 (Azores, Cape Verde)'),
+    ('Etc/GMT', 'GMT (London, Dublin, Lisbon)'),
+    ('Etc/GMT-1', 'GMT+1 (Paris, Berlin, Rome)'),
+    ('Etc/GMT-2', 'GMT+2 (Cairo, Athens, Jerusalem)'),
+    ('Etc/GMT-3', 'GMT+3 (Moscow, Istanbul, Kuwait)'),
+    ('Etc/GMT-4', 'GMT+4 (Dubai, Baku, Tbilisi)'),
+    ('Etc/GMT-5', 'GMT+5 (Karachi, Tashkent)'),
+    ('Etc/GMT-6', 'GMT+6 (Dhaka, Almaty)'),
+    ('Etc/GMT-7', 'GMT+7 (Bangkok, Jakarta, Hanoi)'),
+    ('Etc/GMT-8', 'GMT+8 (Taipei, Manila, Singapore)'),
+    ('Etc/GMT-9', 'GMT+9 (Tokyo, Seoul, Pyongyang)'),
+    ('Etc/GMT-10', 'GMT+10 (Sydney, Melbourne, Vladivostok)'),
+    ('Etc/GMT-11', 'GMT+11 (Noumea, Solomon Islands)'),
+    ('Etc/GMT-12', 'GMT+12 (Auckland, Fiji, Wellington)'),
+    ('Etc/GMT-13', 'GMT+13 (Nuku\'alofa, Samoa)'),
+]
 
 
 class EditProfileForm(forms.ModelForm):

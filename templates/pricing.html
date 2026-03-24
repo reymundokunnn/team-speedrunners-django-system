@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% block body_class %}class="has-sticky-footer"{% endblock %}
 {% block content %}
 <section class="pricing">
 	<div class="parent">
@@ -90,4 +91,7 @@
 
 	</div>
 </section>
+{% endblock %}
+{% block footer %}
+{% include "partials/footer.html" %}
 {% endblock %}
