@@ -28,8 +28,8 @@ urlpatterns = [
     
     # Profile
     path('profile/', views.profile_view, name='profile'),
-    path('profile/<str:username>/', views.profile_view, name='profile_detail'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/<str:username>/', views.profile_view, name='profile_detail'),
     path('profile/block/', views.block_user, name='block_user'),
     path('profile/report/', views.report_user, name='report_user'),
     path('profile/ban/', views.ban_user, name='ban_user'),

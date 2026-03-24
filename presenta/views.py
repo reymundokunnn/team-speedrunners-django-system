@@ -740,105 +740,10 @@ def edit_design_request(request, request_id):
 
 
 @login_required(login_url='signin')
-@require_http_methods(["GET", "POST"])
+@login_required
 def edit_profile(request):
-    # edit user profile with image cropping support.
-    user = request.user
-    
-    # get the Presenta User profile
-    presenta_user = get_presenta_user_safe(user)
-    
-    if request.method == 'POST':
-        form = EditProfileForm(request.POST, instance=presenta_user)
-        
-        if form.is_valid():
-            # save the form but don't commit yet
-            profile = form.save(commit=False)
-            
-            # handle profile picture cropping
-            cropped_image_data = request.POST.get('cropped_image_data')
-            remove_picture = request.POST.get('cropped_image_data') == 'remove'
-            
-            if remove_picture:
-                # remove the profile picture
-                if profile.profile_picture:
-                    profile.profile_picture.delete(save=True)
-                profile.profile_picture = None
-            elif cropped_image_data and not cropped_image_data.startswith('remove'):
-                # decode base64 image data
-                format_part, imgstr = cropped_image_data.split(';base64,')
-                image_data = base64.b64decode(imgstr)
-                
-                # open image with PIL
-                image = Image.open(BytesIO(image_data))
-                
-                # convert to RGB if necessary
-                if image.mode in ('RGBA', 'P'):
-                    image = image.convert('RGB')
-                
-                # save to BytesIO
-                img_io = BytesIO()
-                image.save(img_io, format='JPEG', quality=85)
-                img_io.seek(0)
-                
-                # generate filename
-                from django.utils import timezone
-                import uuid
-                filename = f"profile_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
-                
-                # save to media directory
-                from django.core.files.uploadedfile import InMemoryUploadedFile
-                cropped_file = InMemoryUploadedFile(
-                    img_io,
-                    None,
-                    filename,
-                    'image/jpeg',
-                    img_io.tell(),
-                    None
-                )
-                profile.profile_picture = cropped_file
-            
-            profile.save()
-            
-            # Log profile update activity
-            log_activity(
-                user=user,
-                activity_type='profile_updated',
-                message="Profile information updated."
-            )
-            
-            # also update Django user email if changed
-            if form.cleaned_data.get('email'):
-                user.email = form.cleaned_data.get('email')
-                user.save()
-            
-            # also update Django user first_name and last_name for immediate top bar reflection
-            if form.cleaned_data.get('first_name'):
-                user.first_name = form.cleaned_data.get('first_name')
-            if form.cleaned_data.get('last_name'):
-                user.last_name = form.cleaned_data.get('last_name')
-            if form.cleaned_data.get('first_name') or form.cleaned_data.get('last_name'):
-                user.save()
-            
-            # redirect based on user role
-            try:
-                profile_obj = user.profile
-                if profile_obj.user_role == 'designer':
-                    return redirect('designer_dashboard')
-                elif profile_obj.user_role == 'admin':
-                    return redirect('admin_dashboard')
-                else:
-                    return redirect('user_dashboard')
-            except Profile.DoesNotExist:
-                return redirect('index')
-    else:
-        form = EditProfileForm(instance=presenta_user)
-    
-    context = {
-        'form': form,
-        'presenta_user': presenta_user,
-    }
-    return render(request, 'edit_profile.html', context)
+    """Redirect to unified settings page for profile editing."""
+    return redirect('unified_settings')
 
 
 @login_required
@@ -2763,9 +2668,31 @@ def api_sample_item_detail(request, item_id):
             except ValueError:
                 pass
         
-        # Handle image upload
+        # Handle image upload from file
         if 'image' in request.FILES:
             item.image = request.FILES['image']
+        # Handle base64 image data
+        elif 'image_data' in data and data['image_data']:
+            try:
+                # Extract base64 data
+                image_data = data['image_data']
+                if ',' in image_data:
+                    image_data = image_data.split(',')[1]
+                
+                # Decode base64
+                image_bytes = base64.b64decode(image_data)
+                
+                # Create a unique filename
+                filename = f"sample_{uuid.uuid4().hex}.jpg"
+                
+                # Delete old image if exists
+                if item.image:
+                    item.image.delete()
+                
+                # Save to ImageField
+                item.image.save(filename, ContentFile(image_bytes))
+            except Exception as e:
+                return JsonResponse({'error': f'Failed to process image: {str(e)}'}, status=400)
         
         item.save()
         return JsonResponse({'success': True, 'message': 'Item updated successfully'})
@@ -2777,6 +2704,10 @@ def api_sample_item_detail(request, item_id):
         item.delete()
         return JsonResponse({'success': True, 'message': f'Item "{item_title}" deleted successfully'})
 
+
+from django.core.files.base import ContentFile
+import base64
+import uuid
 
 @login_required
 @require_http_methods(["POST"])
@@ -2822,9 +2753,27 @@ def api_sample_item_create(request):
         except ValueError:
             pass
     
-    # Handle image upload
+    # Handle image upload from file
     if 'image' in request.FILES:
         item.image = request.FILES['image']
+    # Handle base64 image data
+    elif 'image_data' in data and data['image_data']:
+        try:
+            # Extract base64 data
+            image_data = data['image_data']
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            
+            # Decode base64
+            image_bytes = base64.b64decode(image_data)
+            
+            # Create a unique filename
+            filename = f"sample_{uuid.uuid4().hex}.jpg"
+            
+            # Save to ImageField
+            item.image.save(filename, ContentFile(image_bytes))
+        except Exception as e:
+            return JsonResponse({'error': f'Failed to process image: {str(e)}'}, status=400)
     
     item.save()
     

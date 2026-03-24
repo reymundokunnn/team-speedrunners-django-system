@@ -21,6 +21,20 @@ def currency_symbol(code):
     return CURRENCY_SYMBOLS.get(code, '$')
 
 @register.filter
+def currency_format(amount, currency_code='USD'):
+    """
+    Format amount with currency symbol.
+    Usage: {{ total_budget|currency_format:request.currency }}
+    """
+    if amount is None:
+        return ''
+    symbol = CURRENCY_SYMBOLS.get(currency_code, '$')
+    try:
+        return f"{symbol}{float(amount):,.2f}"
+    except (ValueError, TypeError):
+        return f"{symbol}{amount}"
+
+@register.filter
 def get_finished_files(files):
     """Filter to get finished files from a queryset."""
     return [f for f in files if hasattr(f, 'file_type') and f.file_type == 'finished']
