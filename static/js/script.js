@@ -2006,9 +2006,10 @@ function saveNewUser() {
             if (result.ok && result.data.success) {
                 closeModal('addUserModal');
                 showMessageModal('Success', 'User created successfully!', 'success');
-                setTimeout(function () {
-                    location.reload();
-                }, 1500);
+                // Dynamically add new user row to table
+                if (result.data.user) {
+                    addUserRowToTable(result.data.user);
+                }
             } else {
                 showMessageModal('Error', result.data.error || 'Unknown error occurred.', 'error');
             }
@@ -2017,6 +2018,88 @@ function saveNewUser() {
             console.error('Error creating user:', error);
             showMessageModal('Error', 'Error creating user. Please try again.', 'error');
         });
+}
+
+function addUserRowToTable(user) {
+    var tbody = document.querySelector('.users-table tbody');
+    if (!tbody) return;
+    
+    // Create new row
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-user-id', user.id);
+    
+    // Build role badge
+    var roleBadge = '';
+    if (user.is_superuser) {
+        roleBadge = '<span class="role-badge role-owner">Owner</span>';
+    } else if (user.user_role === 'admin' && user.admin_approval_status === 'pending') {
+        roleBadge = '<span class="status-badge status-pending">Pending Approval</span>';
+    } else {
+        roleBadge = '<span class="role-badge role-' + user.user_role + '">' + user.user_role_display + '</span>';
+    }
+    
+    // Build profile picture
+    var avatarHtml = '';
+    if (user.profile_picture) {
+        avatarHtml = '<img src="' + user.profile_picture + '" alt="' + user.first_name + '">';
+    } else {
+        avatarHtml = '<img src="/static/img/default-avatar.png" alt="' + user.first_name + '">';
+    }
+    
+    // Build contact info
+    var contactHtml = '<span class="email">' + user.email + '</span>';
+    if (user.phone_number) {
+        contactHtml += '<span class="phone">' + user.phone_number + '</span>';
+    }
+    
+    // Build action buttons
+    var actionButtons = '<div class="action-buttons">';
+    actionButtons += '<button class="btn-icon btn-view" title="View User" data-user-id="' + user.id + '" data-action="view">';
+    actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    actionButtons += '</button>';
+    actionButtons += '<button class="btn-icon btn-edit" title="Edit User" data-user-id="' + user.id + '" data-action="edit">';
+    actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    actionButtons += '</button>';
+    // Only show delete button if not a superuser (unless current user is superuser)
+    if (!user.is_superuser) {
+        actionButtons += '<button class="btn-icon btn-delete" title="Delete User" data-user-id="' + user.id + '" data-action="delete">';
+        actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+        actionButtons += '</button>';
+    }
+    actionButtons += '</div>';
+    
+    // Set row HTML
+    tr.innerHTML = '<td style="text-align: center;"><input type="checkbox" class="user-checkbox" value="' + user.id + '" onchange="updateBulkActions()"></td>' +
+        '<td class="user-cell"><div class="user-info"><div class="user-avatar">' + avatarHtml + '</div><div class="user-details"><span class="user-name">' + user.first_name + ' ' + user.last_name + '</span><span class="user-username">@' + user.username + '</span></div></div></td>' +
+        '<td class="contact-cell"><div class="contact-info">' + contactHtml + '</div></td>' +
+        '<td>' + roleBadge + '</td>' +
+        '<td class="date-cell">' + user.joined_date + '</td>' +
+        '<td class="actions-cell">' + actionButtons + '</td>';
+    
+    // Add row to table
+    tbody.insertBefore(tr, tbody.firstChild);
+    
+    // Update user count
+    var countBadge = document.querySelector('.count-badge');
+    if (countBadge) {
+        var currentCount = parseInt(countBadge.textContent) || 0;
+        countBadge.textContent = (currentCount + 1) + ' total users in this site';
+    }
+}
+
+function removeUserRowFromTable(userId) {
+    var row = document.querySelector('tr[data-user-id="' + userId + '"]');
+    if (row) {
+        row.remove();
+        // Update user count
+        var countBadge = document.querySelector('.count-badge');
+        if (countBadge) {
+            var currentCount = parseInt(countBadge.textContent) || 0;
+            if (currentCount > 0) {
+                countBadge.textContent = (currentCount - 1) + ' total users in this site';
+            }
+        }
+    }
 }
 
 function viewUser(userId) {
@@ -2217,9 +2300,8 @@ function confirmDeleteUser() {
             if (result.ok && result.data.success) {
                 closeModal('deleteUserModal');
                 showMessageModal('Success', 'User deleted successfully!', 'success');
-                setTimeout(function () {
-                    location.reload();
-                }, 1500);
+                // Dynamically remove user row from table
+                removeUserRowFromTable(userId);
             } else {
                 showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
             }
@@ -2433,6 +2515,130 @@ function clearFilters() {
     var checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
     checkboxes.forEach(function (cb) { cb.checked = false; });
     applyFilters();
+}
+
+function sortUsersTable() {
+    var sortBy = document.getElementById('sortBy').value;
+    var invertSort = document.getElementById('invertSort').checked;
+    
+    if (!sortBy) {
+        return; // No sort option selected
+    }
+    
+    var tableBody = document.querySelector('.users-table tbody');
+    if (!tableBody) {
+        console.error('Table body not found');
+        return;
+    }
+    
+    var rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    // Filter out the empty state row
+    var dataRows = rows.filter(function(row) {
+        return row.id !== 'emptyStateRow';
+    });
+    
+    var emptyStateRow = rows.find(function(row) {
+        return row.id === 'emptyStateRow';
+    });
+    
+    // Sort the rows
+    dataRows.sort(function(a, b) {
+        var valueA, valueB;
+        
+        switch(sortBy) {
+            case 'first_name':
+                valueA = getFirstName(a);
+                valueB = getFirstName(b);
+                break;
+            case 'last_name':
+                valueA = getLastName(a);
+                valueB = getLastName(b);
+                break;
+            case 'contact_info':
+                valueA = getContactInfo(a);
+                valueB = getContactInfo(b);
+                break;
+            case 'join_date':
+                valueA = getJoinDate(a);
+                valueB = getJoinDate(b);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var comparison = 0;
+        if (sortBy === 'join_date') {
+            // For dates, compare as Date objects
+            var dateA = parseDate(valueA);
+            var dateB = parseDate(valueB);
+            comparison = dateA - dateB;
+        } else {
+            // For strings, compare case-insensitive
+            comparison = valueA.toLowerCase().localeCompare(valueB.toLowerCase());
+        }
+        
+        // Apply invert if checked
+        return invertSort ? -comparison : comparison;
+    });
+    
+    // Re-append rows in sorted order
+    dataRows.forEach(function(row) {
+        tableBody.appendChild(row);
+    });
+    
+    // Re-append empty state row at the end if it exists
+    if (emptyStateRow) {
+        tableBody.appendChild(emptyStateRow);
+    }
+}
+
+function getFirstName(row) {
+    var nameElement = row.querySelector('.user-name');
+    if (nameElement) {
+        var fullName = nameElement.textContent.trim();
+        var parts = fullName.split(' ');
+        return parts[0] || '';
+    }
+    return '';
+}
+
+function getLastName(row) {
+    var nameElement = row.querySelector('.user-name');
+    if (nameElement) {
+        var fullName = nameElement.textContent.trim();
+        var parts = fullName.split(' ');
+        return parts.length > 1 ? parts[parts.length - 1] : '';
+    }
+    return '';
+}
+
+function getContactInfo(row) {
+    var emailElement = row.querySelector('.email');
+    return emailElement ? emailElement.textContent.trim().toLowerCase() : '';
+}
+
+function getJoinDate(row) {
+    var dateCell = row.querySelector('.date-cell');
+    return dateCell ? dateCell.textContent.trim() : '';
+}
+
+function parseDate(dateString) {
+    // Parse date in format "M d, Y" (e.g., "Mar 24, 2026")
+    var months = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    
+    var parts = dateString.split(' ');
+    if (parts.length === 3) {
+        var month = months[parts[0]];
+        var day = parseInt(parts[1].replace(',', ''));
+        var year = parseInt(parts[2]);
+        return new Date(year, month, day);
+    }
+    return new Date(0); // Return epoch if parsing fails
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -2850,7 +3056,6 @@ function confirmAdminAction(userId, action) {
     })
     .then(data => {
         showAdminActionModal(data.message, 'success');
-        setTimeout(() => location.reload(), 1000);
     })
     .catch(error => {
         const msg = error.message || error.error || 'An error occurred';

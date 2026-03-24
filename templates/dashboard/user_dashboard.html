@@ -12,8 +12,9 @@
             <div id="dashboard-section" class="dashboard-section-content active">
                 <div class="wrapper-greeting">
                     <div id="main-greeting">
-                        <span id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</span>
+                        <span id="greeting">Good day, <span class="orange">{% if user.user_settings.greeting_name_preference == 'full_name' %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.first_name }}{% endif %}</span>!</span>
                     </div>
+                    {% if user.user_settings.show_time_date %}
                     <div class="date-and-time">
                         <div class="clock-icon">
                             <svg id="clock-svg" width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -32,6 +33,7 @@
                         </div>
                         <button type="button" class="clock-format-toggle" title="Toggle between 12-hour and 24-hour format">24h</button>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="dashboard-stats">
                     <div class="stat-card">

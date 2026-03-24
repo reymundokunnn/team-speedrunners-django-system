@@ -140,6 +140,34 @@
                                 </div>
                         </div>
 
+                        <!-- Display Preferences -->
+                        <div class="settings-unified-group">
+                            <h3 class="settings-unified-group-title">Display Preferences</h3>
+                            <p class="settings-unified-description">Customize how information is displayed in your dashboard</p>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label for="id_greeting_name_preference" class="settings-unified-label">{{ form.greeting_name_preference.label }}</label>
+                                    <span class="settings-unified-description">{{ form.greeting_name_preference.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                    {{ form.greeting_name_preference }}
+                                </div>
+                            </div>
+                            
+                            <div class="settings-unified-row">
+                                <div class="settings-unified-label-container">
+                                    <label class="settings-unified-checkbox-label">
+                                        {{ form.show_time_date }}
+                                        <span>{{ form.show_time_date.label }}</span>
+                                    </label>
+                                    <span class="settings-unified-description">{{ form.show_time_date.help_text }}</span>
+                                </div>
+                                <div class="settings-unified-input-container">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Email Notifications -->
                         <div class="settings-unified-group">
                             <h3 class="settings-unified-group-title">Email Notifications</h3>
@@ -1104,7 +1132,7 @@
                                 <path d="M2 2l7.586 7.586"></path>
                                 <circle cx="11" cy="11" r="2"></circle>
                             </svg>
-                            Manage Portfolio Samples
+                            Manage Samples Data
                         </button>
                     </div>
                     <!-- Form Actions -->
@@ -1376,7 +1404,7 @@
 <div id="samplesModal" class="samples-modal-overlay" style="display: none;">
     <div class="samples-modal-container">
         <div class="samples-modal-header">
-            <h2>Manage Portfolio Samples</h2>
+            <h2>Manage Samples Data</h2>
             <button type="button" class="samples-modal-close" onclick="closeSamplesModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1575,7 +1603,7 @@
     border-radius: 12px;
     width: 100%;
     max-width: 900px;
-    max-height: 85vh;
+    height: 85vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -1636,8 +1664,8 @@
 /* Tabs */
 .samples-modal-tabs {
     display: flex;
-    gap: 8px;
-    padding: 16px 24px;
+    gap: 6px;
+    padding: 0px 24px 20px;
     border-bottom: 1px solid #e5e7eb;
     overflow-x: auto;
     flex-shrink: 0;
@@ -1716,6 +1744,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     transition: all 0.2s;
+    cursor: default;
 }
 
 .samples-item-card:hover {
@@ -1726,6 +1755,36 @@
 .samples-item-card.inactive {
     opacity: 0.6;
     background: #f9fafb;
+}
+
+.samples-item-card.dragging {
+    opacity: 0.5;
+    border: 2px dashed #e87f14;
+}
+
+.samples-item-card.drag-over {
+    border-top: 3px solid #e87f14;
+}
+
+/* Drag Handle */
+.samples-item-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    min-height: 100%;
+    cursor: grab;
+    color: #9ca3af;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.samples-item-drag-handle:hover {
+    color: #e87f14;
+}
+
+.samples-item-drag-handle:active {
+    cursor: grabbing;
 }
 
 .samples-item-image {
@@ -2844,6 +2903,7 @@ function togglePortfolioForm(id) {
 
 let currentSamplesData = [];
 let currentTab = 'all';
+let draggedItem = null;
 
 // Open the samples modal
 function openSamplesModal() {
@@ -2907,9 +2967,19 @@ function renderSamplesItems() {
     }
     
     itemsList.innerHTML = filteredItems.map(item => `
-        <div class="samples-item-card ${item.is_active ? '' : 'inactive'}">
+        <div class="samples-item-card ${item.is_active ? '' : 'inactive'}" draggable="true" data-item-id="${item.id}">
+            <div class="samples-item-drag-handle" title="Drag to reorder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+            </div>
             <div class="samples-item-image">
-                ${item.image_url 
+                ${item.image_url
                     ? `<img src="${item.image_url}" alt="${item.title}">`
                     : `<div class="samples-item-image-placeholder">🖼️</div>`
                 }
@@ -2942,6 +3012,109 @@ function renderSamplesItems() {
             </div>
         </div>
     `).join('');
+    
+    // Initialize drag and drop
+    initDragAndDrop();
+}
+
+// Initialize drag and drop functionality
+function initDragAndDrop() {
+    const itemsList = document.getElementById('samplesItemsList');
+    const cards = itemsList.querySelectorAll('.samples-item-card');
+    
+    cards.forEach(card => {
+        const dragHandle = card.querySelector('.samples-item-drag-handle');
+        
+        // Drag start
+        dragHandle.addEventListener('mousedown', (e) => {
+            draggedItem = card;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', card.dataset.itemId);
+        });
+        
+        // Drag end
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+            draggedItem = null;
+            // Remove drag-over class from all cards
+            document.querySelectorAll('.samples-item-card').forEach(c => {
+                c.classList.remove('drag-over');
+            });
+        });
+        
+        // Drag over
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (draggedItem && draggedItem !== card) {
+                card.classList.add('drag-over');
+            }
+        });
+        
+        // Drag leave
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('drag-over');
+        });
+        
+        // Drop
+        card.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            
+            if (draggedItem && draggedItem !== card) {
+                const itemsList = document.getElementById('samplesItemsList');
+                const allCards = Array.from(itemsList.querySelectorAll('.samples-item-card'));
+                const draggedIndex = allCards.indexOf(draggedItem);
+                const dropIndex = allCards.indexOf(card);
+                
+                if (draggedIndex < dropIndex) {
+                    card.parentNode.insertBefore(draggedItem, card.nextSibling);
+                } else {
+                    card.parentNode.insertBefore(draggedItem, card);
+                }
+                
+                // Update order in database
+                await updateSampleOrder();
+            }
+        });
+    });
+}
+
+// Update sample order in database
+async function updateSampleOrder() {
+    const itemsList = document.getElementById('samplesItemsList');
+    const cards = itemsList.querySelectorAll('.samples-item-card');
+    const orderData = [];
+    
+    cards.forEach((card, index) => {
+        orderData.push({
+            id: parseInt(card.dataset.itemId),
+            order: index
+        });
+    });
+    
+    try {
+        const response = await fetch('/api/samples/reorder/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ items: orderData })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update order');
+        }
+        
+        const result = await response.json();
+        console.log('Order updated:', result);
+    } catch (error) {
+        console.error('Error updating order:', error);
+        alert('Failed to save order. Please try again.');
+        loadSamplesData(); // Reload to reset order
+    }
 }
 
 // Switch tabs

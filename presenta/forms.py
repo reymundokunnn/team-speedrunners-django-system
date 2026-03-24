@@ -202,6 +202,18 @@ class UserSettingsForm(forms.Form):
         initial='en',
         required=False
     )
+    greeting_name_preference = forms.ChoiceField(
+        label='Dashboard Greeting Name',
+        choices=[('first_name', 'First Name Only'), ('full_name', 'Full Name')],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False,
+        help_text='Choose how your name appears in dashboard greetings'
+    )
+    show_time_date = forms.BooleanField(
+        label='Show Clock and Date',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        required=False,
+    )
     currency_preference = forms.ChoiceField(
         label='Currency Preference',
         choices=[

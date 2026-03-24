@@ -83,4 +83,5 @@ urlpatterns = [
     path('api/samples/category/<int:category_id>/', views.api_sample_category_detail, name='api_sample_category_detail'),
     path('api/samples/item/create/', views.api_sample_item_create, name='api_sample_item_create'),
     path('api/samples/item/<int:item_id>/', views.api_sample_item_detail, name='api_sample_item_detail'),
+    path('api/samples/reorder/', views.api_sample_items_reorder, name='api_sample_items_reorder'),
 ]

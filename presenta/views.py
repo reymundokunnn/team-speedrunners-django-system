@@ -907,13 +907,15 @@ def create_user(request):
             return JsonResponse({'error': 'Email already exists'}, status=400)
         
         # Create the user
+        # Auto-approve if superuser is creating the account, otherwise keep pending for admins
+        is_superuser_creating = request.user.is_superuser
         user = User(
             username=username,
             email=email,
             first_name=first_name,
             last_name=last_name,
             user_role=user_role,
-            admin_approval_status='pending' if user_role == 'admin' else 'approved',
+            admin_approval_status='pending' if user_role == 'admin' and not is_superuser_creating else 'approved',
             gender=gender,
             phone_number=phone_number,
             company=company,
@@ -929,7 +931,7 @@ def create_user(request):
             password=password,
             first_name=first_name,
             last_name=last_name,
-            is_active=False if user_role == 'admin' else True
+            is_active=False if user_role == 'admin' and not is_superuser_creating else True
         )
         
         # Link them together
@@ -949,7 +951,27 @@ def create_user(request):
             target_user=django_user
         )
         
-        return JsonResponse({'success': True, 'message': 'User created successfully', 'user_id': user.id})
+        # Return user data for dynamic table update
+        return JsonResponse({
+            'success': True,
+            'message': 'User created successfully',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_role': user.user_role,
+                'user_role_display': user.get_user_role_display(),
+                'phone_number': user.phone_number or '',
+                'company': user.company or '',
+                'location': user.location or '',
+                'joined_date': user.created_at.strftime('%b %d, %Y') if hasattr(user, 'created_at') and user.created_at else '',
+                'profile_picture': user.profile_picture.url if user.profile_picture else None,
+                'admin_approval_status': user.admin_approval_status,
+                'is_superuser': user.auth_user.is_superuser if user.auth_user else False,
+            }
+        })
     
     # Return empty data for GET request (modal will show empty form)
     return JsonResponse({})
@@ -1697,6 +1719,8 @@ def unified_settings(request):
             if account_form.is_valid():
                 user_settings.timezone = account_form.cleaned_data.get('timezone', user_settings.timezone)
                 user_settings.language = account_form.cleaned_data.get('language', user_settings.language)
+                user_settings.greeting_name_preference = account_form.cleaned_data.get('greeting_name_preference', user_settings.greeting_name_preference)
+                user_settings.show_time_date = account_form.cleaned_data.get('show_time_date', False)
                 user_settings.currency_preference = account_form.cleaned_data.get('currency_preference', user_settings.currency_preference)
                 user_settings.email_notifications_enabled = account_form.cleaned_data.get('email_notifications_enabled', False)
                 user_settings.order_updates_email = account_form.cleaned_data.get('order_updates_email', False)
@@ -1718,6 +1742,8 @@ def unified_settings(request):
     account_form = UserSettingsForm(initial={
         'timezone': user_settings.timezone,
         'language': user_settings.language,
+        'greeting_name_preference': user_settings.greeting_name_preference,
+        'show_time_date': user_settings.show_time_date,
         'currency_preference': user_settings.currency_preference,
         'email_notifications_enabled': user_settings.email_notifications_enabled,
         'order_updates_email': user_settings.order_updates_email,
@@ -1808,6 +1834,8 @@ def account_settings(request):
             # Update user settings
             user_settings.timezone = form.cleaned_data.get('timezone', user_settings.timezone)
             user_settings.language = form.cleaned_data.get('language', user_settings.language)
+            user_settings.greeting_name_preference = form.cleaned_data.get('greeting_name_preference', user_settings.greeting_name_preference)
+            user_settings.show_time_date = form.cleaned_data.get('show_time_date', False)
             user_settings.currency_preference = form.cleaned_data.get('currency_preference', user_settings.currency_preference)
             user_settings.email_notifications_enabled = form.cleaned_data.get('email_notifications_enabled', False)
             user_settings.order_updates_email = form.cleaned_data.get('order_updates_email', False)
@@ -1824,6 +1852,8 @@ def account_settings(request):
         initial_data = {
             'timezone': user_settings.timezone,
             'language': user_settings.language,
+            'greeting_name_preference': user_settings.greeting_name_preference,
+            'show_time_date': user_settings.show_time_date,
             'currency_preference': user_settings.currency_preference,
             'email_notifications_enabled': user_settings.email_notifications_enabled,
             'order_updates_email': user_settings.order_updates_email,
@@ -2530,6 +2560,7 @@ def api_sample_categories(request):
                 'items': [
                     {
                         'id': item.id,
+                        'category_id': cat.id,
                         'title': item.title,
                         'description': item.description,
                         'image_url': item.image.url if item.image else None,
@@ -2703,6 +2734,39 @@ def api_sample_item_detail(request, item_id):
         item_title = item.title
         item.delete()
         return JsonResponse({'success': True, 'message': f'Item "{item_title}" deleted successfully'})
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_sample_items_reorder(request):
+    """API endpoint to reorder sample items"""
+    from django.http import JsonResponse
+    import json
+    
+    user = request.user
+    if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    items = data.get('items', [])
+    if not items:
+        return JsonResponse({'error': 'No items provided'}, status=400)
+    
+    try:
+        for item_data in items:
+            item_id = item_data.get('id')
+            order = item_data.get('order', 0)
+            
+            if item_id:
+                SampleItem.objects.filter(id=item_id).update(order=order)
+        
+        return JsonResponse({'success': True, 'message': 'Order updated successfully'})
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to update order: {str(e)}'}, status=500)
 
 
 from django.core.files.base import ContentFile

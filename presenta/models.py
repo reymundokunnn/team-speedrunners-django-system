@@ -311,6 +311,16 @@ class UserSettings(models.Model):
     theme_preference = models.CharField(max_length=10, choices=THEME_CHOICES, default='auto')
     timezone = models.CharField(max_length=50, default='UTC', blank=True)
     language = models.CharField(max_length=10, default='en', blank=True)
+    greeting_name_preference = models.CharField(
+        max_length=20,
+        choices=[('first_name', 'First Name Only'), ('full_name', 'Full Name')],
+        default='first_name',
+        help_text='Choose how your name appears in dashboard greetings'
+    )
+    show_time_date = models.BooleanField(
+        default=True,
+        help_text='Show time and date beside the greeting in dashboard'
+    )
     
     # Notification Settings
     email_notifications_enabled = models.BooleanField(default=True)

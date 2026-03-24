@@ -12,8 +12,9 @@
             <div id="dashboard-section" class="dashboard-section-content active">
                 <div class="wrapper-greeting">
                     <div id="main-greeting">
-                        <span id="greeting">Good day, <span class="orange">{{user.first_name}}</span>!</span>
+                        <span id="greeting">Good day, <span class="orange">{% if user.user_settings.greeting_name_preference == 'full_name' %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.first_name }}{% endif %}</span>!</span>
                     </div>
+                    {% if user.user_settings.show_time_date %}
                     <div class="date-and-time">
                         <div class="clock-icon">
                             <svg id="clock-svg" width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,7 +24,7 @@
                                 <line id="minute-hand" x1="12" y1="12" x2="12" y2="4.5"
                                         stroke="gray" stroke-width="0.6" stroke-linecap="round"/>
                                 <line id="second-hand" x1="12" y1="12" x2="12" y2="4.5"
-                                        stroke="red" stroke-width="0.3" stroke-linecap="round"/>             
+                                        stroke="red" stroke-width="0.3" stroke-linecap="round"/>
                             </svg>
                         </div>
                         <div class="display">
@@ -32,6 +33,7 @@
                         </div>
                         <button type="button" class="clock-format-toggle" title="Toggle between 12-hour and 24-hour format">24h</button>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="dashboard-stats">
                     <div class="stat-card">
@@ -278,6 +280,20 @@
                         <span class="count-badge">{{ all_users|length }} total users in this site</span>
                     </div>
                     <div class="right">
+                        <div class="sort-controls">
+                            <label for="sortBy" class="sort-label">Sort by:</label>
+                            <select id="sortBy" class="sort-dropdown" onchange="sortUsersTable()">
+                                <option value="">-- Select --</option>
+                                <option value="first_name">First name</option>
+                                <option value="last_name">Last name</option>
+                                <option value="contact_info">Contact info</option>
+                                <option value="join_date">Date joined</option>
+                            </select>
+                            <label class="invert-checkbox">
+                                <input type="checkbox" id="invertSort" onchange="sortUsersTable()">
+                                <span>Reverse sorting</span>
+                            </label>
+                        </div>
                         <div class="filter-dropdown-container">
                             <button class="btn btn-secondary" onclick="toggleFilterDropdown()" title="Filter users">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -352,7 +368,7 @@
                                                 {% if user.profile_picture %}
                                                 <img src="{{ user.profile_picture.url }}" alt="{{ user.first_name }}">
                                                 {% else %}
-                                                <div class="avatar-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                                                <img src="{% static 'img/default-avatar.png' %}" alt="{{ user.first_name }}">
                                                 {% endif %}
                                             </div>
                                             <div class="user-details">
@@ -387,7 +403,10 @@
                                     <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>
                                     <td class="actions-cell">
                                         <div class="action-buttons">
-                                            {% if request.user.is_superuser and user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
+                                            {% if user.id == request.user.id %}
+                                                <!-- Hide action buttons for own entry -->
+                                                <span class="text-muted"></span>
+                                            {% elif request.user.is_superuser and user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
                                                 <button class="btn-icon btn-approve" title="Approve Admin" onclick="confirmAdminAction({{ user.id }}, 'approve')">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -421,6 +440,7 @@
                                                         </path>
                                                     </svg>
                                                 </button>
+                                                {% if not user.auth_user.is_superuser or request.user.is_superuser %}
                                                 <button class="btn-icon btn-delete" title="Delete User"
                                                     data-user-id="{{ user.id }}" data-action="delete">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
@@ -432,6 +452,7 @@
                                                         </path>
                                                     </svg>
                                                 </button>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </td>
@@ -519,7 +540,10 @@
                                 </td>
                                 <td class="date-cell">{{ user.joined_date|date:"M d, Y" }}</td>
                                 <td class="actions-cell">
-                                            {% if request.user.is_superuser and user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
+                                            {% if user.id == request.user.id %}
+                                                <!-- Hide action buttons for own entry -->
+                                                <span class="text-muted">-</span>
+                                            {% elif request.user.is_superuser and user.user_role == 'admin' and user.admin_approval_status == 'pending' %}
                                                 <button class="btn-icon btn-approve" title="Approve Admin" onclick="confirmAdminAction({{ user.id }}, 'approve')">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -553,6 +577,7 @@
                                                         </path>
                                                     </svg>
                                                 </button>
+                                                {% if not user.auth_user.is_superuser or request.user.is_superuser %}
                                                 <button class="btn-icon btn-delete" title="Delete User"
                                                     data-user-id="{{ user.id }}" data-action="delete">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
@@ -564,6 +589,7 @@
                                                         </path>
                                                     </svg>
                                                 </button>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                             </tr>
