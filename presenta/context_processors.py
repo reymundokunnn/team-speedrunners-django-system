@@ -173,10 +173,10 @@ def user_notifications(request):
                 is_cleared=False
             ).order_by('-created_at')[:10]
         else:
-            # For users: show designer assignments, status changes, completions
+            # For users: show designer assignments, status changes, completions, rejections
             activities = Activity.objects.filter(
                 user=auth_user,
-                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed', 'request_rejected'],
                 is_cleared=False
             ).order_by('-created_at')[:10]
         

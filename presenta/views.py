@@ -414,7 +414,7 @@ def user_dashboard(request):
     
     # Get user's recent activities (not cleared)
     # Include: user's own activities + activities on their design requests from designers/admins
-    # Exclude 'designer_assigned' and 'assigned' since they now show in notifications
+    # Exclude 'designer_assigned', 'assigned', 'completed', 'request_rejected' since they now show in notifications
     from django.db.models import Q
     
     user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
@@ -423,7 +423,7 @@ def user_dashboard(request):
         Q(user=user) |  # User's own activities
         Q(related_request_id__in=user_request_ids),  # Activities on user's requests
         is_cleared=False
-    ).exclude(activity_type__in=['designer_assigned', 'assigned']).select_related('related_request', 'user').order_by('-created_at')[:10]
+    ).exclude(activity_type__in=['designer_assigned', 'assigned', 'completed', 'request_rejected']).select_related('related_request', 'user').order_by('-created_at')[:10]
     
     # Get user timezone, default to browser timezone or UTC
     user_tz = 'UTC'
@@ -651,7 +651,7 @@ def accept_design_request(request, request_id):
         log_activity(
             user=user,
             activity_type='assigned',
-            message=f"You were assigned to '{design_request.title}'.",
+            message=f"You accepted the design request '{design_request.title}'.",
             related_request=design_request
         )
         
@@ -661,7 +661,7 @@ def accept_design_request(request, request_id):
             log_activity(
                 user=design_request.requester,
                 activity_type='designer_assigned',
-                message=f"Designer {designer_name} assigned to '{design_request.title}'.",
+                message=f"Designer <b>{designer_name}</b> accepted your design request '{design_request.title}'.",
                 related_request=design_request
             )
     
@@ -810,7 +810,7 @@ def update_design_status(request, request_id):
                 log_activity(
                     user=design_request.requester,
                     activity_type='status_changed',
-                    message=f"'{design_request.title}' is now {status_display}.",
+                    message=f"'{design_request.title}' is now {status_display.lower()}.",
                     related_request=design_request
                 )
     
