@@ -59,10 +59,6 @@ function closeAnnouncementBanner() {
         {% if user.is_authenticated %}
         <div class="user-info-wrapper">
             <div class="user-info" id="user-profile-toggle">
-                <div class="user-meta">
-                    <span class="user-name"><b>{{ display_name }}</b></span><br>
-                    <span class="user-username">@{{ user.username }}</span>
-                </div>
                 <div style="position: relative;">
                     {% if profile_picture_url %}
                     <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
@@ -178,7 +174,7 @@ function closeAnnouncementBanner() {
     <div class="modal-content">
         <div class="modal-header">
             <h2>Set Your Status</h2>
-            <span class="modal-close" id="status-modal-close">&times;</span>
+            <span class="modal-close" id="modal-close">&times;</span>
         </div>
         <div class="modal-body">
             <div class="status-options">

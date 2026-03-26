@@ -1470,10 +1470,7 @@ def unified_settings(request):
     
     # Profile Settings form initialization
     profile_settings_form = ProfileSettingsForm(initial={
-        'linkedin_url': social_media.get('linkedin', ''),
-        'twitter_url': social_media.get('twitter', ''),
-        'instagram_url': social_media.get('instagram', ''),
-        'portfolio_url_profile': social_media.get('portfolio', ''),
+        'social_media_links': json.dumps(social_media) if social_media else '{}',
         'availability_hours': user_settings.availability_hours,
         'custom_hours': user_settings.custom_hours,
         'preferred_contact_method': user_settings.preferred_contact_method,
@@ -1546,13 +1543,12 @@ def unified_settings(request):
             # Profile settings form
             profile_settings_form = ProfileSettingsForm(request.POST)
             if profile_settings_form.is_valid():
-                # Update social media links as JSON
-                user_settings.social_media_links = {
-                    'linkedin': profile_settings_form.cleaned_data.get('linkedin_url', ''),
-                    'twitter': profile_settings_form.cleaned_data.get('twitter_url', ''),
-                    'instagram': profile_settings_form.cleaned_data.get('instagram_url', ''),
-                    'portfolio': profile_settings_form.cleaned_data.get('portfolio_url_profile', ''),
-                }
+                # Update social media links from JSON
+                social_media_json = profile_settings_form.cleaned_data.get('social_media_links', '{}')
+                try:
+                    user_settings.social_media_links = json.loads(social_media_json)
+                except json.JSONDecodeError:
+                    user_settings.social_media_links = {}
                 user_settings.availability_hours = profile_settings_form.cleaned_data.get('availability_hours', user_settings.availability_hours)
                 user_settings.custom_hours = profile_settings_form.cleaned_data.get('custom_hours', user_settings.custom_hours)
                 user_settings.preferred_contact_method = profile_settings_form.cleaned_data.get('preferred_contact_method', user_settings.preferred_contact_method)
@@ -2105,6 +2101,19 @@ def profile_view(request, username=None):
         is_cleared=False
     ).select_related('related_request').order_by('-created_at')[:5]
 
+    # Recent works based on user role
+    recent_works = []
+    if target_presenta.user_role == 'client':
+        # For clients: show recent design requests they made
+        recent_works = DesignRequest.objects.filter(
+            requester=target_django
+        ).select_related('designer').order_by('-created_at')[:6]
+    elif target_presenta.user_role == 'designer':
+        # For designers: show recent design requests they worked on
+        recent_works = DesignRequest.objects.filter(
+            designer=target_django
+        ).select_related('requester').order_by('-created_at')[:6]
+
     context = {
         'target': target_presenta,
         'target_django': target_django,
@@ -2113,6 +2122,7 @@ def profile_view(request, username=None):
         'viewer_is_admin': viewer_is_admin,
         'stats': stats,
         'activities': activities,
+        'recent_works': recent_works,
         'can_ban': viewer_is_admin,
         'can_delete': viewer_is_admin,
     }

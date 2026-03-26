@@ -274,25 +274,9 @@ class UserSettingsForm(forms.Form):
 class ProfileSettingsForm(forms.Form):
     """Form for profile settings (social media, availability, etc.)."""
     
-    # Social media links
-    linkedin_url = forms.URLField(
-        label='LinkedIn Profile',
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/in/yourprofile'}),
-        required=False
-    )
-    twitter_url = forms.URLField(
-        label='Twitter Profile',
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://twitter.com/yourprofile'}),
-        required=False
-    )
-    instagram_url = forms.URLField(
-        label='Instagram Profile',
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/yourprofile'}),
-        required=False
-    )
-    portfolio_url_profile = forms.URLField(
-        label='Portfolio Website',
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://yourportfolio.com'}),
+    # Social media links (stored as JSON)
+    social_media_links = forms.CharField(
+        widget=forms.HiddenInput(),
         required=False
     )
     
