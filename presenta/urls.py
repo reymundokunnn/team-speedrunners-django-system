@@ -35,6 +35,8 @@ urlpatterns = [
     path('profile/ban/', views.ban_user, name='ban_user'),
     
     # API endpoints
+    path('api/notifications/', views.api_notifications, name='api_notifications'),
+    path('api/activities/', views.api_activities, name='api_activities'),
     path('api/completion-details/<int:request_id>/', views.get_completion_details, name='completion_details'),
     path('api/reference-files/<int:request_id>/', views.get_reference_files, name='reference_files'),
     path('api/finished-files/<int:request_id>/', views.get_finished_files, name='finished_files'),

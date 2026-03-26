@@ -156,17 +156,27 @@ def user_notifications(request):
         user_role = getattr(presenta_user, 'user_role', 'user')
         
         # Get recent activities (last 10)
+        # Use auth_user for Activity queries since Activity.user expects Django auth User
+        auth_user = getattr(presenta_user, 'auth_user', None)
+        
+        if not auth_user:
+            return {'notifications': []}
+        
         if user_role == 'designer':
             # For designers: show new requests and assignments
+            # Include activities where designer is the user OR new request submissions
+            from django.db.models import Q
+            
             activities = Activity.objects.filter(
-                activity_type__in=['request_submitted', 'assigned', 'revision_requested'],
+                Q(user=auth_user, activity_type__in=['assigned', 'revision_requested']) |
+                Q(activity_type='request_submitted'),  # New requests available for designers
                 is_cleared=False
             ).order_by('-created_at')[:10]
         else:
-            # For users: show assignments, status changes, completions
+            # For users: show designer assignments, status changes, completions
             activities = Activity.objects.filter(
-                user=presenta_user,
-                activity_type__in=['assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                user=auth_user,
+                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
                 is_cleared=False
             ).order_by('-created_at')[:10]
         

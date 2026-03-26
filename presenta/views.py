@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -55,6 +55,138 @@ def log_activity(user, activity_type, message, related_request=None, target_user
         related_request=related_request,
         target_user=target_user
     )
+
+
+@login_required(login_url='signin')
+def api_notifications(request):
+    """API endpoint to fetch notifications dynamically."""
+    try:
+        from .models import Activity, User as PresentaUser
+        
+        # Get the presenta user object
+        presenta_user = PresentaUser.objects.filter(
+            email=getattr(request.user, 'email', '')
+        ).first() or PresentaUser.objects.filter(
+            username=getattr(request.user, 'username', '')
+        ).first()
+        
+        if not presenta_user:
+            return JsonResponse({'notifications': []})
+        
+        # Get user role
+        user_role = getattr(presenta_user, 'user_role', 'user')
+        
+        # Use auth_user for Activity queries
+        auth_user = getattr(presenta_user, 'auth_user', None)
+        
+        if not auth_user:
+            return JsonResponse({'notifications': []})
+        
+        # Get recent activities (last 10)
+        if user_role == 'designer':
+            from django.db.models import Q
+            activities = Activity.objects.filter(
+                Q(user=auth_user, activity_type__in=['assigned', 'revision_requested']) |
+                Q(activity_type='request_submitted'),
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        else:
+            activities = Activity.objects.filter(
+                user=auth_user,
+                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        
+        # Format notifications
+        notifications = []
+        for activity in activities:
+            notification = {
+                'id': activity.id,
+                'message': activity.message,
+                'type': activity.activity_type,
+                'created_at': activity.created_at.isoformat(),
+                'time_ago': _get_time_ago(activity.created_at),
+            }
+            notifications.append(notification)
+        
+        return JsonResponse({'notifications': notifications})
+    except Exception as e:
+        import sys
+        print(f"API notifications error: {e}", file=sys.stderr)
+        return JsonResponse({'notifications': []})
+
+
+@login_required(login_url='signin')
+def api_activities(request):
+    """API endpoint to fetch recent activities dynamically."""
+    try:
+        from .models import Activity, DesignRequest, User as PresentaUser
+        from django.db.models import Q
+        
+        user = request.user
+        
+        # Get user role
+        presenta_user = PresentaUser.objects.filter(
+            email=getattr(user, 'email', '')
+        ).first() or PresentaUser.objects.filter(
+            username=getattr(user, 'username', '')
+        ).first()
+        
+        user_role = getattr(presenta_user, 'user_role', 'user') if presenta_user else 'user'
+        
+        # Get user's design request IDs
+        user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
+        
+        # Get user's recent activities (not cleared)
+        # Exclude 'designer_assigned' and 'assigned' since they show in notifications
+        # For designers, also exclude payment-related activities (only show on user dashboard)
+        if user_role == 'designer':
+            activities = Activity.objects.filter(
+                user=user,  # Only activities performed by the designer themselves
+                is_cleared=False
+            ).exclude(activity_type__in=['payment_received', 'payment_confirmed']).select_related('related_request', 'user').order_by('-created_at')[:10]
+        else:
+            activities = Activity.objects.filter(
+                Q(user=user) |  # User's own activities
+                Q(related_request_id__in=user_request_ids),  # Activities on user's requests
+                is_cleared=False
+            ).exclude(activity_type__in=['designer_assigned', 'assigned']).select_related('related_request', 'user').order_by('-created_at')[:10]
+        
+        # Format activities
+        activities_list = []
+        for activity in activities:
+            activity_data = {
+                'id': activity.id,
+                'message': activity.message,
+                'type': activity.activity_type,
+                'created_at': activity.created_at.isoformat(),
+                'time_ago': _get_time_ago(activity.created_at),
+            }
+            activities_list.append(activity_data)
+        
+        return JsonResponse({'activities': activities_list})
+    except Exception as e:
+        import sys
+        print(f"API activities error: {e}", file=sys.stderr)
+        return JsonResponse({'activities': []})
+
+
+def _get_time_ago(timestamp):
+    """Convert timestamp to human-readable time ago format."""
+    from django.utils import timezone
+    now = timezone.now()
+    diff = now - timestamp
+    
+    if diff.days > 0:
+        return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    else:
+        return "Just now"
 
 
 def index(request):
@@ -282,6 +414,7 @@ def user_dashboard(request):
     
     # Get user's recent activities (not cleared)
     # Include: user's own activities + activities on their design requests from designers/admins
+    # Exclude 'designer_assigned' and 'assigned' since they now show in notifications
     from django.db.models import Q
     
     user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
@@ -290,7 +423,7 @@ def user_dashboard(request):
         Q(user=user) |  # User's own activities
         Q(related_request_id__in=user_request_ids),  # Activities on user's requests
         is_cleared=False
-    ).select_related('related_request', 'user').order_by('-created_at')[:10]
+    ).exclude(activity_type__in=['designer_assigned', 'assigned']).select_related('related_request', 'user').order_by('-created_at')[:10]
     
     # Get user timezone, default to browser timezone or UTC
     user_tz = 'UTC'
@@ -340,10 +473,11 @@ def designer_dashboard(request):
     # Get designer's recent activities (not cleared)
     # Only show activities performed BY the designer (their own actions)
     # Designers should NOT see activities performed by clients on their requests
+    # Exclude payment-related activities (only show on user dashboard)
     activities = Activity.objects.filter(
         user=user,  # Only activities performed by the designer themselves
         is_cleared=False
-    ).select_related('related_request', 'user').order_by('-created_at')[:10]
+    ).exclude(activity_type__in=['payment_received', 'payment_confirmed']).select_related('related_request', 'user').order_by('-created_at')[:10]
     
     # Get user timezone
     user_tz = 'UTC'

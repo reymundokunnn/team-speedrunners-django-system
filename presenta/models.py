@@ -235,6 +235,7 @@ class Activity(models.Model):
         ('request_submitted', 'Request Submitted'),
         ('status_changed', 'Status Changed'),
         ('assigned', 'Designer Assigned'),
+        ('designer_assigned', 'Designer Assigned to Request'),
         ('completed', 'Completed'),
         ('payment_received', 'Payment Received'),
         ('payment_confirmed', 'Payment Confirmed'),
