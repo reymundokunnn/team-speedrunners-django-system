@@ -108,34 +108,151 @@ function closeAnnouncementBanner() {
             </div>
         </div>
         <div class="other-icons">
-            <div class="icon-notif" title="View notifications">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 4.5c-2.8 0-5 2.2-5 5v3.5L5 16h14l-2-3v-3.5c0-2.8-2.2-5-5-5z"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"/>
-                    <path d="M10 19a2 2 0 0 0 4 0"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            stroke-linecap="round"/>
-                </svg>
+            <div class="icon-wrapper">
+                <div class="icon-notif" id="notification-toggle" title="View notifications">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4.5c-2.8 0-5 2.2-5 5v3.5L5 16h14l-2-3v-3.5c0-2.8-2.2-5-5-5z"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"/>
+                        <path d="M10 19a2 2 0 0 0 4 0"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="notification-popup" id="notification-popup">
+                    <h3 class="popup-header">Notifications</h3>
+                    <div class="notification-list">
+                        {% if notifications %}
+                            {% for notification in notifications %}
+                            <div class="notification-item">
+                                <div class="notification-icon">
+                                    {% if notification.type == 'assigned' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                                    </svg>
+                                    {% elif notification.type == 'status_changed' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 11 12 14 22 4"></polyline>
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                    </svg>
+                                    {% elif notification.type == 'completed' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    {% elif notification.type == 'request_submitted' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                    {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="notification-content">
+                                    <p class="notification-message">{{ notification.message }}</p>
+                                    <span class="notification-time">{{ notification.time_ago }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="notification-empty">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                <p>No notifications yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 11.5c0 4.1-3.6 7.5-8 7.5-1.2 0-2.4-.2-3.4-.7L4 20l1.8-3.5C5.3 15.4 5 13.5 5 11.5 5 7.4 8.6 4 13 4s7 3.4 7 7.5z"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"/>
-                <line x1="8" y1="10" x2="16" y2="10"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"/>
-                <line x1="8" y1="13" x2="13.5" y2="13"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"/>
-            </svg>
+            <div class="icon-wrapper">
+                <div class="icon-message" id="message-toggle" title="View messages">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 11.5c0 4.1-3.6 7.5-8 7.5-1.2 0-2.4-.2-3.4-.7L4 20l1.8-3.5C5.3 15.4 5 13.5 5 11.5 5 7.4 8.6 4 13 4s7 3.4 7 7.5z"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"/>
+                        <line x1="8" y1="10" x2="16" y2="10"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"/>
+                        <line x1="8" y1="13" x2="13.5" y2="13"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="message-popup" id="message-popup">
+                    <h3 class="popup-header">Messages</h3>
+                    <div class="notification-list">
+                        {% if notifications %}
+                            {% for notification in notifications %}
+                            <div class="notification-item">
+                                <div class="notification-icon">
+                                    {% if notification.type == 'assigned' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                                    </svg>
+                                    {% elif notification.type == 'status_changed' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 11 12 14 22 4"></polyline>
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                    </svg>
+                                    {% elif notification.type == 'completed' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    {% elif notification.type == 'request_submitted' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                    {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="notification-content">
+                                    <p class="notification-message">{{ notification.message }}</p>
+                                    <span class="notification-time">{{ notification.time_ago }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="notification-empty">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <p>No messages yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
         {% else %}
         <div class="menu-btn">
@@ -204,3 +321,56 @@ function closeAnnouncementBanner() {
     </div>
 </div>
 <div id="status-modal-overlay" class="modal-overlay"></div>
+
+<script>
+// Notification and Message Popup Toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationToggle = document.getElementById('notification-toggle');
+    const notificationPopup = document.getElementById('notification-popup');
+    const messageToggle = document.getElementById('message-toggle');
+    const messagePopup = document.getElementById('message-popup');
+
+    // Function to close popup with animation
+    function closePopup(popup) {
+        if (popup.classList.contains('active')) {
+            popup.classList.add('closing');
+            popup.classList.remove('active');
+            setTimeout(() => {
+                popup.classList.remove('closing');
+            }, 300);
+        }
+    }
+
+    // Toggle notification popup
+    notificationToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (notificationPopup.classList.contains('active')) {
+            closePopup(notificationPopup);
+        } else {
+            notificationPopup.classList.add('active');
+            closePopup(messagePopup);
+        }
+    });
+
+    // Toggle message popup
+    messageToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (messagePopup.classList.contains('active')) {
+            closePopup(messagePopup);
+        } else {
+            messagePopup.classList.add('active');
+            closePopup(notificationPopup);
+        }
+    });
+
+    // Close popups when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!notificationToggle.contains(e.target) && !notificationPopup.contains(e.target)) {
+            closePopup(notificationPopup);
+        }
+        if (!messageToggle.contains(e.target) && !messagePopup.contains(e.target)) {
+            closePopup(messagePopup);
+        }
+    });
+});
+</script>

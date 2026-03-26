@@ -39,8 +39,9 @@ class EditProfileForm(forms.ModelForm):
     
     class Meta:
         model = PresentaUser
-        fields = ('first_name', 'last_name', 'email', 'gender', 'phone_number', 'date_of_birth', 'company', 'location', 'bio', 'pronouns')
+        fields = ('username', 'first_name', 'last_name', 'email', 'gender', 'phone_number', 'date_of_birth', 'company', 'location', 'bio', 'pronouns')
         widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
@@ -59,6 +60,20 @@ class EditProfileForm(forms.ModelForm):
         # Make all fields optional for editing
         for field in self.fields:
             self.fields[field].required = False
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            # Check if username is already taken by another user
+            existing_user = PresentaUser.objects.filter(username=username).exclude(pk=self.instance.pk).first()
+            if existing_user:
+                raise forms.ValidationError('This username is already taken.')
+            # Also check Django User model
+            from django.contrib.auth.models import User as DjangoUser
+            existing_django_user = DjangoUser.objects.filter(username=username).exclude(pk=self.instance.auth_user.pk if self.instance.auth_user else None).first()
+            if existing_django_user:
+                raise forms.ValidationError('This username is already taken.')
+        return username
 
 
 class RegistrationForm(forms.ModelForm):

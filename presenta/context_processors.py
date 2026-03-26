@@ -127,3 +127,81 @@ def announcement_banner(request):
         print(f"Announcement banner error: {e}", file=sys.stderr)
     
     return {'announcement_banner': None}
+
+
+def user_notifications(request):
+    """Provide recent notifications/activities for authenticated users.
+    
+    Returns a list of recent activities relevant to the current user.
+    For users: shows designer assignments, status updates, completions
+    For designers: shows new requests and assignments
+    """
+    if not request.user.is_authenticated:
+        return {'notifications': []}
+    
+    try:
+        from .models import Activity, User as PresentaUser
+        
+        # Get the presenta user object
+        presenta_user = PresentaUser.objects.filter(
+            email=getattr(request.user, 'email', '')
+        ).first() or PresentaUser.objects.filter(
+            username=getattr(request.user, 'username', '')
+        ).first()
+        
+        if not presenta_user:
+            return {'notifications': []}
+        
+        # Get user role
+        user_role = getattr(presenta_user, 'user_role', 'user')
+        
+        # Get recent activities (last 10)
+        if user_role == 'designer':
+            # For designers: show new requests and assignments
+            activities = Activity.objects.filter(
+                activity_type__in=['request_submitted', 'assigned', 'revision_requested'],
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        else:
+            # For users: show assignments, status changes, completions
+            activities = Activity.objects.filter(
+                user=presenta_user,
+                activity_type__in=['assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        
+        # Format notifications
+        notifications = []
+        for activity in activities:
+            notification = {
+                'id': activity.id,
+                'message': activity.message,
+                'type': activity.activity_type,
+                'created_at': activity.created_at,
+                'time_ago': _get_time_ago(activity.created_at),
+            }
+            notifications.append(notification)
+        
+        return {'notifications': notifications}
+    except Exception as e:
+        import sys
+        print(f"User notifications error: {e}", file=sys.stderr)
+        return {'notifications': []}
+
+
+def _get_time_ago(timestamp):
+    """Convert timestamp to human-readable time ago format."""
+    from django.utils import timezone
+    now = timezone.now()
+    diff = now - timestamp
+    
+    if diff.days > 0:
+        return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    else:
+        return "Just now"

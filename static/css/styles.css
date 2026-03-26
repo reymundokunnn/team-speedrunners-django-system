@@ -11927,13 +11927,11 @@ body:not(.dark-mode) .content-tabs .tab-btn:hover {
 }
 
 .detail-card {
-    background: rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     padding: 20px;
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
     transition: all 0.3s ease;
 }
 
@@ -12365,6 +12363,193 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 .other-icons {
     display: flex;
     gap: 15px;
+}
+
+/* Icon Wrapper for Popups */
+.icon-wrapper {
+    position: relative;
+}
+
+.icon-notif,
+.icon-message {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.icon-notif:hover,
+.icon-message:hover {
+    opacity: 0.7;
+}
+
+/* Notification and Message Popup Styles */
+.notification-popup,
+.message-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    min-width: 300px;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    padding: 20px;
+    text-align: center;
+}
+
+.notification-popup.active,
+.message-popup.active {
+    display: block;
+    animation: slideDown 0.3s ease-in-out forwards;
+}
+
+.notification-popup.closing,
+.message-popup.closing {
+    animation: slideUp 0.3s ease-in-out forwards;
+}
+
+.popup-header {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+.popup-image {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.popup-text {
+    color: #666;
+    font-size: 0.95em;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Notification List Styles */
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f9f9f9;
+    margin: 0 -20px;
+    padding: 12px 20px;
+}
+
+.notification-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #e87f14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+.notification-icon svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    margin: 0 0 4px 0;
+    font-size: 0.9em;
+    color: #333;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.notification-time {
+    font-size: 0.75em;
+    color: #999;
+}
+
+.notification-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: #999;
+}
+
+.notification-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.notification-empty p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* Dark Mode for Popups */
+body.dark-mode .notification-popup,
+body.dark-mode .message-popup {
+    background-color: #2d2d2d;
+    border-color: #444;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .popup-header {
+    color: #ffffff;
+    border-bottom-color: #444;
+}
+
+body.dark-mode .popup-text {
+    color: #e0e0e0;
+}
+
+body.dark-mode .notification-item {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .notification-item:hover {
+    background-color: #3a3a3a;
+}
+
+body.dark-mode .notification-message {
+    color: #e0e0e0;
+}
+
+body.dark-mode .notification-time {
+    color: #999;
+}
+
+body.dark-mode .notification-empty {
+    color: #999;
 }
 
 .samples-section {

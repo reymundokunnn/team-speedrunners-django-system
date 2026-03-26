@@ -332,6 +332,13 @@
                                 
                                 <div class="form-row-compact">
                                     <div class="form-group-compact">
+                                        <label for="id_username">Username</label>
+                                        {{ profile_form.username }}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row-compact">
+                                    <div class="form-group-compact">
                                         <label for="id_first_name">First Name</label>
                                         {{ profile_form.first_name }}
                                     </div>
@@ -464,7 +471,7 @@
                                 </div>
                             </div>
 
-                            <div class="settings-unified-row">
+                            <div class="settings-unified-row" id="custom-hours-row">
                                 <div class="settings-unified-label-container">
                                     <label for="id_custom_hours_profile" class="settings-unified-label">{{ profile_settings_form.custom_hours.label }}</label>
                                 </div>
@@ -4135,6 +4142,34 @@ function removeSampleImage() {
         sampleImageInput.value = '';
     }
 }
+
+// ============================================
+// Custom Hours Visibility Toggle
+// ============================================
+
+function toggleCustomHours() {
+    const availabilityHoursSelect = document.querySelector('select[name="availability_hours"]');
+    const customHoursRow = document.getElementById('custom-hours-row');
+    
+    if (availabilityHoursSelect && customHoursRow) {
+        if (availabilityHoursSelect.value === 'custom') {
+            customHoursRow.style.display = 'flex';
+        } else {
+            customHoursRow.style.display = 'none';
+        }
+    }
+}
+
+// Initialize custom hours visibility on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCustomHours();
+    
+    // Add event listener for availability hours dropdown changes
+    const availabilityHoursSelect = document.querySelector('select[name="availability_hours"]');
+    if (availabilityHoursSelect) {
+        availabilityHoursSelect.addEventListener('change', toggleCustomHours);
+    }
+});
 </script>
 
 {% endblock %}

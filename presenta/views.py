@@ -1653,12 +1653,14 @@ def unified_settings(request):
                 
                 profile.save()
                 
-                # Also update Django user first_name and last_name
+                # Also update Django user first_name, last_name, and username
                 if profile.first_name:
                     user.first_name = profile.first_name
                 if profile.last_name:
                     user.last_name = profile.last_name
-                if profile.first_name or profile.last_name:
+                if profile.username:
+                    user.username = profile.username
+                if profile.first_name or profile.last_name or profile.username:
                     user.save()
                 
                 messages.success(request, 'Profile updated successfully.')
@@ -1666,8 +1668,8 @@ def unified_settings(request):
                 messages.error(request, 'Error updating profile. Please check the form.')
         else:
             # Account settings form (default)
-            # First handle profile update if it has first_name
-            if 'first_name' in request.POST or 'last_name' in request.POST:
+            # First handle profile update if it has first_name, last_name, or username
+            if 'first_name' in request.POST or 'last_name' in request.POST or 'username' in request.POST:
                 profile_form = EditProfileForm(request.POST, instance=presenta_user)
                 if profile_form.is_valid():
                     profile = profile_form.save(commit=False)
@@ -1702,12 +1704,14 @@ def unified_settings(request):
                     
                     profile.save()
                     
-                    # Also update Django user first_name and last_name
+                    # Also update Django user first_name, last_name, and username
                     if profile.first_name:
                         user.first_name = profile.first_name
                     if profile.last_name:
                         user.last_name = profile.last_name
-                    if profile.first_name or profile.last_name:
+                    if profile.username:
+                        user.username = profile.username
+                    if profile.first_name or profile.last_name or profile.username:
                         user.save()
             
             # Handle account settings
