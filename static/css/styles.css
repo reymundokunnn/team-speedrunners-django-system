@@ -2,7 +2,7 @@
 #blockModal,
 #reportModal,
 #banModal,
-#deleteModal {
+#deleteUserModal {
     display: none !important;
 }
 
@@ -629,7 +629,6 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
-    padding: 16px 24px 24px;
 }
 
 /* Unified Modal Content (for modals using .modal-content) */
@@ -2666,7 +2665,6 @@ body.dark-mode .recent-designs-table~span {
 
 .designs {
     margin-top: 30px;
-    display: flex;
     gap: 20px;
 }
 
@@ -12771,6 +12769,9 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
     justify-content: center;
     padding: 0 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.notification-badge.animate {
     animation: badgePulse 2s ease-in-out infinite;
 }
 
@@ -12792,6 +12793,34 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 
 .icon-notif.has-notifications:hover {
     animation: none;
+}
+
+/* Clear Notifications Button */
+.clear-notifications-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    transition: color 0.2s ease;
+    border-radius: 4px;
+}
+
+.clear-notifications-btn:hover {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+body.dark-mode .clear-notifications-btn {
+    color: #888;
+}
+
+body.dark-mode .clear-notifications-btn:hover {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.2);
 }
 
 /* Notification and Message Popup Styles */
@@ -12827,6 +12856,9 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 }
 
 .popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 1.1em;
     font-weight: 600;
     color: #333;
@@ -12834,6 +12866,10 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
     padding-bottom: 12px;
     border-bottom: 1px solid #eee;
     text-align: left;
+}
+
+.popup-header h3 {
+    margin: 0;
 }
 
 .popup-image {

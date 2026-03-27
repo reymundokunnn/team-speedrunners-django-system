@@ -122,11 +122,19 @@ function closeAnnouncementBanner() {
                                 stroke-linecap="round"/>
                     </svg>
                     {% if notifications %}
-                    <span class="notification-badge" id="notification-badge">{{ notifications|length }}</span>
+                    <span class="notification-badge" id="notification-badge" style="display: none;">{{ notifications|length }}</span>
                     {% endif %}
                 </div>
                 <div class="notification-popup" id="notification-popup">
-                    <h3 class="popup-header">Notifications</h3>
+                    <div class="popup-header">
+                        <h3>Notifications</h3>
+                        <button class="clear-notifications-btn" id="clear-notifications-btn" title="Clear all notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="notification-list">
                         {% if notifications %}
                             {% for notification in notifications %}
@@ -286,17 +294,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const messagePopup = document.getElementById('message-popup');
     const notificationBadge = document.getElementById('notification-badge');
     
-    // Track if notifications have been read (global variable)
-    window.notificationsRead = false;
-
-    // Add animation class if there are notifications
-    if (notificationBadge && !window.notificationsRead) {
+    // Get the list of notification IDs from the server
+    const notificationIds = [];
+    {% if notifications %}
+        {% for notification in notifications %}
+            notificationIds.push({{ notification.id }});
+        {% endfor %}
+    {% endif %}
+    
+    // Get previously read notification IDs from localStorage
+    const readNotificationIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    
+    // Check if there are NEW (unread) notifications
+    const hasNewNotifications = notificationIds.some(id => !readNotificationIds.includes(id));
+    
+    // Initialize window.notificationsRead based on localStorage
+    // This ensures the state persists across page navigations
+    window.notificationsRead = !hasNewNotifications;
+    
+    // Only show badge and animation if there are new (unread) notifications
+    if (notificationBadge && hasNewNotifications) {
+        // Show the badge count
+        notificationBadge.style.display = 'inline-block';
+        notificationBadge.classList.add('animate');
+        
+        // Add animation for new notifications
         notificationToggle.classList.add('has-notifications');
         
         // Remove animation after it completes, then re-add periodically
         notificationToggle.addEventListener('animationend', function() {
             setTimeout(() => {
-                if (notificationBadge && !window.notificationsRead) {
+                if (notificationBadge && hasNewNotifications) {
                     notificationToggle.classList.remove('has-notifications');
                     void notificationToggle.offsetWidth; // Trigger reflow
                     notificationToggle.classList.add('has-notifications');
@@ -325,14 +353,62 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationPopup.classList.add('active');
             closePopup(messagePopup);
             
-            // Mark notifications as read - disable animation and hide badge
+            // Mark notifications as read in localStorage (but don't clear them from server)
+            if (notificationIds.length > 0) {
+                const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+            }
+            
+            // Mark notifications as read globally
             window.notificationsRead = true;
+            
+            // Remove animation and hide badge
             notificationToggle.classList.remove('has-notifications');
             if (notificationBadge) {
                 notificationBadge.style.display = 'none';
+                notificationBadge.classList.remove('animate');
             }
         }
     });
+    
+    // Clear all notifications button
+    const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+    if (clearNotificationsBtn) {
+        clearNotificationsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Clear notifications on the server
+            fetch('/activities/clear/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json()).then(data => {
+                // After clearing, update localStorage to remember these are read
+                if (notificationIds.length > 0) {
+                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                }
+                
+                // Close the popup
+                closePopup(notificationPopup);
+                
+                // Reload the page to refresh notifications
+                window.location.reload();
+            }).catch(error => {
+                console.error('Error clearing notifications:', error);
+                // Still update localStorage even if server call fails
+                if (notificationIds.length > 0) {
+                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                }
+                
+                // Close the popup
+                closePopup(notificationPopup);
+            });
+        });
+    }
 
     // Toggle message popup
     messageToggle.addEventListener('click', function(e) {

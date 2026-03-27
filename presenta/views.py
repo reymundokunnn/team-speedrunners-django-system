@@ -1393,6 +1393,12 @@ def clear_activities(request):
     
     # Redirect back to the referring page or dashboard
     referer = request.META.get('HTTP_REFERER')
+    
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        from django.http import JsonResponse
+        return JsonResponse({'success': True})
+    
     if referer:
         return redirect(referer)
     

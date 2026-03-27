@@ -302,10 +302,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /* Modal Functions */
 function openModal(modalType) {
+    console.log('openModal called with:', modalType);
     const modal = document.getElementById(modalType);
+    console.log('Found modal:', modal);
     if (modal) {
+        console.log('Modal display before:', modal.style.display);
         modal.classList.add('show');
         modal.style.display = 'flex';
+        console.log('Modal display after:', modal.style.display);
+    } else {
+        console.error('Modal not found:', modalType);
     }
 }
 
@@ -1159,9 +1165,46 @@ function confirmCancelProject() {
     form.submit();
 }
 
-/* User Dashboard - Edit Modal Functions */
+// Global click handler for debugging
+document.addEventListener('click', function(e) {
+    var target = e.target;
+    var closestButton = target.closest('.btn-icon');
+    if (closestButton) {
+        console.log('Button clicked:', closestButton);
+        console.log('Has onclick:', closestButton.onclick);
+        console.log('dataset:', closestButton.dataset);
+    }
+}, true); // Use capture to catch all clicks
+
+// User Dashboard - Edit and Delete button global handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation for edit buttons
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.btn-edit');
+        if (editBtn) {
+            console.log('Edit button clicked via delegation');
+            openEditModal(editBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        var deleteBtn = e.target.closest('.btn-delete');
+        if (deleteBtn) {
+            console.log('Delete button clicked via delegation');
+            openDeleteModal(deleteBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+});
+
+// User Dashboard - Edit Modal Functions */
 function openEditModal(button) {
+    console.log('openEditModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
     var designType = button.dataset.designType;
     var description = button.dataset.description;
@@ -1171,19 +1214,32 @@ function openEditModal(button) {
 
     // Set form action URL
     var editForm = document.getElementById('editForm');
+    console.log('editForm:', editForm);
     if (editForm) {
         editForm.action = '/design-request/' + requestId + '/edit/';
 
         // Populate form fields
-        document.getElementById('edit_title').value = title;
-        document.getElementById('edit_design_type').value = designType;
-        document.getElementById('edit_description').value = description;
-        document.getElementById('edit_budget').value = budget;
-        document.getElementById('edit_currency').value = currency;
-        document.getElementById('edit_deadline').value = deadline;
+        var editTitle = document.getElementById('edit_title');
+        var editDesignType = document.getElementById('edit_design_type');
+        var editDescription = document.getElementById('edit_description');
+        var editBudget = document.getElementById('edit_budget');
+        var editCurrency = document.getElementById('edit_currency');
+        var editDeadline = document.getElementById('edit_deadline');
+        
+        console.log('Form fields:', { editTitle, editDesignType, editDescription, editBudget, editCurrency, editDeadline });
+        
+        if (editTitle) editTitle.value = title;
+        if (editDesignType) editDesignType.value = designType;
+        if (editDescription) editDescription.value = description;
+        if (editBudget) editBudget.value = budget;
+        if (editCurrency) editCurrency.value = currency;
+        if (editDeadline) editDeadline.value = deadline;
 
         // Show modal using openModal
+        console.log('Calling openModal for editModal');
         openModal('editModal');
+    } else {
+        console.error('editForm not found in the DOM');
     }
 }
 
@@ -1191,22 +1247,222 @@ function closeEditModal() {
     closeModal('editModal');
 }
 
-/* User Dashboard - Delete Modal Functions */
+/* User Dashboard - Delete Design Request Modal */
 function openDeleteModal(button) {
+    console.log('openDeleteModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
-
-    // Set form action URL
-    var deleteForm = document.getElementById('deleteForm');
-    if (deleteForm) {
-        deleteForm.action = '/design-request/' + requestId + '/delete/';
-
-        // Set title
-        document.getElementById('deleteRequestTitle').textContent = title;
-
-        // Show modal
+    
+    // Get the modal
+    var modal = document.getElementById('deleteModal');
+    console.log('Delete modal:', modal);
+    var form = document.getElementById('deleteForm');
+    var titleEl = document.getElementById('deleteRequestTitle');
+    
+    if (modal && form && titleEl) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/delete/';
+        
+        // Set the title
+        titleEl.textContent = title;
+        
+        // Show the modal using openModal for consistency
         openModal('deleteModal');
+    } else {
+        console.error('Delete modal elements not found:', { modal: modal, form: form, titleEl: titleEl });
     }
+}
+
+function closeDeleteModal() {
+    var modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+function confirmDelete(btn) {
+    var form = document.getElementById('deleteForm');
+    if (form) {
+        // Extract request ID from form action
+        var action = form.action;
+        var match = action.match(/\/design-request\/(\d+)\/delete\//);
+        var requestId = match ? match[1] : null;
+        
+        if (!requestId) {
+            alert('Error: Could not get request ID');
+            return false;
+        }
+        
+        // Get CSRF token
+        var csrftoken = getCookie('csrftoken');
+        
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(function(response) {
+            if (response.ok) {
+                // Close modal
+                closeDeleteModal();
+                // Find and remove the row in the table
+                var tableRow = document.querySelector('tr[data-request-id="' + requestId + '"]');
+                if (tableRow) {
+                    tableRow.remove();
+                }
+                
+                // Check if there are any remaining rows
+                var tbody = document.querySelector('.design-requests-table tbody');
+                if (tbody) {
+                    var remainingRows = tbody.querySelectorAll('tr');
+                    if (remainingRows.length === 0) {
+                        // Hide the table and show empty state
+                        var table = document.querySelector('.design-requests-table');
+                        var emptyState = document.getElementById('emptyState');
+                        if (table) table.style.display = 'none';
+                        if (emptyState) emptyState.style.display = 'flex';
+                    }
+                }
+            } else {
+                alert('Error deleting design request. Please try again.');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design request. Please try again.');
+        });
+    }
+    return false;
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/* User Dashboard - Bulk Delete Design Requests */
+function toggleSelectAllDesignRequests() {
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    var checkboxes = document.querySelectorAll('.design-request-checkbox');
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateDesignRequestBulkActions();
+}
+
+function updateDesignRequestBulkActions() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+    var selectedCount = document.getElementById('selectedDesignCount');
+
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.classList.add('show');
+        selectedCount.textContent = checkedBoxes.length + ' design request' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
+    } else {
+        bulkActionsBar.classList.remove('show');
+    }
+
+    // Update select all checkbox state
+    var allCheckboxes = document.querySelectorAll('.design-request-checkbox');
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function bulkDeleteDesignRequests() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        alert('No design requests selected.');
+        return;
+    }
+
+    // Show bulk delete confirmation modal
+    var bulkDeleteCount = document.getElementById('bulkDeleteCount');
+    if (bulkDeleteCount) {
+        bulkDeleteCount.textContent = requestIds.length;
+    }
+    openModal('bulkDeleteModal');
+}
+
+// Bulk Delete Modal Functions
+function closeBulkDeleteModal() {
+    closeModal('bulkDeleteModal');
+}
+
+function confirmBulkDelete(btn) {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        closeBulkDeleteModal();
+        return false;
+    }
+
+    var csrftoken = getCookie('csrftoken');
+    var deletePromises = requestIds.map(function(requestId) {
+        return fetch('/design-request/' + requestId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        });
+    });
+
+    Promise.all(deletePromises)
+        .then(function() {
+            // Remove deleted rows
+            checkedBoxes.forEach(function(checkbox) {
+                var row = checkbox.closest('tr');
+                if (row) {
+                    row.remove();
+                }
+            });
+
+            // Hide bulk actions bar
+            var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+            bulkActionsBar.classList.remove('show');
+
+            // Close the bulk delete modal
+            closeBulkDeleteModal();
+
+            // Check if table is now empty
+            var tbody = document.querySelector('.design-requests-table tbody');
+            if (tbody) {
+                var remainingRows = tbody.querySelectorAll('tr');
+                if (remainingRows.length === 0) {
+                    var table = document.querySelector('.design-requests-table');
+                    var emptyState = document.getElementById('emptyState');
+                    if (table) table.style.display = 'none';
+                    if (emptyState) emptyState.style.display = 'flex';
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design requests. Please try again.');
+            closeBulkDeleteModal();
+        });
 }
 
 function closeDeleteModal() {
@@ -2663,8 +2919,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Handle user action buttons (view/edit/delete)
-    document.querySelectorAll('.action-buttons button').forEach(function (button) {
+    // Handle user action buttons in admin dashboard (view/edit/delete)
+    // Only target buttons that have data-user-id attribute (admin dashboard)
+    document.querySelectorAll('.action-buttons button[data-user-id]').forEach(function (button) {
         button.addEventListener('click', function () {
             var userId = this.getAttribute('data-user-id');
             var action = this.getAttribute('data-action');
@@ -3355,16 +3612,26 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (!notificationList) return;
         
-        // Check if new notifications arrived
-        const hasNewNotifications = notifications.length > previousNotificationCount;
+        // Get notification IDs from the API response
+        const notificationIds = notifications.map(n => n.id);
+        
+        // Get previously read notification IDs from localStorage
+        const readNotificationIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        
+        // Check if there are NEW (unread) notifications
+        const hasNewNotifications = notificationIds.some(id => !readNotificationIds.includes(id));
+        
+        // Check if new notifications arrived (more than before)
+        const hasMoreNotifications = notifications.length > previousNotificationCount;
         previousNotificationCount = notifications.length;
         
         // If new notifications arrived and user had read previous ones, re-enable animation
-        if (hasNewNotifications && window.notificationsRead) {
+        if (hasMoreNotifications && window.notificationsRead) {
             window.notificationsRead = false;
             if (notificationToggle && notificationBadge) {
                 notificationToggle.classList.add('has-notifications');
                 notificationBadge.style.display = 'block';
+                notificationBadge.classList.add('animate');
             }
         }
         
@@ -3372,12 +3639,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (notificationBadge) {
             if (notifications.length > 0) {
                 notificationBadge.textContent = notifications.length;
-                // Only show badge if notifications haven't been read
-                if (!window.notificationsRead) {
+                // Only show badge if there are unread notifications
+                if (hasNewNotifications) {
                     notificationBadge.style.display = 'block';
+                    notificationBadge.classList.add('animate');
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBadge.classList.remove('animate');
                 }
             } else {
                 notificationBadge.style.display = 'none';
+                notificationBadge.classList.remove('animate');
             }
         }
         
