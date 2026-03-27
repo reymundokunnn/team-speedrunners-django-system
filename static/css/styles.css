@@ -1,3 +1,11 @@
+/* Hide work-in-progress modals on profile page */
+#blockModal,
+#reportModal,
+#banModal,
+#deleteModal {
+    display: none !important;
+}
+
 /* Dark Mode & Animation Styles */
 @keyframes fadeInDarkMode {
     from {
@@ -481,50 +489,94 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     border-top-color: #444;
 }
 
-/* Status Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 50%;
-    top: 50%;
-    width: 500px;
-    max-width: 90vw;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+/* Modal Fade In Animation */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
-.modal.active {
-    animation: modalSlideDown 0.3s ease-out forwards;
-}
-
-.modal-overlay {
-    display: none;
+/* Unified Modal Backdrop */
+.modal-backdrop {
     position: fixed;
-    z-index: 1999;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    animation: fadeInDarkMode 0.3s ease-out;
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1999;
+    animation: modalFadeIn 0.3s ease-out forwards;
 }
 
-.modal.active {
-    display: block;
+/* Unified Modal Overlay (for existing code that uses .modal-overlay) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: -1;
+    animation: modalFadeIn 0.3s ease-out forwards;
 }
 
-.modal-overlay.active {
-    display: block;
+/* Unified Modal Wrapper */
+.modal-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
+.modal-wrapper.active {
+    display: flex;
+}
+
+/* Unified Modal Container */
+.modal-container {
+    background-color: #ffffff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+/* Unified Modal Slide In Animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Unified Modal Header */
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid #eee;
 }
 
@@ -532,24 +584,253 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     margin: 0;
     font-size: 1.3em;
     color: #333;
+    font-weight: 600;
 }
 
+/* Unified Modal Close Button */
 .modal-close {
-    width: 24px;
-    height: 24px;
-    font-size: 20pt;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #666;
+    transition: all 0.2s ease;
+    line-height: 1;
+    z-index: 10;
 }
 
 .modal-close:hover {
     color: #e87f14;
+    background-color: #f5f5f5;
+    transform: rotate(90deg);
+}
+
+.modal-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Unified Modal Body */
+.modal-body {
+    padding: 20px 24px;
+}
+
+/* Unified Modal Actions */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 16px 24px 24px;
+}
+
+/* Unified Modal Content (for modals using .modal-content) */
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+/* Unified Modal Content Close Button */
+.modal-content .close-btn,
+.modal-content .modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: all 0.2s ease;
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+}
+
+.modal-content .close-btn:hover,
+.modal-content .modal-close-btn:hover {
+    background-color: #f0f0f0;
+    color: #e87f14;
+    transform: rotate(90deg);
+}
+
+.modal-content .close-btn svg,
+.modal-content .modal-close-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Unified Modal Title */
+.modal-content h2,
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding-right: 40px;
+}
+
+/* Unified Modal Responsive */
+@media (max-width: 540px) {
+    .modal-container,
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+        max-height: 85vh;
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        padding: 16px 20px;
+    }
+    
+    .modal-body {
+        padding: 16px 20px;
+    }
+    
+    .modal-actions {
+        padding: 12px 20px 20px;
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Dark Mode Unified Modal Styles */
+body.dark-mode .modal-backdrop,
+body.dark-mode .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .modal-container,
+body.dark-mode .modal-content {
+    background-color: #2d2d2d;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .modal-header h2,
+body.dark-mode .modal-content h2,
+body.dark-mode .modal-content h3 {
+    color: #ffffff;
+}
+
+body.dark-mode .modal-close,
+body.dark-mode .modal-content .close-btn,
+body.dark-mode .modal-content .modal-close-btn {
+    color: #aaa;
+}
+
+body.dark-mode .modal-close:hover,
+body.dark-mode .modal-content .close-btn:hover,
+body.dark-mode .modal-content .modal-close-btn:hover {
+    background-color: #404040;
+    color: #e87f14;
+}
+
+body.dark-mode .modal-body {
+    color: #e0e0e0;
+}
+
+/* Status Modal Styles */
+#status-modal.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    max-width: 90vw;
+}
+
+#status-modal.modal.active {
+    display: block;
+}
+
+#status-modal-overlay.modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 1999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+#status-modal-overlay.modal-overlay.active {
+    display: block;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3em;
+    color: #333;
+    font-weight: 600;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #666;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #e87f14;
+    background-color: #f5f5f5;
+    transform: rotate(90deg);
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 20px 24px;
 }
 
 .status-options {
@@ -610,10 +891,6 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
 }
 
 /* Dark mode modal styles */
-body.dark-mode .modal {
-    background-color: #2d2d2d;
-}
-
 body.dark-mode .modal-header {
     border-bottom-color: #444;
 }
@@ -1984,10 +2261,6 @@ h1#greeting {
     margin-bottom: 20px;
 }
 
-.dashboard-container {
-    margin-top: 0;
-}
-
 .dashboard-stats {
     display: flex;
     gap: clamp(10px, 3vw, 30px);
@@ -2070,6 +2343,11 @@ body.dark-mode .dashboard-section .dashboard-container .side-panel {
     margin-left: 270px;
     margin-top: -20px;
     transition: all 0.3s ease;
+    background-color: #ffffff;
+}
+
+body.dark-mode .dashboard-container .main {
+    background-color: #1a1a1a;
 }
 
 .dashboard-container .side-panel {
@@ -2470,27 +2748,20 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease-out;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .add-new-design-modal.show {
     display: flex;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
 }
 
 .add-new-design-modal .modal-content {
@@ -2619,24 +2890,45 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
 }
 
 .file-upload-area {
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    padding: 25px 20px;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 32px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    background-color: #fafafa;
+    transition: all 0.2s ease;
+    background: #f9fafb;
 }
 
 .file-upload-area:hover {
     border-color: #e87f14;
-    background-color: #fff5f0;
+    background: #fff7ed;
 }
 
 .file-upload-area.dragover {
     border-color: #e87f14;
-    background-color: #fff5f0;
-    transform: scale(1.02);
+    background: #fed7aa;
+}
+
+.file-upload-area-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-upload-area-content svg {
+    color: #9ca3af;
+}
+
+.file-upload-area-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.file-upload-area-content small {
+    color: #9ca3af;
+    font-size: 0.75rem;
 }
 
 /* Modal responsive styles */
@@ -2863,18 +3155,30 @@ body.dark-mode .design-request-form select {
 }
 
 body.dark-mode .file-upload-area {
-    background-color: #484848;
-    border-color: #666;
+    background: #2d2d2d;
+    border-color: #555;
 }
 
 body.dark-mode .file-upload-area:hover {
     border-color: #e87f14;
-    background-color: #565656;
+    background: #3d2600;
 }
 
 body.dark-mode .file-upload-area.dragover {
     border-color: #e87f14;
-    background-color: #565656;
+    background: #4d3500;
+}
+
+body.dark-mode .file-upload-area-content svg {
+    color: #6b7280;
+}
+
+body.dark-mode .file-upload-area-content p {
+    color: #e5e7eb;
+}
+
+body.dark-mode .file-upload-area-content small {
+    color: #9ca3af;
 }
 
 /* Action buttons for design requests table */
@@ -2959,13 +3263,16 @@ body.dark-mode .confirm-note {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease-out;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .edit-modal.show {
@@ -2982,7 +3289,7 @@ body.dark-mode .confirm-note {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
-    animation: slideUp 0.3s ease-out;
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 body.dark-mode .edit-modal .modal-content {
@@ -2993,7 +3300,7 @@ body.dark-mode .edit-modal .modal-content {
 .edit-modal .modal-content h2 {
     margin-top: 0;
     margin-bottom: 20px;
-    color: #e87f14;
+    color: #333;
     font-size: 1.5rem;
     font-weight: 700;
     padding-right: 40px;
@@ -3726,16 +4033,20 @@ body.dark-mode .project-link {
 .project-modal,
 .confirm-modal {
     background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 10000;
+    z-index: 2000;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .project-modal.active,
@@ -3745,6 +4056,7 @@ body.dark-mode .project-link {
 
 .modal-container {
     position: relative;
+    z-index: 1;
     background: #ffffff;
     border-radius: 16px;
     width: 90%;
@@ -3752,7 +4064,7 @@ body.dark-mode .project-link {
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.3s ease-out;
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 body.dark-mode .modal-container {
@@ -3760,7 +4072,7 @@ body.dark-mode .modal-container {
 }
 
 .modal-header {
-    padding: 25px 25px 15px;
+    padding: 20px 24px;
     border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
@@ -3775,8 +4087,9 @@ body.dark-mode .modal-header {
 
 .modal-header h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.3em;
     color: #333;
+    font-weight: 600;
 }
 
 body.dark-mode .modal-header h2 {
@@ -3784,7 +4097,7 @@ body.dark-mode .modal-header h2 {
 }
 
 .modal-body {
-    padding: 20px 25px 25px;
+    padding: 20px 24px;
 }
 
 .project-info {
@@ -4488,13 +4801,16 @@ body.dark-mode .form-actions .btn-secondary:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
-    opacity: 1;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .cropper-modal.show {
@@ -4519,9 +4835,10 @@ body.cropper-modal-open {
     max-height: 90vh;
     overflow: hidden;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 body.dark-mode .cropper-modal-content {
@@ -8251,13 +8568,18 @@ body.dark-mode .settings-compact-description {
 .change-password-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .change-password-modal.show {
@@ -8268,32 +8590,57 @@ body.dark-mode .settings-compact-description {
 
 .change-password-modal-content {
     background-color: white;
-    border-radius: 8px;
+    border-radius: 16px;
     width: 90%;
-    max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 .change-password-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid #eee;
 }
 
 .change-password-modal-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 1.3em;
     color: #333;
+    font-weight: 600;
+}
+
+.change-password-modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #666;
+    transition: all 0.2s ease;
 }
 
 .change-password-modal-close:hover {
-    color: #333;
+    color: #e87f14;
+    background-color: #f5f5f5;
+    transform: rotate(90deg);
+}
+
+.change-password-modal-close::before {
+    content: "\00d7";
+    font-size: 24px;
+    line-height: 1;
 }
 
 .change-password-modal-form {
-    padding: 20px;
+    padding: 20px 24px;
 }
 
 .change-password-form-group {
@@ -8310,29 +8657,31 @@ body.dark-mode .settings-compact-description {
 
 .change-password-form-control {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 14px;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .change-password-form-control:focus {
     outline: none;
     border-color: #e87f14;
+    box-shadow: 0 0 0 4px rgba(232, 127, 20, 0.1);
 }
 
 .change-password-form-error {
     display: block;
-    color: #d32f2f;
+    color: #dc3545;
     font-size: 12px;
     margin-top: 4px;
 }
 
 .change-password-form-message {
     margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 4px;
+    padding: 12px;
+    border-radius: 8px;
     text-align: center;
     font-size: 14px;
 }
@@ -8343,14 +8692,15 @@ body.dark-mode .settings-compact-description {
 }
 
 .change-password-form-error-text {
-    color: #d32f2f;
+    color: #dc3545;
     background-color: #fff0f0;
 }
 
 .change-password-modal-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     justify-content: flex-end;
+    padding: 16px 24px 24px;
 }
 
 .change-password-modal-actions button {
@@ -8360,23 +8710,22 @@ body.dark-mode .settings-compact-description {
 
 .change-password-btn {
     flex: 1;
-    padding: 10px 16px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
-    font-weight: bold;
+    transition: all 0.3s ease;
 }
 
 .change-password-btn-primary {
-    background-color: #e87f14;
+    background: linear-gradient(135deg, #e87f14 0%, #d06b0f 100%);
     color: white;
 }
 
 .change-password-btn-primary:hover {
-    background-color: #d06f10;
+    background: linear-gradient(135deg, #d06b0f 0%, #b85a0d 100%);
 }
 
 .change-password-btn-primary.loading {
@@ -8385,25 +8734,30 @@ body.dark-mode .settings-compact-description {
 }
 
 .change-password-btn-secondary {
-    background-color: #e0e0e0;
+    background-color: #f3f4f6;
     color: #333;
 }
 
 .change-password-btn-secondary:hover {
-    background-color: #d0d0d0;
+    background-color: #e5e7eb;
 }
 
 /* Social Media Modal Styles */
 .social-media-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 20px;
+    box-sizing: border-box;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .social-media-modal.show {
@@ -8414,42 +8768,53 @@ body.dark-mode .settings-compact-description {
 
 .social-media-modal-content {
     background-color: white;
-    border-radius: 8px;
+    border-radius: 16px;
     width: 90%;
     max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 .social-media-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid #eee;
 }
 
 .social-media-modal-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 1.3em;
     color: #333;
+    font-weight: 600;
 }
 
 .social-media-modal-close {
-    background: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
     border: none;
-    font-size: 24px;
     cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
     color: #666;
+    transition: all 0.2s ease;
     padding: 0;
     line-height: 1;
 }
 
 .social-media-modal-close:hover {
-    color: #333;
+    color: #e87f14;
+    background-color: #f5f5f5;
+    transform: rotate(90deg);
 }
 
 .social-media-modal-body {
-    padding: 20px;
+    padding: 20px 24px;
 }
 
 .social-platform-selection {
@@ -11844,21 +12209,20 @@ body:not(.dark-mode) .profile-actions .btn-secondary:hover {
 
 /* Profile Content - Modern Tabs */
 .profile-content {
-    background: rgba(45, 45, 45, 0.6);
+    background: #ffffff;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 24px;
     padding: 8px;
     margin-bottom: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-body:not(.dark-mode) .profile-content {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+body.dark-mode .profile-content {
+    background: rgba(45, 45, 45, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .content-tabs {
@@ -12143,7 +12507,9 @@ body:not(.dark-mode) .empty-state span {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .profile-container .modal.active {
@@ -12157,18 +12523,25 @@ body:not(.dark-mode) .empty-state span {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .profile-container .modal-content {
     position: relative;
-    background: #2d2d2d;
-    border-radius: 20px;
+    background: #ffffff;
+    border-radius: 16px;
     width: 90%;
-    max-width: 440px;
-    overflow: hidden;
-    animation: modalSlideDown 0.3s ease;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .profile-container .modal-content {
+    background: #2d2d2d;
 }
 
 body:not(.dark-mode) .profile-container .modal-content {
@@ -12439,6 +12812,7 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
     transform: translateY(-10px);
     padding: 20px;
     text-align: center;
+    overflow-x: hidden;
 }
 
 .notification-popup.active,
@@ -12522,6 +12896,7 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 .notification-content {
     flex: 1;
     min-width: 0;
+    text-align: left;
 }
 
 .notification-message {
@@ -12535,6 +12910,7 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 .notification-time {
     font-size: 0.75em;
     color: #999;
+    text-align: left;
 }
 
 .notification-empty {

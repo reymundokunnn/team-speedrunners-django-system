@@ -451,7 +451,15 @@
                     <label for="finished_file">Upload Finished File</label>
                     <div class="file-upload-area" id="modalFileUploadArea">
                         <input type="file" id="finished_file" name="finished_file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.ai,.psd,.svg" style="display: none;">
-                        <p>Drag and drop files here or <span class="file-upload-link">click to browse</span></p>
+                        <div class="file-upload-area-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag and drop files here, or click to select</p>
+                            <small>Upload finished design files</small>
+                        </div>
                         <div id="modalFileList" class="file-list"></div>
                     </div>
                 </div>

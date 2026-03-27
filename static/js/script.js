@@ -624,7 +624,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileUploadArea = document.getElementById('fileUploadArea');
     const fileInput = document.getElementById('reference_files');
     const fileList = document.getElementById('fileList');
-    const fileUploadLink = document.querySelector('.file-upload-link');
 
     if (!fileUploadArea || !fileInput) return;
 
@@ -660,12 +659,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Click to browse - trigger file input click
-    if (fileUploadLink) {
-        fileUploadLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            fileInput.click();
-        });
-    }
+    fileUploadArea.addEventListener('click', function (e) {
+        // Don't trigger if clicking on file list items or remove buttons
+        if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+            return;
+        }
+        e.stopPropagation();
+        fileInput.click();
+    });
 
     // File input change - accumulate files (only new files, not duplicates)
     fileInput.addEventListener('change', function () {
@@ -706,10 +707,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fileList.innerHTML = '';
         const fileArray = Array.from(files);
 
-        // Toggle upload text visibility
-        const uploadText = fileUploadArea.querySelector('p');
-        if (uploadText) {
-            uploadText.style.display = fileArray.length > 0 ? 'none' : 'block';
+        // Toggle upload content visibility
+        const uploadContent = fileUploadArea.querySelector('.file-upload-area-content');
+        if (uploadContent) {
+            uploadContent.style.display = fileArray.length > 0 ? 'none' : 'flex';
         }
 
         if (fileArray.length === 0) {
@@ -852,7 +853,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
                 return;
             }
-            e.preventDefault();
             e.stopPropagation();
             finishedFileInput.click();
         });
@@ -906,10 +906,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             modalFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = modalFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = modalFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -1351,6 +1351,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return dt.files;
         }
 
+        // Click to browse - trigger file input click
+        editFileUploadArea.addEventListener('click', function (e) {
+            // Don't trigger if clicking on file list items or remove buttons
+            if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+                return;
+            }
+            e.stopPropagation();
+            editFileInput.click();
+        });
+
         // Drag and drop events
         editFileUploadArea.addEventListener('dragover', function (e) {
             e.preventDefault();
@@ -1390,10 +1400,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             editFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = editFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = editFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -3257,6 +3267,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let activitiesPollingInterval = null;
     let lastNotificationsHash = '';
     let lastActivitiesHash = '';
+    let previousNotificationCount = 0;
     
     // Get CSRF token from cookie
     function getCSRFToken() {
@@ -3340,14 +3351,31 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateNotificationsUI(notifications) {
         const notificationList = document.querySelector('.notification-popup .notification-list');
         const notificationBadge = document.getElementById('notification-badge');
+        const notificationToggle = document.getElementById('notification-toggle');
         
         if (!notificationList) return;
+        
+        // Check if new notifications arrived
+        const hasNewNotifications = notifications.length > previousNotificationCount;
+        previousNotificationCount = notifications.length;
+        
+        // If new notifications arrived and user had read previous ones, re-enable animation
+        if (hasNewNotifications && window.notificationsRead) {
+            window.notificationsRead = false;
+            if (notificationToggle && notificationBadge) {
+                notificationToggle.classList.add('has-notifications');
+                notificationBadge.style.display = 'block';
+            }
+        }
         
         // Update badge
         if (notificationBadge) {
             if (notifications.length > 0) {
                 notificationBadge.textContent = notifications.length;
-                notificationBadge.style.display = 'block';
+                // Only show badge if notifications haven't been read
+                if (!window.notificationsRead) {
+                    notificationBadge.style.display = 'block';
+                }
             } else {
                 notificationBadge.style.display = 'none';
             }

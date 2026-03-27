@@ -246,7 +246,7 @@ function closeAnnouncementBanner() {
     <div class="modal-content">
         <div class="modal-header">
             <h2>Set Your Status</h2>
-            <span class="modal-close" id="modal-close">&times;</span>
+            <span class="modal-close" id="status-modal-close">&times;</span>
         </div>
         <div class="modal-body">
             <div class="status-options">
@@ -285,15 +285,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageToggle = document.getElementById('message-toggle');
     const messagePopup = document.getElementById('message-popup');
     const notificationBadge = document.getElementById('notification-badge');
+    
+    // Track if notifications have been read (global variable)
+    window.notificationsRead = false;
 
     // Add animation class if there are notifications
-    if (notificationBadge) {
+    if (notificationBadge && !window.notificationsRead) {
         notificationToggle.classList.add('has-notifications');
         
         // Remove animation after it completes, then re-add periodically
         notificationToggle.addEventListener('animationend', function() {
             setTimeout(() => {
-                if (notificationBadge) {
+                if (notificationBadge && !window.notificationsRead) {
                     notificationToggle.classList.remove('has-notifications');
                     void notificationToggle.offsetWidth; // Trigger reflow
                     notificationToggle.classList.add('has-notifications');
@@ -321,6 +324,13 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             notificationPopup.classList.add('active');
             closePopup(messagePopup);
+            
+            // Mark notifications as read - disable animation and hide badge
+            window.notificationsRead = true;
+            notificationToggle.classList.remove('has-notifications');
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+            }
         }
     });
 
