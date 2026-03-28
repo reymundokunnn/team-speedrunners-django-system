@@ -59,6 +59,9 @@
                                 <h1 class="profile-name">
                                     {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
                                 </h1>
+                                <span class="profile-username">
+                                    @{{ target.username }}
+                                </span>
                                 
                                 <div class="profile-meta">
                                     {% if target.is_superuser %}
@@ -86,7 +89,7 @@
                                 {% if target.bio %}
                                 <span class="profile-bio">{{target.bio}}</span>
                                 {% else %}
-                                <span class="profile-bio">No bio available.</span>
+                                <span class="profile-bio"></span>
                                 {% endif %}
                             </div>
                             <div class="profile-stats">
@@ -250,7 +253,11 @@
                     <div class="recent-works-section">
                         <div class="recent-works-header">
                             <h2 class="recent-works-title">
-                                Recent Works
+                                {% if target.user_role == 'user' %}
+                                    My Requests
+                                {% else %}
+                                    Recent Works
+                                {% endif %}
                             </h2>
                         </div>
                         {% if recent_works %}
