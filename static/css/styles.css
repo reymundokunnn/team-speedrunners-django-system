@@ -5108,7 +5108,7 @@ body.dark-mode .cropper-modal-footer {
 /* Cropper.js custom styles */
 .cropper-view-box,
 .cropper-face {
-    border-radius: 50%;
+    border-radius: 0%;
 }
 
 .cropper-view-box {
@@ -5155,12 +5155,6 @@ body.dark-mode .cropper-bg {
             #4a4a4a 75%,
             #3a3a3a 75%,
             #3a3a3a);
-}
-
-/* Cropper.js Customization */
-.cropper-view-box,
-.cropper-face {
-    border-radius: 50%;
 }
 
 .cropper-point {
