@@ -302,10 +302,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /* Modal Functions */
 function openModal(modalType) {
+    console.log('openModal called with:', modalType);
     const modal = document.getElementById(modalType);
+    console.log('Found modal:', modal);
     if (modal) {
+        console.log('Modal display before:', modal.style.display);
         modal.classList.add('show');
         modal.style.display = 'flex';
+        console.log('Modal display after:', modal.style.display);
+    } else {
+        console.error('Modal not found:', modalType);
     }
 }
 
@@ -624,7 +630,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileUploadArea = document.getElementById('fileUploadArea');
     const fileInput = document.getElementById('reference_files');
     const fileList = document.getElementById('fileList');
-    const fileUploadLink = document.querySelector('.file-upload-link');
 
     if (!fileUploadArea || !fileInput) return;
 
@@ -660,12 +665,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Click to browse - trigger file input click
-    if (fileUploadLink) {
-        fileUploadLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            fileInput.click();
-        });
-    }
+    fileUploadArea.addEventListener('click', function (e) {
+        // Don't trigger if clicking on file list items or remove buttons
+        if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+            return;
+        }
+        e.stopPropagation();
+        fileInput.click();
+    });
 
     // File input change - accumulate files (only new files, not duplicates)
     fileInput.addEventListener('change', function () {
@@ -706,10 +713,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fileList.innerHTML = '';
         const fileArray = Array.from(files);
 
-        // Toggle upload text visibility
-        const uploadText = fileUploadArea.querySelector('p');
-        if (uploadText) {
-            uploadText.style.display = fileArray.length > 0 ? 'none' : 'block';
+        // Toggle upload content visibility
+        const uploadContent = fileUploadArea.querySelector('.file-upload-area-content');
+        if (uploadContent) {
+            uploadContent.style.display = fileArray.length > 0 ? 'none' : 'flex';
         }
 
         if (fileArray.length === 0) {
@@ -792,7 +799,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.dataset.requester,
                 link.dataset.deadline,
                 link.dataset.budget,
-                link.dataset.completedAt
+                link.dataset.completedAt,
+                link.dataset.revisionNotes
             );
         });
     });
@@ -852,7 +860,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
                 return;
             }
-            e.preventDefault();
             e.stopPropagation();
             finishedFileInput.click();
         });
@@ -906,10 +913,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             modalFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = modalFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = modalFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -978,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt) {
+function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt, revisionNotes) {
     currentDesignId = id;
     document.getElementById('modalDesignId').value = id;
     document.getElementById('modalProjectTitle').textContent = title;
@@ -986,6 +993,16 @@ function openProjectModal(id, title, description, status, requester, deadline, b
     document.getElementById('modalRequester').textContent = requester;
     document.getElementById('modalDeadline').textContent = deadline;
     document.getElementById('modalBudget').textContent = budget;
+    
+    // Handle revision notes
+    var revisionNotesSection = document.getElementById('revisionNotesSection');
+    var modalRevisionNotes = document.getElementById('modalRevisionNotes');
+    if (revisionNotes && revisionNotes.trim() !== '') {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'block';
+        if (modalRevisionNotes) modalRevisionNotes.innerHTML = '<p class="revision-notes-text">' + revisionNotes + '</p>';
+    } else {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'none';
+    }
 
     var statusBadge = document.getElementById('modalProjectStatus');
     statusBadge.className = 'status-badge status-' + status;
@@ -1159,9 +1176,46 @@ function confirmCancelProject() {
     form.submit();
 }
 
-/* User Dashboard - Edit Modal Functions */
+// Global click handler for debugging
+document.addEventListener('click', function(e) {
+    var target = e.target;
+    var closestButton = target.closest('.btn-icon');
+    if (closestButton) {
+        console.log('Button clicked:', closestButton);
+        console.log('Has onclick:', closestButton.onclick);
+        console.log('dataset:', closestButton.dataset);
+    }
+}, true); // Use capture to catch all clicks
+
+// User Dashboard - Edit and Delete button global handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation for edit buttons
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.btn-edit');
+        if (editBtn) {
+            console.log('Edit button clicked via delegation');
+            openEditModal(editBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        var deleteBtn = e.target.closest('.btn-delete');
+        if (deleteBtn) {
+            console.log('Delete button clicked via delegation');
+            openDeleteModal(deleteBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+});
+
+// User Dashboard - Edit Modal Functions */
 function openEditModal(button) {
+    console.log('openEditModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
     var designType = button.dataset.designType;
     var description = button.dataset.description;
@@ -1171,19 +1225,32 @@ function openEditModal(button) {
 
     // Set form action URL
     var editForm = document.getElementById('editForm');
+    console.log('editForm:', editForm);
     if (editForm) {
         editForm.action = '/design-request/' + requestId + '/edit/';
 
         // Populate form fields
-        document.getElementById('edit_title').value = title;
-        document.getElementById('edit_design_type').value = designType;
-        document.getElementById('edit_description').value = description;
-        document.getElementById('edit_budget').value = budget;
-        document.getElementById('edit_currency').value = currency;
-        document.getElementById('edit_deadline').value = deadline;
+        var editTitle = document.getElementById('edit_title');
+        var editDesignType = document.getElementById('edit_design_type');
+        var editDescription = document.getElementById('edit_description');
+        var editBudget = document.getElementById('edit_budget');
+        var editCurrency = document.getElementById('edit_currency');
+        var editDeadline = document.getElementById('edit_deadline');
+        
+        console.log('Form fields:', { editTitle, editDesignType, editDescription, editBudget, editCurrency, editDeadline });
+        
+        if (editTitle) editTitle.value = title;
+        if (editDesignType) editDesignType.value = designType;
+        if (editDescription) editDescription.value = description;
+        if (editBudget) editBudget.value = budget;
+        if (editCurrency) editCurrency.value = currency;
+        if (editDeadline) editDeadline.value = deadline;
 
         // Show modal using openModal
+        console.log('Calling openModal for editModal');
         openModal('editModal');
+    } else {
+        console.error('editForm not found in the DOM');
     }
 }
 
@@ -1191,22 +1258,222 @@ function closeEditModal() {
     closeModal('editModal');
 }
 
-/* User Dashboard - Delete Modal Functions */
+/* User Dashboard - Delete Design Request Modal */
 function openDeleteModal(button) {
+    console.log('openDeleteModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
-
-    // Set form action URL
-    var deleteForm = document.getElementById('deleteForm');
-    if (deleteForm) {
-        deleteForm.action = '/design-request/' + requestId + '/delete/';
-
-        // Set title
-        document.getElementById('deleteRequestTitle').textContent = title;
-
-        // Show modal
+    
+    // Get the modal
+    var modal = document.getElementById('deleteModal');
+    console.log('Delete modal:', modal);
+    var form = document.getElementById('deleteForm');
+    var titleEl = document.getElementById('deleteRequestTitle');
+    
+    if (modal && form && titleEl) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/delete/';
+        
+        // Set the title
+        titleEl.textContent = title;
+        
+        // Show the modal using openModal for consistency
         openModal('deleteModal');
+    } else {
+        console.error('Delete modal elements not found:', { modal: modal, form: form, titleEl: titleEl });
     }
+}
+
+function closeDeleteModal() {
+    var modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+function confirmDelete(btn) {
+    var form = document.getElementById('deleteForm');
+    if (form) {
+        // Extract request ID from form action
+        var action = form.action;
+        var match = action.match(/\/design-request\/(\d+)\/delete\//);
+        var requestId = match ? match[1] : null;
+        
+        if (!requestId) {
+            alert('Error: Could not get request ID');
+            return false;
+        }
+        
+        // Get CSRF token
+        var csrftoken = getCookie('csrftoken');
+        
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(function(response) {
+            if (response.ok) {
+                // Close modal
+                closeDeleteModal();
+                // Find and remove the row in the table
+                var tableRow = document.querySelector('tr[data-request-id="' + requestId + '"]');
+                if (tableRow) {
+                    tableRow.remove();
+                }
+                
+                // Check if there are any remaining rows
+                var tbody = document.querySelector('.design-requests-table tbody');
+                if (tbody) {
+                    var remainingRows = tbody.querySelectorAll('tr');
+                    if (remainingRows.length === 0) {
+                        // Hide the table and show empty state
+                        var table = document.querySelector('.design-requests-table');
+                        var emptyState = document.getElementById('emptyState');
+                        if (table) table.style.display = 'none';
+                        if (emptyState) emptyState.style.display = 'flex';
+                    }
+                }
+            } else {
+                alert('Error deleting design request. Please try again.');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design request. Please try again.');
+        });
+    }
+    return false;
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/* User Dashboard - Bulk Delete Design Requests */
+function toggleSelectAllDesignRequests() {
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    var checkboxes = document.querySelectorAll('.design-request-checkbox');
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateDesignRequestBulkActions();
+}
+
+function updateDesignRequestBulkActions() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+    var selectedCount = document.getElementById('selectedDesignCount');
+
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.classList.add('show');
+        selectedCount.textContent = checkedBoxes.length + ' design request' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
+    } else {
+        bulkActionsBar.classList.remove('show');
+    }
+
+    // Update select all checkbox state
+    var allCheckboxes = document.querySelectorAll('.design-request-checkbox');
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function bulkDeleteDesignRequests() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        alert('No design requests selected.');
+        return;
+    }
+
+    // Show bulk delete confirmation modal
+    var bulkDeleteCount = document.getElementById('bulkDeleteCount');
+    if (bulkDeleteCount) {
+        bulkDeleteCount.textContent = requestIds.length;
+    }
+    openModal('bulkDeleteModal');
+}
+
+// Bulk Delete Modal Functions
+function closeBulkDeleteModal() {
+    closeModal('bulkDeleteModal');
+}
+
+function confirmBulkDelete(btn) {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        closeBulkDeleteModal();
+        return false;
+    }
+
+    var csrftoken = getCookie('csrftoken');
+    var deletePromises = requestIds.map(function(requestId) {
+        return fetch('/design-request/' + requestId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        });
+    });
+
+    Promise.all(deletePromises)
+        .then(function() {
+            // Remove deleted rows
+            checkedBoxes.forEach(function(checkbox) {
+                var row = checkbox.closest('tr');
+                if (row) {
+                    row.remove();
+                }
+            });
+
+            // Hide bulk actions bar
+            var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+            bulkActionsBar.classList.remove('show');
+
+            // Close the bulk delete modal
+            closeBulkDeleteModal();
+
+            // Check if table is now empty
+            var tbody = document.querySelector('.design-requests-table tbody');
+            if (tbody) {
+                var remainingRows = tbody.querySelectorAll('tr');
+                if (remainingRows.length === 0) {
+                    var table = document.querySelector('.design-requests-table');
+                    var emptyState = document.getElementById('emptyState');
+                    if (table) table.style.display = 'none';
+                    if (emptyState) emptyState.style.display = 'flex';
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design requests. Please try again.');
+            closeBulkDeleteModal();
+        });
 }
 
 function closeDeleteModal() {
@@ -1351,6 +1618,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return dt.files;
         }
 
+        // Click to browse - trigger file input click
+        editFileUploadArea.addEventListener('click', function (e) {
+            // Don't trigger if clicking on file list items or remove buttons
+            if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+                return;
+            }
+            e.stopPropagation();
+            editFileInput.click();
+        });
+
         // Drag and drop events
         editFileUploadArea.addEventListener('dragover', function (e) {
             e.preventDefault();
@@ -1390,10 +1667,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             editFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = editFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = editFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -1744,6 +2021,333 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Cover Photo Cropping Functionality
+    var coverCropper = null;
+    var coverEditBtn = document.getElementById('coverEditBtn');
+    var coverPhotoInput = document.getElementById('cover_photo_input');
+    var coverCropperModal = document.getElementById('coverCropperModal');
+    var coverCropperImage = document.getElementById('coverCropperImage');
+    var closeCoverCropperBtn = document.getElementById('closeCoverCropperBtn');
+    var cancelCoverCropBtn = document.getElementById('cancelCoverCropBtn');
+    var applyCoverCropBtn = document.getElementById('applyCoverCropBtn');
+    var profileCover = document.getElementById('profileCover');
+
+    if (coverEditBtn && coverPhotoInput) {
+        // Click on cover edit button
+        coverEditBtn.addEventListener('click', function () {
+            coverPhotoInput.click();
+        });
+
+        // Click on cover clear button
+        var coverClearBtn = document.getElementById('coverClearBtn');
+        if (coverClearBtn) {
+            coverClearBtn.addEventListener('click', function () {
+                if (confirm('Are you sure you want to clear your cover photo?')) {
+                    // Submit AJAX request to clear cover photo
+                    function getCookie(name) {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+                    var csrfToken = getCookie('csrftoken');
+                    
+                    fetch('/api/clear-cover-photo/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show the cleared cover photo
+                            window.location.reload();
+                        } else {
+                            alert('Error clearing cover photo: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error clearing cover photo. Please try again.');
+                    });
+                }
+            });
+        }
+
+        // File input change
+        coverPhotoInput.addEventListener('change', function (e) {
+            if (this.files && this.files[0]) {
+                var file = this.files[0];
+
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file (JPEG, PNG, etc.)');
+                    return;
+                }
+
+                // Validate file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File size must be less than 10MB');
+                    return;
+                }
+
+                // Show cropper modal first, then load image
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    if (coverCropperImage && coverCropperModal) {
+                        // Show modal immediately
+                        coverCropperModal.classList.add('show');
+                        document.documentElement.classList.add('cropper-modal-open');
+                        document.body.classList.add('cropper-modal-open');
+
+                        // Destroy existing cropper
+                        if (coverCropper) {
+                            coverCropper.destroy();
+                            coverCropper = null;
+                        }
+
+                        // Clear src first to ensure fresh load
+                        coverCropperImage.src = '';
+
+                        // Set new src and init cropper after image loads
+                        coverCropperImage.onload = function () {
+                            // Small delay to ensure modal is rendered
+                            setTimeout(function () {
+                                initCoverCropper();
+                            }, 50);
+                        };
+
+                        coverCropperImage.src = event.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Initialize cover cropper function
+    function initCoverCropper() {
+        if (!coverCropperImage) return;
+
+        coverCropper = new Cropper(coverCropperImage, {
+            aspectRatio: 1200 / 400, // Match profile-cover dimensions (height 280px, approximate width)
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            minContainerWidth: 200,
+            minContainerHeight: 100,
+            ready: function () {
+                // Cropper is ready
+                console.log('Cover Cropper ready');
+            }
+        });
+    }
+
+    // Close cover cropper modal
+    if (closeCoverCropperBtn) {
+        closeCoverCropperBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Cancel cover crop
+    if (cancelCoverCropBtn) {
+        cancelCoverCropBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Zoom in cover
+    var coverZoomInBtn = document.getElementById('coverZoomInBtn');
+    if (coverZoomInBtn) {
+        coverZoomInBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(0.1);
+            }
+        });
+    }
+
+    // Zoom out cover
+    var coverZoomOutBtn = document.getElementById('coverZoomOutBtn');
+    if (coverZoomOutBtn) {
+        coverZoomOutBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(-0.1);
+            }
+        });
+    }
+
+    // Rotate left cover
+    var coverRotateLeftBtn = document.getElementById('coverRotateLeftBtn');
+    if (coverRotateLeftBtn) {
+        coverRotateLeftBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(-45);
+            }
+        });
+    }
+
+    // Rotate right cover
+    var coverRotateRightBtn = document.getElementById('coverRotateRightBtn');
+    if (coverRotateRightBtn) {
+        coverRotateRightBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(45);
+            }
+        });
+    }
+
+    // Flip horizontal cover
+    var coverFlipHorizontalBtn = document.getElementById('coverFlipHorizontalBtn');
+    if (coverFlipHorizontalBtn) {
+        coverFlipHorizontalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleX = coverCropper.getData().scaleX || 1;
+                coverCropper.scaleX(-scaleX);
+            }
+        });
+    }
+
+    // Flip vertical cover
+    var coverFlipVerticalBtn = document.getElementById('coverFlipVerticalBtn');
+    if (coverFlipVerticalBtn) {
+        coverFlipVerticalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleY = coverCropper.getData().scaleY || 1;
+                coverCropper.scaleY(-scaleY);
+            }
+        });
+    }
+
+    // Reset cover crop
+    var coverResetCropBtn = document.getElementById('coverResetCropBtn');
+    if (coverResetCropBtn) {
+        coverResetCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.reset();
+            }
+        });
+    }
+
+    // Apply cover crop
+    if (applyCoverCropBtn) {
+        applyCoverCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                // Get cropped canvas (use original dimensions to preserve quality)
+                var canvas = coverCropper.getCroppedCanvas({
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                // Convert to base64 (use JPEG with high quality to balance quality and size)
+                var croppedImageData = canvas.toDataURL('image/jpeg', 0.98);
+
+                // Update cover photo display
+                if (profileCover) {
+                    var existingImg = profileCover.querySelector('.cover-photo-image');
+                    if (existingImg) {
+                        existingImg.src = croppedImageData;
+                    } else {
+                        var img = document.createElement('img');
+                        img.src = croppedImageData;
+                        img.alt = 'Cover Photo';
+                        img.className = 'cover-photo-image';
+                        profileCover.insertBefore(img, profileCover.firstChild);
+                    }
+                }
+
+                closeCoverCropperModal();
+
+                // Submit the cover photo via AJAX
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                var csrfToken = getCookie('csrftoken');
+                
+                fetch('/api/upload-cover-photo/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        cover_cropped_image_data: croppedImageData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show the new cover photo
+                        window.location.reload();
+                    } else {
+                        alert('Error uploading cover photo: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error uploading cover photo. Please try again.');
+                });
+            }
+        });
+    }
+
+    // Close modal when clicking outside
+    if (coverCropperModal) {
+        coverCropperModal.addEventListener('click', function (e) {
+            if (e.target === coverCropperModal) {
+                closeCoverCropperModal();
+            }
+        });
+    }
+
+    // Close cover cropper modal function
+    function closeCoverCropperModal() {
+        if (coverCropperModal) {
+            coverCropperModal.classList.remove('show');
+        }
+
+        document.documentElement.classList.remove('cropper-modal-open');
+        document.body.classList.remove('cropper-modal-open');
+
+        if (coverCropper) {
+            coverCropper.destroy();
+            coverCropper = null;
+        }
+
+        // Reset file input
+        if (coverPhotoInput) {
+            coverPhotoInput.value = '';
+        }
+    }
+
     // Form submission loading state
     var editProfileForm = document.getElementById('editProfileForm');
     if (editProfileForm) {
@@ -1796,9 +2400,10 @@ function openCompletionModal(requestId) {
             var designerSection = document.getElementById('designerSection');
             var designerAvatar = document.getElementById('designerAvatar');
             var designerName = document.getElementById('designerName');
+            var designerProfileLink = document.getElementById('designerProfileLink');
 
             console.log('Designer data:', data.designer);
-            console.log('Elements:', { designerSection, designerAvatar, designerName });
+            console.log('Elements:', { designerSection, designerAvatar, designerName, designerProfileLink });
 
             if (data.designer && designerSection && designerAvatar && designerName) {
                 designerSection.style.display = 'block';
@@ -1810,6 +2415,14 @@ function openCompletionModal(requestId) {
                 } else {
                     designerAvatar.innerHTML = '<span class="avatar-initials">' + (data.designer.initials || '?') + '</span>';
                 }
+
+                // Set profile link
+                if (designerProfileLink && data.designer.username) {
+                    designerProfileLink.href = '/profile/' + data.designer.username + '/';
+                }
+
+                // Load and setup rating functionality
+                setupRatingSystem(requestId);
             } else if (designerSection) {
                 designerSection.style.display = 'none';
             }
@@ -1842,6 +2455,212 @@ function openCompletionModal(requestId) {
 
 function closeCompletionModal() {
     closeModal('completionModal');
+}
+
+// Rating System Functions
+let currentRequestId = null;
+let selectedRating = 0;
+
+function setupRatingSystem(requestId) {
+    currentRequestId = requestId;
+    const rateBtnText = document.getElementById('rateBtnText');
+
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + requestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                rateBtnText.textContent = 'Rated ' + data.user_rating + '/5';
+            } else if (data.average_rating > 0) {
+                rateBtnText.textContent = 'Avg: ' + data.average_rating + '/5';
+            } else {
+                rateBtnText.textContent = 'Rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            rateBtnText.textContent = 'Rate';
+        });
+}
+
+function openRatingModal() {
+    if (!currentRequestId) return;
+    
+    const modal = document.getElementById('ratingModal');
+    const ratingDesignerAvatar = document.getElementById('ratingDesignerAvatar');
+    const ratingDesignerName = document.getElementById('ratingDesignerName');
+    const ratingTextLarge = document.getElementById('ratingTextLarge');
+    const starsLarge = document.querySelectorAll('#ratingStarsLarge .star-large');
+    
+    // Get designer info from completion modal
+    const designerAvatar = document.getElementById('designerAvatar');
+    const designerName = document.getElementById('designerName');
+    
+    // Copy designer info to rating modal
+    ratingDesignerAvatar.innerHTML = designerAvatar.innerHTML;
+    ratingDesignerName.textContent = designerName.textContent;
+    
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + currentRequestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                selectedRating = data.user_rating;
+                updateStarsLarge(starsLarge, selectedRating);
+                ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+            } else {
+                selectedRating = 0;
+                updateStarsLarge(starsLarge, 0);
+                ratingTextLarge.textContent = 'Click on a star to rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            selectedRating = 0;
+            updateStarsLarge(starsLarge, 0);
+            ratingTextLarge.textContent = 'Click on a star to rate';
+        });
+    
+    // Add hover effects
+    starsLarge.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, rating);
+            ratingTextLarge.textContent = getRatingText(rating);
+        });
+
+        star.addEventListener('mouseleave', function() {
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = selectedRating > 0 ? 'Your rating: ' + selectedRating + '/5' : 'Click on a star to rate';
+        });
+
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+        });
+    });
+    
+    openModal('ratingModal');
+}
+
+function closeRatingModal() {
+    closeModal('ratingModal');
+    selectedRating = 0;
+}
+
+function updateStarsLarge(stars, rating) {
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+function getRatingText(rating) {
+    const texts = {
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very Good',
+        5: 'Excellent'
+    };
+    return texts[rating] || '';
+}
+
+function submitRating() {
+    if (selectedRating === 0) {
+        showNotification('Please select a rating', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitRatingBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    fetch('/api/save-designer-rating/' + currentRequestId + '/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ rating: selectedRating })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Save rating value before closing modal
+            const savedRating = selectedRating;
+            
+            showNotification('Rating saved successfully!', 'success');
+            closeRatingModal();
+            
+            // Update button text with saved rating
+            const rateBtnText = document.getElementById('rateBtnText');
+            rateBtnText.textContent = 'Rated ' + savedRating + '/5';
+        } else {
+            showNotification('Error saving rating: ' + data.error, 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    })
+    .catch(error => {
+        console.error('Error saving rating:', error);
+        showNotification('Error saving rating. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification notification-' + type;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = '#10b981';
+    } else {
+        notification.style.background = '#ef4444';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 /* Designer Dashboard - Dynamic Section Switching */
@@ -2659,8 +3478,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Handle user action buttons (view/edit/delete)
-    document.querySelectorAll('.action-buttons button').forEach(function (button) {
+    // Handle user action buttons in admin dashboard (view/edit/delete)
+    // Only target buttons that have data-user-id attribute (admin dashboard)
+    document.querySelectorAll('.action-buttons button[data-user-id]').forEach(function (button) {
         button.addEventListener('click', function () {
             var userId = this.getAttribute('data-user-id');
             var action = this.getAttribute('data-action');
@@ -2709,7 +3529,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function () {
             var designId = this.getAttribute('data-design-id');
             if (designId && typeof openProjectModal === 'function') {
-                openProjectModal(parseInt(designId));
+                openProjectModal(parseInt(designId), null, null, null, null, null, null, null, null);
             }
         });
     });
@@ -3254,3 +4074,294 @@ document.addEventListener('DOMContentLoaded', function () {
 
     clock(); // start
 });
+
+// Dynamic notifications and activities polling
+(function() {
+    'use strict';
+    
+    let notificationsPollingInterval = null;
+    let activitiesPollingInterval = null;
+    let lastNotificationsHash = '';
+    let lastActivitiesHash = '';
+    let previousNotificationCount = 0;
+    
+    // Get CSRF token from cookie
+    function getCSRFToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 10) === 'csrftoken=') {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Fetch notifications from API
+    function fetchNotifications() {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken(),
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const notifications = data.notifications || [];
+            const notificationsHash = JSON.stringify(notifications);
+            
+            // Only update if notifications changed
+            if (notificationsHash !== lastNotificationsHash) {
+                lastNotificationsHash = notificationsHash;
+                updateNotificationsUI(notifications);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching notifications:', error);
+        });
+    }
+    
+    // Fetch activities from API
+    function fetchActivities() {
+        fetch('/api/activities/', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken(),
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const activities = data.activities || [];
+            const activitiesHash = JSON.stringify(activities);
+            
+            // Only update if activities changed
+            if (activitiesHash !== lastActivitiesHash) {
+                lastActivitiesHash = activitiesHash;
+                updateActivitiesUI(activities);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching activities:', error);
+        });
+    }
+    
+    // Update notifications UI
+    function updateNotificationsUI(notifications) {
+        const notificationList = document.querySelector('.notification-popup .notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        const notificationToggle = document.getElementById('notification-toggle');
+        
+        if (!notificationList) return;
+        
+        // Get notification IDs from the API response
+        const notificationIds = notifications.map(n => n.id);
+        
+        // Get previously read notification IDs from localStorage
+        const readNotificationIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        
+        // Check if there are NEW (unread) notifications
+        const hasNewNotifications = notificationIds.some(id => !readNotificationIds.includes(id));
+        
+        // Check if new notifications arrived (more than before)
+        const hasMoreNotifications = notifications.length > previousNotificationCount;
+        previousNotificationCount = notifications.length;
+        
+        // If new notifications arrived and user had read previous ones, re-enable animation
+        if (hasMoreNotifications && window.notificationsRead) {
+            window.notificationsRead = false;
+            if (notificationToggle && notificationBadge) {
+                notificationToggle.classList.add('has-notifications');
+                notificationBadge.style.display = 'block';
+                notificationBadge.classList.add('animate');
+            }
+        }
+        
+        // Update badge
+        if (notificationBadge) {
+            if (notifications.length > 0) {
+                notificationBadge.textContent = notifications.length;
+                // Only show badge if there are unread notifications
+                if (hasNewNotifications) {
+                    notificationBadge.style.display = 'block';
+                    notificationBadge.classList.add('animate');
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBadge.classList.remove('animate');
+                }
+            } else {
+                notificationBadge.style.display = 'none';
+                notificationBadge.classList.remove('animate');
+            }
+        }
+        
+        // Update notification list
+        if (notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="notification-empty">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <p>No notifications yet</p>
+                </div>
+            `;
+        } else {
+            let html = '';
+            notifications.forEach(notification => {
+                let icon = '';
+                if (notification.type === 'assigned' || notification.type === 'designer_assigned') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>`;
+                } else if (notification.type === 'status_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>`;
+                } else if (notification.type === 'completed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>`;
+                } else if (notification.type === 'request_submitted') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>`;
+                } else {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>`;
+                }
+                
+                html += `
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            ${icon}
+                        </div>
+                        <div class="notification-content">
+                            <p class="notification-message">${notification.message}</p>
+                            <span class="notification-time">${notification.time_ago}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            notificationList.innerHTML = html;
+        }
+    }
+    
+    // Update activities UI
+    function updateActivitiesUI(activities) {
+        const activityList = document.querySelector('.activity-list');
+        const activityContent = document.querySelector('.activity-content');
+        
+        if (!activityList || !activityContent) return;
+        
+        if (activities.length === 0) {
+            activityContent.innerHTML = `
+                <div class="empty-activity">
+                    <span>No recent activity</span>
+                </div>
+            `;
+        } else {
+            let html = '<ul class="activity-list compact">';
+            activities.slice(0, 5).forEach(activity => {
+                let icon = '';
+                if (activity.type === 'request_submitted') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+                } else if (activity.type === 'status_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon><line x1="3" y1="22" x2="21" y2="22"></line></svg>`;
+                } else if (activity.type === 'completed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                } else if (activity.type === 'payment_received' || activity.type === 'payment_confirmed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
+                } else if (activity.type === 'revision_requested') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+                } else if (activity.type === 'request_rejected' || activity.type === 'request_cancelled') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+                } else if (activity.type === 'login') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>`;
+                } else if (activity.type === 'logout') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`;
+                } else if (activity.type === 'profile_updated') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                } else if (activity.type === 'file_uploaded') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`;
+                } else if (activity.type === 'password_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+                } else {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                }
+                
+                html += `
+                    <li class="activity-item">
+                        <div class="activity-icon status-${activity.type}">
+                            ${icon}
+                        </div>
+                        <div class="activity-details">
+                            <p class="activity-text">${activity.message}</p>
+                            <span class="activity-time">${activity.time_ago}</span>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            
+            if (activities.length > 5) {
+                html += `
+                    <div class="view-more">
+                        <button class="btn-view-more" onclick="showDashboardSection('activity')">View all activity →</button>
+                    </div>
+                `;
+            }
+            
+            activityContent.innerHTML = html;
+        }
+    }
+    
+    // Start polling when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial fetch
+        fetchNotifications();
+        fetchActivities();
+        
+        // Poll every 10 seconds
+        notificationsPollingInterval = setInterval(fetchNotifications, 10000);
+        activitiesPollingInterval = setInterval(fetchActivities, 10000);
+    });
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        if (notificationsPollingInterval) {
+            clearInterval(notificationsPollingInterval);
+        }
+        if (activitiesPollingInterval) {
+            clearInterval(activitiesPollingInterval);
+        }
+    });
+})();

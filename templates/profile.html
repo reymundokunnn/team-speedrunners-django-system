@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Profile - {{ target.first_name|default:target.username }}{% endblock %}
+{% block title %}Your Profile | Presenta{% endblock %}
 
 {% block content %}
 <section class="dashboard-section">
@@ -27,8 +27,30 @@
             <!-- Profile Container -->
             <div class="profile-container">
                 <!-- Cover Banner -->
-                <div class="profile-cover">
+                <div class="profile-cover" id="profileCover">
+                    {% if target.cover_photo %}
+                        <img src="{{ target.cover_photo.url }}" alt="Cover Photo" class="cover-photo-image">
+                    {% endif %}
                     <div class="cover-gradient"></div>
+                    {% if is_self %}
+                        <button type="button" class="cover-edit-btn" id="coverEditBtn" title="Change Cover Photo">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <span>Change</span>
+                        </button>
+                        {% if target.cover_photo %}
+                        <button type="button" class="cover-clear-btn" id="coverClearBtn" title="Clear Cover Photo">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            <span>Clear</span>
+                        </button>
+                        {% endif %}
+                        <input type="file" id="cover_photo_input" name="cover_photo" accept="image/*" style="display: none;">
+                    {% endif %}
                 </div>
                 <!-- Profile Hero -->
                 <section class="profile-hero">
@@ -59,6 +81,9 @@
                                 <h1 class="profile-name">
                                     {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
                                 </h1>
+                                <span class="profile-username">
+                                    @{{ target.username }}
+                                </span>
                                 
                                 <div class="profile-meta">
                                     {% if target.is_superuser %}
@@ -73,6 +98,21 @@
                                             {{ target.get_user_role_display }}
                                         </span>
                                     {% endif %}
+                                    {% if target.user_role == 'designer' and stats.average_rating > 0 %}
+                                    <span class="designer-rating-badge">
+                                        <span class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= stats.average_rating %}
+                                                    <span class="star filled">★</span>
+                                                {% else %}
+                                                    <span class="star">★</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <span class="rating-value">{{ stats.average_rating }}</span>
+                                        <span class="rating-count">({{ stats.rating_count }})</span>
+                                    </span>
+                                    {% else %}
                                     <span class="join-date">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -82,11 +122,12 @@
                                         </svg>
                                         Joined {{ target.created_at|date:"M Y" }}
                                     </span>
+                                    {% endif %}
                                 </div>
                                 {% if target.bio %}
                                 <span class="profile-bio">{{target.bio}}</span>
                                 {% else %}
-                                <span class="profile-bio">No bio available.</span>
+                                <span class="profile-bio"></span>
                                 {% endif %}
                             </div>
                             <div class="profile-stats">
@@ -98,7 +139,7 @@
                                 </div>
                                 <div class="stat-content">
                                     <div class="number">{{ stats.requests|default:0 }}</div>
-                                    <span>Total Projects</span>
+                                    <span>Projects</span>
                                 </div>
                             </div>
                             <div class="stat-card">
@@ -250,7 +291,11 @@
                     <div class="recent-works-section">
                         <div class="recent-works-header">
                             <h2 class="recent-works-title">
-                                Recent Works
+                                {% if target.user_role == 'user' %}
+                                    My Requests
+                                {% else %}
+                                    Recent Works
+                                {% endif %}
                             </h2>
                         </div>
                         {% if recent_works %}
@@ -394,7 +439,7 @@
                 </div>
             </div>
 
-            <div id="deleteModal" class="modal">
+            <div id="deleteUserModal" class="modal">
                 <div class="modal-overlay"></div>
                 <div class="modal-content">
                     <div class="modal-header">
@@ -415,6 +460,97 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cover Photo Cropper Modal -->
+    <div id="coverCropperModal" class="cropper-modal">
+        <div class="cropper-modal-content">
+            <div class="cropper-modal-header">
+                <h3>Crop Cover Photo</h3>
+                <button type="button" id="closeCoverCropperBtn" class="close-btn" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="cropper-modal-body">
+                <div class="cropper-container">
+                    <img id="coverCropperImage" src="" alt="Image to crop">
+                </div>
+                
+                <!-- Transform Controls Row -->
+                <div class="cropper-controls">
+                    <button type="button" id="coverZoomInBtn" class="btn btn-secondary btn-icon" title="Zoom in">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                    </button>
+                    
+                    <button type="button" id="coverZoomOutBtn" class="btn btn-secondary btn-icon" title="Zoom out">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                    </button>
+                    
+                    <div class="controls-divider"></div>
+                    
+                    <button type="button" id="coverRotateLeftBtn" class="btn btn-secondary btn-icon" title="Rotate left 45°">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 5"></path>
+                            <polyline points="3 3 3 9 9 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <button type="button" id="coverRotateRightBtn" class="btn btn-secondary btn-icon" title="Rotate right 45°">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 5"></path>
+                            <polyline points="21 3 21 9 15 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <div class="controls-divider"></div>
+                    
+                    <button type="button" id="coverFlipHorizontalBtn" class="btn btn-secondary btn-icon" title="Flip horizontally">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 4v16h8V4H1z"></path>
+                            <path d="M15 4v16h8V4h-8z"></path>
+                            <line x1="11" y1="9" x2="13" y2="9"></line>
+                            <line x1="11" y1="13" x2="13" y2="13"></line>
+                        </svg>
+                    </button>
+                    
+                    <button type="button" id="coverFlipVerticalBtn" class="btn btn-secondary btn-icon" title="Flip vertically">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 1h16v7H4V1z"></path>
+                            <path d="M4 16h16v7H4v-7z"></path>
+                            <line x1="9" y1="10" x2="15" y2="10"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </button>
+                    
+                    <div class="controls-divider"></div>
+                    
+                    <button type="button" id="coverResetCropBtn" class="btn btn-secondary btn-icon" title="Reset to default">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="cropper-modal-footer">
+                <button type="button" id="cancelCoverCropBtn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="applyCoverCropBtn" class="btn btn-primary">Apply</button>
             </div>
         </div>
     </div>

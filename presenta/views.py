@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -7,7 +7,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating
 from django.utils import timezone
 import uuid
 from PIL import Image
@@ -55,6 +55,138 @@ def log_activity(user, activity_type, message, related_request=None, target_user
         related_request=related_request,
         target_user=target_user
     )
+
+
+@login_required(login_url='signin')
+def api_notifications(request):
+    """API endpoint to fetch notifications dynamically."""
+    try:
+        from .models import Activity, User as PresentaUser
+        
+        # Get the presenta user object
+        presenta_user = PresentaUser.objects.filter(
+            email=getattr(request.user, 'email', '')
+        ).first() or PresentaUser.objects.filter(
+            username=getattr(request.user, 'username', '')
+        ).first()
+        
+        if not presenta_user:
+            return JsonResponse({'notifications': []})
+        
+        # Get user role
+        user_role = getattr(presenta_user, 'user_role', 'user')
+        
+        # Use auth_user for Activity queries
+        auth_user = getattr(presenta_user, 'auth_user', None)
+        
+        if not auth_user:
+            return JsonResponse({'notifications': []})
+        
+        # Get recent activities (last 10)
+        if user_role == 'designer':
+            from django.db.models import Q
+            activities = Activity.objects.filter(
+                Q(user=auth_user, activity_type__in=['assigned', 'revision_requested']) |
+                Q(activity_type='request_submitted'),
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        else:
+            activities = Activity.objects.filter(
+                user=auth_user,
+                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                is_cleared=False
+            ).order_by('-created_at')[:10]
+        
+        # Format notifications
+        notifications = []
+        for activity in activities:
+            notification = {
+                'id': activity.id,
+                'message': activity.message,
+                'type': activity.activity_type,
+                'created_at': activity.created_at.isoformat(),
+                'time_ago': _get_time_ago(activity.created_at),
+            }
+            notifications.append(notification)
+        
+        return JsonResponse({'notifications': notifications})
+    except Exception as e:
+        import sys
+        print(f"API notifications error: {e}", file=sys.stderr)
+        return JsonResponse({'notifications': []})
+
+
+@login_required(login_url='signin')
+def api_activities(request):
+    """API endpoint to fetch recent activities dynamically."""
+    try:
+        from .models import Activity, DesignRequest, User as PresentaUser
+        from django.db.models import Q
+        
+        user = request.user
+        
+        # Get user role
+        presenta_user = PresentaUser.objects.filter(
+            email=getattr(user, 'email', '')
+        ).first() or PresentaUser.objects.filter(
+            username=getattr(user, 'username', '')
+        ).first()
+        
+        user_role = getattr(presenta_user, 'user_role', 'user') if presenta_user else 'user'
+        
+        # Get user's design request IDs
+        user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
+        
+        # Get user's recent activities (not cleared)
+        # Exclude 'designer_assigned' and 'assigned' since they show in notifications
+        # For designers, also exclude payment-related activities (only show on user dashboard)
+        if user_role == 'designer':
+            activities = Activity.objects.filter(
+                user=user,  # Only activities performed by the designer themselves
+                is_cleared=False
+            ).exclude(activity_type__in=['payment_received', 'payment_confirmed']).select_related('related_request', 'user').order_by('-created_at')[:10]
+        else:
+            activities = Activity.objects.filter(
+                Q(user=user) |  # User's own activities
+                Q(related_request_id__in=user_request_ids),  # Activities on user's requests
+                is_cleared=False
+            ).exclude(activity_type__in=['designer_assigned', 'assigned']).select_related('related_request', 'user').order_by('-created_at')[:10]
+        
+        # Format activities
+        activities_list = []
+        for activity in activities:
+            activity_data = {
+                'id': activity.id,
+                'message': activity.message,
+                'type': activity.activity_type,
+                'created_at': activity.created_at.isoformat(),
+                'time_ago': _get_time_ago(activity.created_at),
+            }
+            activities_list.append(activity_data)
+        
+        return JsonResponse({'activities': activities_list})
+    except Exception as e:
+        import sys
+        print(f"API activities error: {e}", file=sys.stderr)
+        return JsonResponse({'activities': []})
+
+
+def _get_time_ago(timestamp):
+    """Convert timestamp to human-readable time ago format."""
+    from django.utils import timezone
+    now = timezone.now()
+    diff = now - timestamp
+    
+    if diff.days > 0:
+        return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    else:
+        return "Just now"
 
 
 def index(request):
@@ -282,6 +414,7 @@ def user_dashboard(request):
     
     # Get user's recent activities (not cleared)
     # Include: user's own activities + activities on their design requests from designers/admins
+    # Exclude 'designer_assigned', 'assigned', 'completed', 'request_rejected' since they now show in notifications
     from django.db.models import Q
     
     user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
@@ -290,7 +423,7 @@ def user_dashboard(request):
         Q(user=user) |  # User's own activities
         Q(related_request_id__in=user_request_ids),  # Activities on user's requests
         is_cleared=False
-    ).select_related('related_request', 'user').order_by('-created_at')[:10]
+    ).exclude(activity_type__in=['designer_assigned', 'assigned', 'completed', 'request_rejected']).select_related('related_request', 'user').order_by('-created_at')[:10]
     
     # Get user timezone, default to browser timezone or UTC
     user_tz = 'UTC'
@@ -340,10 +473,11 @@ def designer_dashboard(request):
     # Get designer's recent activities (not cleared)
     # Only show activities performed BY the designer (their own actions)
     # Designers should NOT see activities performed by clients on their requests
+    # Exclude payment-related activities (only show on user dashboard)
     activities = Activity.objects.filter(
         user=user,  # Only activities performed by the designer themselves
         is_cleared=False
-    ).select_related('related_request', 'user').order_by('-created_at')[:10]
+    ).exclude(activity_type__in=['payment_received', 'payment_confirmed']).select_related('related_request', 'user').order_by('-created_at')[:10]
     
     # Get user timezone
     user_tz = 'UTC'
@@ -517,7 +651,7 @@ def accept_design_request(request, request_id):
         log_activity(
             user=user,
             activity_type='assigned',
-            message=f"You were assigned to '{design_request.title}'.",
+            message=f"You accepted the design request '{design_request.title}'.",
             related_request=design_request
         )
         
@@ -527,7 +661,7 @@ def accept_design_request(request, request_id):
             log_activity(
                 user=design_request.requester,
                 activity_type='designer_assigned',
-                message=f"Designer {designer_name} assigned to '{design_request.title}'.",
+                message=f"Designer <b>{designer_name}</b> accepted your design request '{design_request.title}'.",
                 related_request=design_request
             )
     
@@ -676,7 +810,7 @@ def update_design_status(request, request_id):
                 log_activity(
                     user=design_request.requester,
                     activity_type='status_changed',
-                    message=f"'{design_request.title}' is now {status_display}.",
+                    message=f"'{design_request.title}' is now {status_display.lower()}.",
                     related_request=design_request
                 )
     
@@ -703,9 +837,10 @@ def request_revision(request, request_id):
     # Get revision notes from request
     revision_notes = request.POST.get('revision_notes', '').strip()
     
-    # Update status back to in_progress
+    # Update status back to in_progress and save revision notes
     design_request.status = 'in_progress'
     design_request.completed_at = None
+    design_request.revision_notes = revision_notes
     design_request.save()
     
     # Log activity for the requester
@@ -821,7 +956,8 @@ def get_completion_details(request, request_id):
         designer_data = {
             'name': f"{designer.first_name} {designer.last_name}".strip() or designer.username,
             'profile_picture': presenta_user.profile_picture.url if presenta_user and presenta_user.profile_picture else None,
-            'initials': (designer.first_name[0] if designer.first_name else '') + (designer.last_name[0] if designer.last_name else '') or designer.username[0].upper()
+            'initials': (designer.first_name[0] if designer.first_name else '') + (designer.last_name[0] if designer.last_name else '') or designer.username[0].upper(),
+            'username': designer.username
         }
     
     return JsonResponse({
@@ -829,6 +965,88 @@ def get_completion_details(request, request_id):
         'completed_at': design_request.completed_at.strftime('%Y-%m-%d %H:%M') if design_request.completed_at else '',
         'files': files_data,
         'designer': designer_data
+    })
+
+
+@login_required
+def save_designer_rating(request, request_id):
+    # API endpoint to save a designer rating.
+    from django.http import JsonResponse
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
+    
+    if not design_request.designer:
+        return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        rating_value = data.get('rating')
+        
+        if rating_value is None:
+            return JsonResponse({'error': 'Rating is required'}, status=400)
+        
+        rating_value = int(rating_value)
+        if rating_value < 1 or rating_value > 5:
+            return JsonResponse({'error': 'Rating must be between 1 and 5'}, status=400)
+        
+        # Create or update the rating
+        rating, created = DesignerRating.objects.update_or_create(
+            designer=design_request.designer,
+            rater=request.user,
+            design_request=design_request,
+            defaults={'rating': rating_value}
+        )
+        
+        # Get updated average rating
+        avg_rating = DesignerRating.get_average_rating(design_request.designer)
+        rating_count = DesignerRating.get_rating_count(design_request.designer)
+        
+        return JsonResponse({
+            'success': True,
+            'rating': rating.rating,
+            'created': created,
+            'average_rating': round(avg_rating, 1),
+            'rating_count': rating_count
+        })
+    except (ValueError, KeyError) as e:
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def get_designer_rating(request, request_id):
+    # API endpoint to get the user's rating for a design request.
+    from django.http import JsonResponse
+    
+    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
+    
+    if not design_request.designer:
+        return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
+    
+    # Get user's rating for this request
+    try:
+        user_rating = DesignerRating.objects.get(
+            designer=design_request.designer,
+            rater=request.user,
+            design_request=design_request
+        )
+        user_rating_value = user_rating.rating
+    except DesignerRating.DoesNotExist:
+        user_rating_value = None
+    
+    # Get average rating
+    avg_rating = DesignerRating.get_average_rating(design_request.designer)
+    rating_count = DesignerRating.get_rating_count(design_request.designer)
+    
+    return JsonResponse({
+        'user_rating': user_rating_value,
+        'average_rating': round(avg_rating, 1),
+        'rating_count': rating_count
     })
 
 
@@ -1308,6 +1526,12 @@ def clear_activities(request):
     
     # Redirect back to the referring page or dashboard
     referer = request.META.get('HTTP_REFERER')
+    
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        from django.http import JsonResponse
+        return JsonResponse({'success': True})
+    
     if referer:
         return redirect(referer)
     
@@ -1700,6 +1924,34 @@ def unified_settings(request):
                     except Exception as e:
                         print(f"Error processing image: {e}")
                 
+                # Handle cover photo cropping
+                cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
+                remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
+                
+                if remove_cover:
+                    if presenta_user.cover_photo:
+                        presenta_user.cover_photo.delete(save=True)
+                    presenta_user.cover_photo = None
+                elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
+                    try:
+                        format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                        image_data = base64.b64decode(imgstr)
+                        image = Image.open(BytesIO(image_data))
+                        if image.mode in ('RGBA', 'P'):
+                            image = image.convert('RGB')
+                        img_io = BytesIO()
+                        image.save(img_io, format='JPEG', quality=85)
+                        img_io.seek(0)
+                        import uuid
+                        filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                        from django.core.files.uploadedfile import InMemoryUploadedFile
+                        cropped_file = InMemoryUploadedFile(
+                            img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                        )
+                        presenta_user.cover_photo = cropped_file
+                    except Exception as e:
+                        print(f"Error processing cover image: {e}")
+                
                 profile.save()
                 
                 # Also update Django user first_name, last_name, and username
@@ -1750,10 +2002,38 @@ def unified_settings(request):
                             profile.profile_picture = cropped_file
                         except Exception as e:
                             print(f"Error processing image: {e}")
-                    
-                    profile.save()
-                    
-                    # Also update Django user first_name, last_name, and username
+                        
+                        # Handle cover photo cropping
+                        cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
+                        remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
+                        
+                        if remove_cover:
+                            if presenta_user.cover_photo:
+                                presenta_user.cover_photo.delete(save=True)
+                            presenta_user.cover_photo = None
+                        elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
+                            try:
+                                format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                                image_data = base64.b64decode(imgstr)
+                                image = Image.open(BytesIO(image_data))
+                                if image.mode in ('RGBA', 'P'):
+                                    image = image.convert('RGB')
+                                img_io = BytesIO()
+                                image.save(img_io, format='JPEG', quality=85)
+                                img_io.seek(0)
+                                import uuid
+                                filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                                from django.core.files.uploadedfile import InMemoryUploadedFile
+                                cropped_file = InMemoryUploadedFile(
+                                    img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                                )
+                                presenta_user.cover_photo = cropped_file
+                            except Exception as e:
+                                print(f"Error processing cover image: {e}")
+                        
+                        profile.save()
+                        
+                        # Also update Django user first_name, last_name, and username
                     if profile.first_name:
                         user.first_name = profile.first_name
                     if profile.last_name:
@@ -2147,6 +2427,14 @@ def profile_view(request, username=None):
             Q(requester=target_django) | Q(designer=target_django),
             status='completed'
         ).count()
+        
+        # Add average rating for designers
+        if target_presenta.user_role == 'designer':
+            from .models import DesignerRating
+            avg_rating = DesignerRating.get_average_rating(target_django)
+            rating_count = DesignerRating.get_rating_count(target_django)
+            stats['average_rating'] = round(avg_rating, 1)
+            stats['rating_count'] = rating_count
 
     # Recent activities (public)
     activities = Activity.objects.filter(
@@ -2963,3 +3251,71 @@ def api_sample_category_create(request):
             'slug': category.slug,
         }
     })
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_upload_cover_photo(request):
+    """API endpoint to upload cover photo via AJAX."""
+    import json
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    
+    try:
+        data = json.loads(request.body)
+        cover_cropped_image_data = data.get('cover_cropped_image_data')
+        
+        if not cover_cropped_image_data:
+            return JsonResponse({'success': False, 'error': 'No cover photo data provided'}, status=400)
+        
+        # Get the presenta user
+        user = request.user
+        presenta_user = get_presenta_user_safe(user)
+        
+        # Process the base64 image data
+        try:
+            format_part, imgstr = cover_cropped_image_data.split(';base64,')
+            image_data = base64.b64decode(imgstr)
+            image = Image.open(BytesIO(image_data))
+            # Keep original format and mode to preserve quality
+            img_io = BytesIO()
+            # Save as JPEG with high quality to balance quality and file size
+            image.save(img_io, format='JPEG', quality=98)
+            img_io.seek(0)
+            
+            filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+            cropped_file = InMemoryUploadedFile(
+                img_io, None, filename, 'image/jpeg', img_io.tell(), None
+            )
+            presenta_user.cover_photo = cropped_file
+            presenta_user.save()
+            
+            return JsonResponse({'success': True, 'message': 'Cover photo uploaded successfully'})
+        except Exception as e:
+            print(f"Error processing cover image: {e}")
+            return JsonResponse({'success': False, 'error': 'Error processing image'}, status=500)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error uploading cover photo: {e}")
+        return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_clear_cover_photo(request):
+    """API endpoint to clear cover photo via AJAX."""
+    try:
+        # Get the presenta user
+        user = request.user
+        presenta_user = get_presenta_user_safe(user)
+        
+        # Clear the cover photo
+        if presenta_user.cover_photo:
+            presenta_user.cover_photo.delete(save=True)
+        presenta_user.cover_photo = None
+        presenta_user.save()
+        
+        return JsonResponse({'success': True, 'message': 'Cover photo cleared successfully'})
+    except Exception as e:
+        print(f"Error clearing cover photo: {e}")
+        return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)

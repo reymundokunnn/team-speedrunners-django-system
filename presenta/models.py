@@ -55,6 +55,7 @@ class User(models.Model):
     company = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    cover_photo = models.ImageField(upload_to='cover_photos/', null=True, blank=True)
     pronouns = models.CharField(max_length=50, blank=True, null=True, help_text='e.g., he/him, she/her, they/them')
     
     # Status
@@ -190,6 +191,7 @@ class DesignRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    revision_notes = models.TextField(blank=True, null=True, help_text="Notes from client when requesting revision")
     
     class Meta:
         ordering = ['-created_at']
@@ -235,6 +237,7 @@ class Activity(models.Model):
         ('request_submitted', 'Request Submitted'),
         ('status_changed', 'Status Changed'),
         ('assigned', 'Designer Assigned'),
+        ('designer_assigned', 'Designer Assigned to Request'),
         ('completed', 'Completed'),
         ('payment_received', 'Payment Received'),
         ('payment_confirmed', 'Payment Confirmed'),
@@ -482,3 +485,38 @@ class SampleItem(models.Model):
         if self.tags:
             return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
         return []
+
+
+class DesignerRating(models.Model):
+    """Model for storing designer ratings from clients."""
+    
+    designer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='designer_ratings')
+    rater = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='given_ratings')
+    design_request = models.ForeignKey(DesignRequest, on_delete=models.CASCADE, related_name='ratings', null=True, blank=True)
+    rating = models.IntegerField(help_text="Rating from 1 to 5 stars")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['designer', 'rater', 'design_request']
+    
+    def __str__(self):
+        return f"{self.rater.username} rated {self.designer.username} {self.rating}/5"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.rating < 1 or self.rating > 5:
+            raise ValidationError('Rating must be between 1 and 5')
+    
+    @classmethod
+    def get_average_rating(cls, designer):
+        """Get the average rating for a designer."""
+        from django.db.models import Avg
+        result = cls.objects.filter(designer=designer).aggregate(Avg('rating'))
+        return result['rating__avg'] or 0
+    
+    @classmethod
+    def get_rating_count(cls, designer):
+        """Get the total number of ratings for a designer."""
+        return cls.objects.filter(designer=designer).count()

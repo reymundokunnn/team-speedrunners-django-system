@@ -87,13 +87,16 @@ function closeAnnouncementBanner() {
                 {% endif %}
                 <button id="set-status-btn" class="dropdown-item">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                     <span><b>Set Status</b></span>
                 </button>
                 <a href="{% url 'profile' %}" class="dropdown-item">
-                    <img src="{% static 'img/user-icon.svg' %}" alt="Profile" class="dropdown-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
                     <span>View Profile</span>
                 </a>
                 <a href="{% url 'settings' %}" class="dropdown-item">
@@ -121,15 +124,26 @@ function closeAnnouncementBanner() {
                                 stroke-width="1.8"
                                 stroke-linecap="round"/>
                     </svg>
+                    {% if notifications %}
+                    <span class="notification-badge" id="notification-badge" style="display: none;">{{ notifications|length }}</span>
+                    {% endif %}
                 </div>
                 <div class="notification-popup" id="notification-popup">
-                    <h3 class="popup-header">Notifications</h3>
+                    <div class="popup-header">
+                        <h3>Notifications</h3>
+                        <button class="clear-notifications-btn" id="clear-notifications-btn" title="Clear all notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="notification-list">
                         {% if notifications %}
                             {% for notification in notifications %}
                             <div class="notification-item">
                                 <div class="notification-icon">
-                                    {% if notification.type == 'assigned' %}
+                                    {% if notification.type == 'assigned' or notification.type == 'designer_assigned' %}
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="8.5" cy="7" r="4"></circle>
@@ -199,57 +213,9 @@ function closeAnnouncementBanner() {
                 </div>
                 <div class="message-popup" id="message-popup">
                     <h3 class="popup-header">Messages</h3>
-                    <div class="notification-list">
-                        {% if notifications %}
-                            {% for notification in notifications %}
-                            <div class="notification-item">
-                                <div class="notification-icon">
-                                    {% if notification.type == 'assigned' %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="8.5" cy="7" r="4"></circle>
-                                        <line x1="20" y1="8" x2="20" y2="14"></line>
-                                        <line x1="23" y1="11" x2="17" y2="11"></line>
-                                    </svg>
-                                    {% elif notification.type == 'status_changed' %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="9 11 12 14 22 4"></polyline>
-                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                                    </svg>
-                                    {% elif notification.type == 'completed' %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
-                                    {% elif notification.type == 'request_submitted' %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="12" y1="18" x2="12" y2="12"></line>
-                                        <line x1="9" y1="15" x2="15" y2="15"></line>
-                                    </svg>
-                                    {% else %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                    </svg>
-                                    {% endif %}
-                                </div>
-                                <div class="notification-content">
-                                    <p class="notification-message">{{ notification.message }}</p>
-                                    <span class="notification-time">{{ notification.time_ago }}</span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="notification-empty">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                                <p>No messages yet</p>
-                            </div>
-                        {% endif %}
+                    <div class="message-content" style="text-align: center; padding: 20px;">
+                        <img src="{% static 'img/cook.jpg' %}" alt="Work in progress" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 12px;">
+                        <p style="color: #666; font-size: 14px;"><h2>di pa po inaasikaso ng mga devs hahahah</h2><br>Feature coming soon; this nonsense will be eventually removed.</p>
                     </div>
                 </div>
             </div>
@@ -291,7 +257,7 @@ function closeAnnouncementBanner() {
     <div class="modal-content">
         <div class="modal-header">
             <h2>Set Your Status</h2>
-            <span class="modal-close" id="modal-close">&times;</span>
+            <span class="modal-close" id="status-modal-close">&times;</span>
         </div>
         <div class="modal-body">
             <div class="status-options">
@@ -329,6 +295,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationPopup = document.getElementById('notification-popup');
     const messageToggle = document.getElementById('message-toggle');
     const messagePopup = document.getElementById('message-popup');
+    const notificationBadge = document.getElementById('notification-badge');
+    
+    // Get the list of notification IDs from the server
+    const notificationIds = [];
+    {% if notifications %}
+        {% for notification in notifications %}
+            notificationIds.push({{ notification.id }});
+        {% endfor %}
+    {% endif %}
+    
+    // Get previously read notification IDs from localStorage
+    const readNotificationIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    
+    // Check if there are NEW (unread) notifications
+    const hasNewNotifications = notificationIds.some(id => !readNotificationIds.includes(id));
+    
+    // Initialize window.notificationsRead based on localStorage
+    // This ensures the state persists across page navigations
+    window.notificationsRead = !hasNewNotifications;
+    
+    // Only show badge and animation if there are new (unread) notifications
+    if (notificationBadge && hasNewNotifications) {
+        // Show the badge count
+        notificationBadge.style.display = 'inline-block';
+        notificationBadge.classList.add('animate');
+        
+        // Add animation for new notifications
+        notificationToggle.classList.add('has-notifications');
+        
+        // Remove animation after it completes, then re-add periodically
+        notificationToggle.addEventListener('animationend', function() {
+            setTimeout(() => {
+                if (notificationBadge && hasNewNotifications) {
+                    notificationToggle.classList.remove('has-notifications');
+                    void notificationToggle.offsetWidth; // Trigger reflow
+                    notificationToggle.classList.add('has-notifications');
+                }
+            }, 3000); // Re-trigger animation every 3 seconds
+        });
+    }
 
     // Function to close popup with animation
     function closePopup(popup) {
@@ -349,8 +355,63 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             notificationPopup.classList.add('active');
             closePopup(messagePopup);
+            
+            // Mark notifications as read in localStorage (but don't clear them from server)
+            if (notificationIds.length > 0) {
+                const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+            }
+            
+            // Mark notifications as read globally
+            window.notificationsRead = true;
+            
+            // Remove animation and hide badge
+            notificationToggle.classList.remove('has-notifications');
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+                notificationBadge.classList.remove('animate');
+            }
         }
     });
+    
+    // Clear all notifications button
+    const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+    if (clearNotificationsBtn) {
+        clearNotificationsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Clear notifications on the server
+            fetch('/activities/clear/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json()).then(data => {
+                // After clearing, update localStorage to remember these are read
+                if (notificationIds.length > 0) {
+                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                }
+                
+                // Close the popup
+                closePopup(notificationPopup);
+                
+                // Reload the page to refresh notifications
+                window.location.reload();
+            }).catch(error => {
+                console.error('Error clearing notifications:', error);
+                // Still update localStorage even if server call fails
+                if (notificationIds.length > 0) {
+                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                }
+                
+                // Close the popup
+                closePopup(notificationPopup);
+            });
+        });
+    }
 
     // Toggle message popup
     messageToggle.addEventListener('click', function(e) {
