@@ -25,6 +25,7 @@ urlpatterns = [
     path('design-request/<int:request_id>/update-status/', views.update_design_status, name='update_design_status'),
     path('design-request/<int:request_id>/delete/', views.delete_design_request, name='delete_design_request'),
     path('design-request/<int:request_id>/edit/', views.edit_design_request, name='edit_design_request'),
+    path('design-request/<int:request_id>/request-revision/', views.request_revision, name='request_revision'),
     
     # Profile
     path('profile/', views.profile_view, name='profile'),

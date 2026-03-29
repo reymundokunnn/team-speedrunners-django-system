@@ -276,6 +276,11 @@
                                 <td class="actions-cell">
                                     <div class="action-buttons">
                                         {% if request.status == 'completed' %}
+                                        <button type="button" class="btn-icon btn-revision" title="Request Revision"
+                                            data-request-id="{{ request.id }}" data-title="{{ request.title|escapejs }}"
+                                            onclick="openRevisionModal(this)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </button>
                                         <button type="button" class="btn-icon btn-delete" title="Delete"
                                             data-request-id="{{ request.id }}" data-title="{{ request.title|escapejs }}"
                                             onclick="openDeleteModal(this)">
@@ -785,8 +790,115 @@
                 </h3>
                 <ul id="finishedFilesList" class="file-list-modal"></ul>
             </div>
+            
+            <div class="completion-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCompletionModal()">Close</button>
+                <button type="button" class="btn btn-primary" id="completionRevisionBtn" onclick="requestRevisionFromModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    Request Revision
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Revision Request Modal -->
+<div class="add-new-design-modal" id="revisionModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeRevisionModal()" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Request Revision</h2>
+        <p>Request a revision for: <strong id="revisionRequestTitle"></strong></p>
+        <form method="post" id="revisionForm" action="" class="design-request-form">
+            {% csrf_token %}
+            <label for="revision_notes">Revision Notes (Optional)</label>
+            <textarea id="revision_notes" name="revision_notes"
+                placeholder="Describe what changes you would like..."></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeRevisionModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Request Revision</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Revision Modal Functions
+function openRevisionModal(button) {
+    const requestId = button.getAttribute('data-request-id');
+    const title = button.getAttribute('data-title');
+    
+    document.getElementById('revisionRequestTitle').textContent = title;
+    document.getElementById('revisionForm').action = `/design-request/${requestId}/request-revision/`;
+    
+    document.getElementById('revisionModal').style.display = 'flex';
+}
+
+function closeRevisionModal() {
+    document.getElementById('revisionModal').style.display = 'none';
+    document.getElementById('revision_notes').value = '';
+}
+
+// Handle revision form submission
+document.getElementById('revisionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const action = form.action;
+    
+    fetch(action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeRevisionModal();
+            // Show success message
+            alert(data.message);
+            // Reload the page to reflect the status change
+            location.reload();
+        } else {
+            alert(data.error || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while requesting revision');
+    });
+});
+
+// Request revision from completion modal
+function requestRevisionFromModal() {
+    // Get the current request ID from the completion modal
+    const completionModal = document.getElementById('completionModal');
+    const requestId = completionModal.getAttribute('data-request-id');
+    const title = document.getElementById('completionTitle').textContent;
+    
+    if (!requestId) {
+        alert('Unable to identify the design request');
+        return;
+    }
+    
+    // Close completion modal and open revision modal
+    closeCompletionModal();
+    
+    // Set up revision modal
+    document.getElementById('revisionRequestTitle').textContent = title;
+    document.getElementById('revisionForm').action = `/design-request/${requestId}/request-revision/`;
+    
+    // Open revision modal
+    document.getElementById('revisionModal').style.display = 'flex';
+}
+</script>
 
 {% endblock %}

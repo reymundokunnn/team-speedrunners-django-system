@@ -1761,6 +1761,12 @@ document.addEventListener('DOMContentLoaded', function () {
 function openCompletionModal(requestId) {
     console.log('Opening completion modal for request ID:', requestId);
     openModal('completionModal');
+    
+    // Store request ID in the modal for revision button
+    var completionModal = document.getElementById('completionModal');
+    if (completionModal) {
+        completionModal.setAttribute('data-request-id', requestId);
+    }
 
     // Fetch completion details from API
     fetch('/api/completion-details/' + requestId + '/')
