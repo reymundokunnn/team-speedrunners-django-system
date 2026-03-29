@@ -262,18 +262,18 @@
                                 <div class="request-actions">
                                     <form method="post" action="{% url 'accept_design_request' request.id %}" class="action-form">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn-action btn-accept" title="Accept Request">
+                                        <button type="submit" class="btn-action request-btn-accept" title="Accept Request">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                             <span>Accept</span>
                                         </button>
                                     </form>
-                                    <button class="btn-action btn-view" data-id="{{ request.id }}" onclick="openAvailableRequestModal(this)" title="View Details">
+                                    <button class="btn-action request-btn-view" data-id="{{ request.id }}" onclick="openAvailableRequestModal(this)" title="View Details">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         <span>View</span>
                                     </button>
                                     <form method="post" action="{% url 'reject_design_request' request.id %}" class="action-form" onsubmit="return confirm('Are you sure you want to reject this request?');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn-action btn-reject" title="Reject Request">
+                                        <button type="submit" class="btn-action request-btn-reject" title="Reject Request">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                             <span>Reject</span>
                                         </button>

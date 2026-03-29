@@ -181,7 +181,32 @@ body.dark-mode .section-2 h2 {
 }
 
 body.dark-mode .section-3 {
-    background: linear-gradient(180deg, #2d2d2d, #1a1a1a00);
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+}
+
+body.dark-mode .section-3 .process-title {
+    color: #f8f9fa;
+}
+
+body.dark-mode .section-3 .process-subtitle {
+    color: #adb5bd;
+}
+
+body.dark-mode .section-3 .process-card {
+    background: #2d2d2d;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .section-3 .process-card:hover {
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+}
+
+body.dark-mode .section-3 .process-card h3 {
+    color: #f8f9fa;
+}
+
+body.dark-mode .section-3 .process-card p {
+    color: #adb5bd;
 }
 
 body.dark-mode .section-2-cards .card {
@@ -1171,64 +1196,102 @@ main {
 }
 
 .section-3 {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: clamp(15px, 3vw, 30px);
-    background: linear-gradient(180deg, #c0c0c0, #d1d1d100);
-    padding: clamp(30px, 5vw, 60px);
-    height: auto;
-    min-height: clamp(100px, 20vh, 200px);
-    box-sizing: border-box;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    padding: clamp(60px, 8vw, 100px) clamp(20px, 5vw, 60px);
+    min-height: auto;
 }
 
-.section-3 .diagram-container {
-    display: flex;
-    gap: clamp(10px, 2vw, 20px);
-    flex-wrap: wrap;
-    width: 100%;
+.section-3 .process-container {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.section-3 .diagram-container .diagram-card {
-    padding: clamp(10px, 2vw, 20px);
-    border-radius: 10px;
-    flex: 1 1 clamp(150px, 30vw, 300px);
-    margin-bottom: 0;
+.section-3 .process-title {
     text-align: center;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 0.5rem;
+}
+
+.section-3 .process-subtitle {
+    text-align: center;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: #6c757d;
+    margin-bottom: clamp(40px, 6vw, 60px);
+}
+
+.section-3 .process-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(20px, 3vw, 30px);
+}
+
+.section-3 .process-card {
+    background: white;
+    border-radius: 16px;
+    padding: clamp(24px, 3vw, 32px);
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
 }
 
-.section-3 .diagram-container .diagram-card h3 {
-    margin: clamp(5px, 1vw, 15px) 0;
-    font-size: clamp(1.25rem, 3vw, 2.5rem);
-    word-break: break-word;
+.section-3 .process-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
 }
 
-.section-3 .diagram-container .diagram-card p {
-    text-align: justify;
-    font-size: clamp(0.85rem, 2vw, 1.1rem);
-    margin: clamp(5px, 1vw, 10px) 0;
-    word-break: break-word;
-}
-
-.section-3 .diagram-container .diagram-card .circled-number {
-    width: clamp(70px, 12vw, 130px);
-    height: clamp(70px, 12vw, 130px);
-    min-width: clamp(70px, 12vw, 130px);
-    min-height: clamp(70px, 12vw, 130px);
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a15509, #583723);
-    color: white;
+.section-3 .process-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: clamp(1.5rem, 5vw, 3rem);
-    margin: clamp(5px, 2vw, 20px) auto clamp(5px, 1vw, 15px);
+    color: white;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.section-3 .process-card:hover .process-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.section-3 .process-number {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.section-3 .process-card h3 {
+    font-size: clamp(1.1rem, 2vw, 1.25rem);
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 0.75rem;
+    word-break: break-word;
+}
+
+.section-3 .process-card p {
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 0;
+    word-break: break-word;
 }
 
 /* signin section */
@@ -3199,6 +3262,10 @@ body.dark-mode .file-upload-area-content small {
     transition: all 0.2s ease;
 }
 
+.btn-view svg {
+    stroke: grey;
+}
+
 .btn-edit {
     background-color: #e87f14;
     color: white;
@@ -3629,7 +3696,7 @@ body.dark-mode .btn-action:hover {
 }
 
 /* Accept Button */
-.btn-accept {
+.request-btn-accept {
     background: linear-gradient(135deg, #28a745 0%, #218838 100%);
     color: white;
     box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
@@ -3644,22 +3711,22 @@ body.dark-mode .btn-action:hover {
 }
 
 /* View Button */
-.btn-view {
+.request-btn-view {
     background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     color: white;
     box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
 }
 
-.btn-view:hover {
+.request-btn-view:hover {
     box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
 }
 
-.btn-view svg {
+.request-btn-view svg {
     stroke: white;
 }
 
 /* Reject Button */
-.btn-reject {
+.request-btn-reject {
     background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     color: white;
     box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
@@ -6323,11 +6390,6 @@ body.dark-mode .role-admin {
     white-space: nowrap;
 }
 
-.action-buttons {
-    display: flex;
-    gap: 8px;
-}
-
 .btn-icon {
     display: flex;
     align-items: center;
@@ -7054,6 +7116,7 @@ body.dark-mode .caught-up-desc {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    color: white;
 }
 
 .activity-list.compact .activity-icon svg {
@@ -12183,7 +12246,7 @@ body:not(.dark-mode) .profile-name {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
+    gap: 6px;
     margin-bottom: 12px;
     margin-top: 10px;
 }
@@ -12997,7 +13060,7 @@ body.dark-mode .clear-notifications-btn:hover {
 .notification-item {
     display: flex;
     align-items: flex-start;
-    padding: 12px 0;
+    padding: 12px;
     border-bottom: 1px solid #eee;
     transition: background-color 0.2s ease;
 }
@@ -13008,8 +13071,6 @@ body.dark-mode .clear-notifications-btn:hover {
 
 .notification-item:hover {
     background-color: #f9f9f9;
-    margin: 0 -20px;
-    padding: 12px 20px;
 }
 
 .notification-icon {
@@ -13766,5 +13827,312 @@ body.has-sticky-footer main {
     
     body.has-sticky-footer main {
         padding-bottom: 30px;
+    }
+}
+
+/* Contact Page Styles */
+.contact-page {
+    min-height: 100vh;
+}
+
+.contact-hero {
+    background: linear-gradient(90deg,rgba(232, 127, 20, 1) 0%, rgba(186, 93, 0, 1) 50%, rgba(150, 77, 5, 1) 100%);
+    color: white;
+    padding: 80px 0 60px;
+    text-align: center;
+}
+
+.contact-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.contact-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.contact-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+/* Contact Information */
+.contact-info {
+    padding: 40px;
+    border-radius: 16px;
+    height: fit-content;
+}
+
+body.dark-mode .contact-info, body.dark-mode contact-form-container {
+    background: #333;
+}
+.contact-info h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.contact-info-text {
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+.contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.contact-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.contact-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(90deg,rgba(232, 127, 20, 1) 0%, rgba(186, 93, 0, 1) 50%, rgba(150, 77, 5, 1) 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.contact-item-content h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.contact-item-content p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Social Links */
+.social-links {
+    border-top: 1px solid #e9ecef;
+    padding-top: 2rem;
+}
+
+.social-links h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.social-icons {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-icon {
+    width: 44px;
+    height: 44px;
+    background: #1a1a2e;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background-color: #e87f14;
+    transform: translateY(-3px);
+}
+
+/* Contact Form */
+.contact-form-container {
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.contact-form-container h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    color: #e87f14;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.alert {
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px 28px;
+    background-color: #e87f14;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* FAQ Section */
+.faq-section {
+    background-color: #FAD1A735;
+    padding: 60px 0;
+}
+
+.faq-title {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 3rem;
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.faq-item {
+    background: #33333303;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.faq-item h3 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    color: #e87f14;
+}
+
+.faq-item p {
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .contact-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .faq-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-title {
+        font-size: 2rem;
+    }
+    
+    .contact-subtitle {
+        font-size: 1rem;
+    }
+    
+    .contact-info,
+    .contact-form-container {
+        padding: 30px;
+    }
+    
+    .contact-hero {
+        padding: 60px 0 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-title {
+        font-size: 1.75rem;
+    }
+    
+    .contact-info,
+    .contact-form-container {
+        padding: 20px;
+    }
+    
+    .social-icons {
+        flex-wrap: wrap;
     }
 }
