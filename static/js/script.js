@@ -2383,9 +2383,10 @@ function openCompletionModal(requestId) {
             var designerSection = document.getElementById('designerSection');
             var designerAvatar = document.getElementById('designerAvatar');
             var designerName = document.getElementById('designerName');
+            var designerProfileLink = document.getElementById('designerProfileLink');
 
             console.log('Designer data:', data.designer);
-            console.log('Elements:', { designerSection, designerAvatar, designerName });
+            console.log('Elements:', { designerSection, designerAvatar, designerName, designerProfileLink });
 
             if (data.designer && designerSection && designerAvatar && designerName) {
                 designerSection.style.display = 'block';
@@ -2397,6 +2398,14 @@ function openCompletionModal(requestId) {
                 } else {
                     designerAvatar.innerHTML = '<span class="avatar-initials">' + (data.designer.initials || '?') + '</span>';
                 }
+
+                // Set profile link
+                if (designerProfileLink && data.designer.username) {
+                    designerProfileLink.href = '/profile/' + data.designer.username + '/';
+                }
+
+                // Load and setup rating functionality
+                setupRatingSystem(requestId);
             } else if (designerSection) {
                 designerSection.style.display = 'none';
             }
@@ -2429,6 +2438,212 @@ function openCompletionModal(requestId) {
 
 function closeCompletionModal() {
     closeModal('completionModal');
+}
+
+// Rating System Functions
+let currentRequestId = null;
+let selectedRating = 0;
+
+function setupRatingSystem(requestId) {
+    currentRequestId = requestId;
+    const rateBtnText = document.getElementById('rateBtnText');
+
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + requestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                rateBtnText.textContent = 'Rated ' + data.user_rating + '/5';
+            } else if (data.average_rating > 0) {
+                rateBtnText.textContent = 'Avg: ' + data.average_rating + '/5';
+            } else {
+                rateBtnText.textContent = 'Rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            rateBtnText.textContent = 'Rate';
+        });
+}
+
+function openRatingModal() {
+    if (!currentRequestId) return;
+    
+    const modal = document.getElementById('ratingModal');
+    const ratingDesignerAvatar = document.getElementById('ratingDesignerAvatar');
+    const ratingDesignerName = document.getElementById('ratingDesignerName');
+    const ratingTextLarge = document.getElementById('ratingTextLarge');
+    const starsLarge = document.querySelectorAll('#ratingStarsLarge .star-large');
+    
+    // Get designer info from completion modal
+    const designerAvatar = document.getElementById('designerAvatar');
+    const designerName = document.getElementById('designerName');
+    
+    // Copy designer info to rating modal
+    ratingDesignerAvatar.innerHTML = designerAvatar.innerHTML;
+    ratingDesignerName.textContent = designerName.textContent;
+    
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + currentRequestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                selectedRating = data.user_rating;
+                updateStarsLarge(starsLarge, selectedRating);
+                ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+            } else {
+                selectedRating = 0;
+                updateStarsLarge(starsLarge, 0);
+                ratingTextLarge.textContent = 'Click on a star to rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            selectedRating = 0;
+            updateStarsLarge(starsLarge, 0);
+            ratingTextLarge.textContent = 'Click on a star to rate';
+        });
+    
+    // Add hover effects
+    starsLarge.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, rating);
+            ratingTextLarge.textContent = getRatingText(rating);
+        });
+
+        star.addEventListener('mouseleave', function() {
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = selectedRating > 0 ? 'Your rating: ' + selectedRating + '/5' : 'Click on a star to rate';
+        });
+
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+        });
+    });
+    
+    openModal('ratingModal');
+}
+
+function closeRatingModal() {
+    closeModal('ratingModal');
+    selectedRating = 0;
+}
+
+function updateStarsLarge(stars, rating) {
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+function getRatingText(rating) {
+    const texts = {
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very Good',
+        5: 'Excellent'
+    };
+    return texts[rating] || '';
+}
+
+function submitRating() {
+    if (selectedRating === 0) {
+        showNotification('Please select a rating', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitRatingBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    fetch('/api/save-designer-rating/' + currentRequestId + '/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ rating: selectedRating })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Save rating value before closing modal
+            const savedRating = selectedRating;
+            
+            showNotification('Rating saved successfully!', 'success');
+            closeRatingModal();
+            
+            // Update button text with saved rating
+            const rateBtnText = document.getElementById('rateBtnText');
+            rateBtnText.textContent = 'Rated ' + savedRating + '/5';
+        } else {
+            showNotification('Error saving rating: ' + data.error, 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    })
+    .catch(error => {
+        console.error('Error saving rating:', error);
+        showNotification('Error saving rating. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification notification-' + type;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = '#10b981';
+    } else {
+        notification.style.background = '#ef4444';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 /* Designer Dashboard - Dynamic Section Switching */

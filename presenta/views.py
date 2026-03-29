@@ -7,7 +7,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating
 from django.utils import timezone
 import uuid
 from PIL import Image
@@ -906,7 +906,8 @@ def get_completion_details(request, request_id):
         designer_data = {
             'name': f"{designer.first_name} {designer.last_name}".strip() or designer.username,
             'profile_picture': presenta_user.profile_picture.url if presenta_user and presenta_user.profile_picture else None,
-            'initials': (designer.first_name[0] if designer.first_name else '') + (designer.last_name[0] if designer.last_name else '') or designer.username[0].upper()
+            'initials': (designer.first_name[0] if designer.first_name else '') + (designer.last_name[0] if designer.last_name else '') or designer.username[0].upper(),
+            'username': designer.username
         }
     
     return JsonResponse({
@@ -914,6 +915,88 @@ def get_completion_details(request, request_id):
         'completed_at': design_request.completed_at.strftime('%Y-%m-%d %H:%M') if design_request.completed_at else '',
         'files': files_data,
         'designer': designer_data
+    })
+
+
+@login_required
+def save_designer_rating(request, request_id):
+    # API endpoint to save a designer rating.
+    from django.http import JsonResponse
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
+    
+    if not design_request.designer:
+        return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        rating_value = data.get('rating')
+        
+        if rating_value is None:
+            return JsonResponse({'error': 'Rating is required'}, status=400)
+        
+        rating_value = int(rating_value)
+        if rating_value < 1 or rating_value > 5:
+            return JsonResponse({'error': 'Rating must be between 1 and 5'}, status=400)
+        
+        # Create or update the rating
+        rating, created = DesignerRating.objects.update_or_create(
+            designer=design_request.designer,
+            rater=request.user,
+            design_request=design_request,
+            defaults={'rating': rating_value}
+        )
+        
+        # Get updated average rating
+        avg_rating = DesignerRating.get_average_rating(design_request.designer)
+        rating_count = DesignerRating.get_rating_count(design_request.designer)
+        
+        return JsonResponse({
+            'success': True,
+            'rating': rating.rating,
+            'created': created,
+            'average_rating': round(avg_rating, 1),
+            'rating_count': rating_count
+        })
+    except (ValueError, KeyError) as e:
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def get_designer_rating(request, request_id):
+    # API endpoint to get the user's rating for a design request.
+    from django.http import JsonResponse
+    
+    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
+    
+    if not design_request.designer:
+        return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
+    
+    # Get user's rating for this request
+    try:
+        user_rating = DesignerRating.objects.get(
+            designer=design_request.designer,
+            rater=request.user,
+            design_request=design_request
+        )
+        user_rating_value = user_rating.rating
+    except DesignerRating.DoesNotExist:
+        user_rating_value = None
+    
+    # Get average rating
+    avg_rating = DesignerRating.get_average_rating(design_request.designer)
+    rating_count = DesignerRating.get_rating_count(design_request.designer)
+    
+    return JsonResponse({
+        'user_rating': user_rating_value,
+        'average_rating': round(avg_rating, 1),
+        'rating_count': rating_count
     })
 
 
@@ -2294,6 +2377,14 @@ def profile_view(request, username=None):
             Q(requester=target_django) | Q(designer=target_django),
             status='completed'
         ).count()
+        
+        # Add average rating for designers
+        if target_presenta.user_role == 'designer':
+            from .models import DesignerRating
+            avg_rating = DesignerRating.get_average_rating(target_django)
+            rating_count = DesignerRating.get_rating_count(target_django)
+            stats['average_rating'] = round(avg_rating, 1)
+            stats['rating_count'] = rating_count
 
     # Recent activities (public)
     activities = Activity.objects.filter(

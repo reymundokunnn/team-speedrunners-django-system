@@ -817,15 +817,25 @@
             
             <div class="designer-section" id="designerSection">
                 <span class="info-label">Designed by</span>
-                <div class="designer-card">
-                    <div class="designer-avatar" id="designerAvatar">
-                        <!-- Avatar will be populated by JS -->
+                <a href="#" id="designerProfileLink" class="designer-card-link" style="text-decoration: none; color: inherit;">
+                    <div class="designer-card">
+                        <div class="designer-avatar" id="designerAvatar">
+                            <!-- Avatar will be populated by JS -->
+                        </div>
+                        <div class="designer-info">
+                            <div class="designer-name-row">
+                                <span class="designer-name" id="designerName"></span>
+                                <button type="button" id="rateDesignerBtn" class="rate-designer-btn" onclick="event.preventDefault(); event.stopPropagation(); openRatingModal();">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                    <span id="rateBtnText">Rate</span>
+                                </button>
+                            </div>
+                            <span class="designer-role">Designer</span>
+                        </div>
                     </div>
-                    <div class="designer-info">
-                        <span class="designer-name" id="designerName"></span>
-                        <span class="designer-role">Designer</span>
-                    </div>
-                </div>
+                </a>
             </div>
             
             <div class="finished-files-section">
@@ -839,6 +849,38 @@
                     Finished Files
                 </h3>
                 <ul id="finishedFilesList" class="file-list-modal"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Modal -->
+<div class="add-new-design-modal" id="ratingModal">
+    <div class="modal-content rating-modal-content">
+        <button class="close-btn" onclick="closeRatingModal()" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h2>Rate Designer</h2>
+        <div class="rating-modal-body">
+            <div class="rating-designer-info">
+                <div class="rating-designer-avatar" id="ratingDesignerAvatar"></div>
+                <span class="rating-designer-name" id="ratingDesignerName"></span>
+            </div>
+            <div class="rating-stars-large" id="ratingStarsLarge">
+                <span class="star-large" data-rating="1">★</span>
+                <span class="star-large" data-rating="2">★</span>
+                <span class="star-large" data-rating="3">★</span>
+                <span class="star-large" data-rating="4">★</span>
+                <span class="star-large" data-rating="5">★</span>
+            </div>
+            <div class="rating-text-large" id="ratingTextLarge"></div>
+            <div class="rating-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeRatingModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()">Submit Rating</button>
             </div>
         </div>
     </div>
