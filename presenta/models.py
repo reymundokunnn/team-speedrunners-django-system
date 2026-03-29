@@ -55,6 +55,7 @@ class User(models.Model):
     company = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    cover_photo = models.ImageField(upload_to='cover_photos/', null=True, blank=True)
     pronouns = models.CharField(max_length=50, blank=True, null=True, help_text='e.g., he/him, she/her, they/them')
     
     # Status

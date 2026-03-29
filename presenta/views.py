@@ -1791,6 +1791,34 @@ def unified_settings(request):
                     except Exception as e:
                         print(f"Error processing image: {e}")
                 
+                # Handle cover photo cropping
+                cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
+                remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
+                
+                if remove_cover:
+                    if presenta_user.cover_photo:
+                        presenta_user.cover_photo.delete(save=True)
+                    presenta_user.cover_photo = None
+                elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
+                    try:
+                        format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                        image_data = base64.b64decode(imgstr)
+                        image = Image.open(BytesIO(image_data))
+                        if image.mode in ('RGBA', 'P'):
+                            image = image.convert('RGB')
+                        img_io = BytesIO()
+                        image.save(img_io, format='JPEG', quality=85)
+                        img_io.seek(0)
+                        import uuid
+                        filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                        from django.core.files.uploadedfile import InMemoryUploadedFile
+                        cropped_file = InMemoryUploadedFile(
+                            img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                        )
+                        presenta_user.cover_photo = cropped_file
+                    except Exception as e:
+                        print(f"Error processing cover image: {e}")
+                
                 profile.save()
                 
                 # Also update Django user first_name, last_name, and username
@@ -1841,10 +1869,38 @@ def unified_settings(request):
                             profile.profile_picture = cropped_file
                         except Exception as e:
                             print(f"Error processing image: {e}")
-                    
-                    profile.save()
-                    
-                    # Also update Django user first_name, last_name, and username
+                        
+                        # Handle cover photo cropping
+                        cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
+                        remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
+                        
+                        if remove_cover:
+                            if presenta_user.cover_photo:
+                                presenta_user.cover_photo.delete(save=True)
+                            presenta_user.cover_photo = None
+                        elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
+                            try:
+                                format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                                image_data = base64.b64decode(imgstr)
+                                image = Image.open(BytesIO(image_data))
+                                if image.mode in ('RGBA', 'P'):
+                                    image = image.convert('RGB')
+                                img_io = BytesIO()
+                                image.save(img_io, format='JPEG', quality=85)
+                                img_io.seek(0)
+                                import uuid
+                                filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                                from django.core.files.uploadedfile import InMemoryUploadedFile
+                                cropped_file = InMemoryUploadedFile(
+                                    img_io, None, filename, 'image/jpeg', img_io.tell(), None
+                                )
+                                presenta_user.cover_photo = cropped_file
+                            except Exception as e:
+                                print(f"Error processing cover image: {e}")
+                        
+                        profile.save()
+                        
+                        # Also update Django user first_name, last_name, and username
                     if profile.first_name:
                         user.first_name = profile.first_name
                     if profile.last_name:
@@ -3054,3 +3110,71 @@ def api_sample_category_create(request):
             'slug': category.slug,
         }
     })
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_upload_cover_photo(request):
+    """API endpoint to upload cover photo via AJAX."""
+    import json
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    
+    try:
+        data = json.loads(request.body)
+        cover_cropped_image_data = data.get('cover_cropped_image_data')
+        
+        if not cover_cropped_image_data:
+            return JsonResponse({'success': False, 'error': 'No cover photo data provided'}, status=400)
+        
+        # Get the presenta user
+        user = request.user
+        presenta_user = get_presenta_user_safe(user)
+        
+        # Process the base64 image data
+        try:
+            format_part, imgstr = cover_cropped_image_data.split(';base64,')
+            image_data = base64.b64decode(imgstr)
+            image = Image.open(BytesIO(image_data))
+            # Keep original format and mode to preserve quality
+            img_io = BytesIO()
+            # Save as JPEG with high quality to balance quality and file size
+            image.save(img_io, format='JPEG', quality=98)
+            img_io.seek(0)
+            
+            filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
+            cropped_file = InMemoryUploadedFile(
+                img_io, None, filename, 'image/jpeg', img_io.tell(), None
+            )
+            presenta_user.cover_photo = cropped_file
+            presenta_user.save()
+            
+            return JsonResponse({'success': True, 'message': 'Cover photo uploaded successfully'})
+        except Exception as e:
+            print(f"Error processing cover image: {e}")
+            return JsonResponse({'success': False, 'error': 'Error processing image'}, status=500)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error uploading cover photo: {e}")
+        return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_clear_cover_photo(request):
+    """API endpoint to clear cover photo via AJAX."""
+    try:
+        # Get the presenta user
+        user = request.user
+        presenta_user = get_presenta_user_safe(user)
+        
+        # Clear the cover photo
+        if presenta_user.cover_photo:
+            presenta_user.cover_photo.delete(save=True)
+        presenta_user.cover_photo = None
+        presenta_user.save()
+        
+        return JsonResponse({'success': True, 'message': 'Cover photo cleared successfully'})
+    except Exception as e:
+        print(f"Error clearing cover photo: {e}")
+        return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)

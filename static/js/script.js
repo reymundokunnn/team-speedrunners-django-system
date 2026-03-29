@@ -2010,6 +2010,333 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Cover Photo Cropping Functionality
+    var coverCropper = null;
+    var coverEditBtn = document.getElementById('coverEditBtn');
+    var coverPhotoInput = document.getElementById('cover_photo_input');
+    var coverCropperModal = document.getElementById('coverCropperModal');
+    var coverCropperImage = document.getElementById('coverCropperImage');
+    var closeCoverCropperBtn = document.getElementById('closeCoverCropperBtn');
+    var cancelCoverCropBtn = document.getElementById('cancelCoverCropBtn');
+    var applyCoverCropBtn = document.getElementById('applyCoverCropBtn');
+    var profileCover = document.getElementById('profileCover');
+
+    if (coverEditBtn && coverPhotoInput) {
+        // Click on cover edit button
+        coverEditBtn.addEventListener('click', function () {
+            coverPhotoInput.click();
+        });
+
+        // Click on cover clear button
+        var coverClearBtn = document.getElementById('coverClearBtn');
+        if (coverClearBtn) {
+            coverClearBtn.addEventListener('click', function () {
+                if (confirm('Are you sure you want to clear your cover photo?')) {
+                    // Submit AJAX request to clear cover photo
+                    function getCookie(name) {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+                    var csrfToken = getCookie('csrftoken');
+                    
+                    fetch('/api/clear-cover-photo/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show the cleared cover photo
+                            window.location.reload();
+                        } else {
+                            alert('Error clearing cover photo: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error clearing cover photo. Please try again.');
+                    });
+                }
+            });
+        }
+
+        // File input change
+        coverPhotoInput.addEventListener('change', function (e) {
+            if (this.files && this.files[0]) {
+                var file = this.files[0];
+
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file (JPEG, PNG, etc.)');
+                    return;
+                }
+
+                // Validate file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File size must be less than 10MB');
+                    return;
+                }
+
+                // Show cropper modal first, then load image
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    if (coverCropperImage && coverCropperModal) {
+                        // Show modal immediately
+                        coverCropperModal.classList.add('show');
+                        document.documentElement.classList.add('cropper-modal-open');
+                        document.body.classList.add('cropper-modal-open');
+
+                        // Destroy existing cropper
+                        if (coverCropper) {
+                            coverCropper.destroy();
+                            coverCropper = null;
+                        }
+
+                        // Clear src first to ensure fresh load
+                        coverCropperImage.src = '';
+
+                        // Set new src and init cropper after image loads
+                        coverCropperImage.onload = function () {
+                            // Small delay to ensure modal is rendered
+                            setTimeout(function () {
+                                initCoverCropper();
+                            }, 50);
+                        };
+
+                        coverCropperImage.src = event.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Initialize cover cropper function
+    function initCoverCropper() {
+        if (!coverCropperImage) return;
+
+        coverCropper = new Cropper(coverCropperImage, {
+            aspectRatio: 1200 / 400, // Match profile-cover dimensions (height 280px, approximate width)
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            minContainerWidth: 200,
+            minContainerHeight: 100,
+            ready: function () {
+                // Cropper is ready
+                console.log('Cover Cropper ready');
+            }
+        });
+    }
+
+    // Close cover cropper modal
+    if (closeCoverCropperBtn) {
+        closeCoverCropperBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Cancel cover crop
+    if (cancelCoverCropBtn) {
+        cancelCoverCropBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Zoom in cover
+    var coverZoomInBtn = document.getElementById('coverZoomInBtn');
+    if (coverZoomInBtn) {
+        coverZoomInBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(0.1);
+            }
+        });
+    }
+
+    // Zoom out cover
+    var coverZoomOutBtn = document.getElementById('coverZoomOutBtn');
+    if (coverZoomOutBtn) {
+        coverZoomOutBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(-0.1);
+            }
+        });
+    }
+
+    // Rotate left cover
+    var coverRotateLeftBtn = document.getElementById('coverRotateLeftBtn');
+    if (coverRotateLeftBtn) {
+        coverRotateLeftBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(-45);
+            }
+        });
+    }
+
+    // Rotate right cover
+    var coverRotateRightBtn = document.getElementById('coverRotateRightBtn');
+    if (coverRotateRightBtn) {
+        coverRotateRightBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(45);
+            }
+        });
+    }
+
+    // Flip horizontal cover
+    var coverFlipHorizontalBtn = document.getElementById('coverFlipHorizontalBtn');
+    if (coverFlipHorizontalBtn) {
+        coverFlipHorizontalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleX = coverCropper.getData().scaleX || 1;
+                coverCropper.scaleX(-scaleX);
+            }
+        });
+    }
+
+    // Flip vertical cover
+    var coverFlipVerticalBtn = document.getElementById('coverFlipVerticalBtn');
+    if (coverFlipVerticalBtn) {
+        coverFlipVerticalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleY = coverCropper.getData().scaleY || 1;
+                coverCropper.scaleY(-scaleY);
+            }
+        });
+    }
+
+    // Reset cover crop
+    var coverResetCropBtn = document.getElementById('coverResetCropBtn');
+    if (coverResetCropBtn) {
+        coverResetCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.reset();
+            }
+        });
+    }
+
+    // Apply cover crop
+    if (applyCoverCropBtn) {
+        applyCoverCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                // Get cropped canvas (use original dimensions to preserve quality)
+                var canvas = coverCropper.getCroppedCanvas({
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                // Convert to base64 (use JPEG with high quality to balance quality and size)
+                var croppedImageData = canvas.toDataURL('image/jpeg', 0.98);
+
+                // Update cover photo display
+                if (profileCover) {
+                    var existingImg = profileCover.querySelector('.cover-photo-image');
+                    if (existingImg) {
+                        existingImg.src = croppedImageData;
+                    } else {
+                        var img = document.createElement('img');
+                        img.src = croppedImageData;
+                        img.alt = 'Cover Photo';
+                        img.className = 'cover-photo-image';
+                        profileCover.insertBefore(img, profileCover.firstChild);
+                    }
+                }
+
+                closeCoverCropperModal();
+
+                // Submit the cover photo via AJAX
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                var csrfToken = getCookie('csrftoken');
+                
+                fetch('/api/upload-cover-photo/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        cover_cropped_image_data: croppedImageData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show the new cover photo
+                        window.location.reload();
+                    } else {
+                        alert('Error uploading cover photo: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error uploading cover photo. Please try again.');
+                });
+            }
+        });
+    }
+
+    // Close modal when clicking outside
+    if (coverCropperModal) {
+        coverCropperModal.addEventListener('click', function (e) {
+            if (e.target === coverCropperModal) {
+                closeCoverCropperModal();
+            }
+        });
+    }
+
+    // Close cover cropper modal function
+    function closeCoverCropperModal() {
+        if (coverCropperModal) {
+            coverCropperModal.classList.remove('show');
+        }
+
+        document.documentElement.classList.remove('cropper-modal-open');
+        document.body.classList.remove('cropper-modal-open');
+
+        if (coverCropper) {
+            coverCropper.destroy();
+            coverCropper = null;
+        }
+
+        // Reset file input
+        if (coverPhotoInput) {
+            coverPhotoInput.value = '';
+        }
+    }
+
     // Form submission loading state
     var editProfileForm = document.getElementById('editProfileForm');
     if (editProfileForm) {

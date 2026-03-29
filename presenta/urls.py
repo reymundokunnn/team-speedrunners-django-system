@@ -40,6 +40,8 @@ urlpatterns = [
     path('api/completion-details/<int:request_id>/', views.get_completion_details, name='completion_details'),
     path('api/reference-files/<int:request_id>/', views.get_reference_files, name='reference_files'),
     path('api/finished-files/<int:request_id>/', views.get_finished_files, name='finished_files'),
+    path('api/upload-cover-photo/', views.api_upload_cover_photo, name='api_upload_cover_photo'),
+    path('api/clear-cover-photo/', views.api_clear_cover_photo, name='api_clear_cover_photo'),
     
     # Admin user management
     path('manage/user/<int:user_id>/view/', views.view_user, name='view_user'),
