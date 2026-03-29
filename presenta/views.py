@@ -839,6 +839,56 @@ def update_design_status(request, request_id):
 
 @login_required(login_url='signin')
 @require_http_methods(["POST"])
+def request_revision(request, request_id):
+    """Client requests a revision for a completed design request."""
+    user = request.user
+    design_request = get_object_or_404(DesignRequest, id=request_id)
+    
+    # Only the requester can request a revision
+    if design_request.requester != user:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Only allow revision for completed requests
+    if design_request.status != 'completed':
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Revision can only be requested for completed designs'}, status=400)
+    
+    # Get revision notes from request
+    revision_notes = request.POST.get('revision_notes', '').strip()
+    
+    # Update status back to in_progress and save revision notes
+    design_request.status = 'in_progress'
+    design_request.completed_at = None
+    design_request.revision_notes = revision_notes
+    design_request.save()
+    
+    # Log activity for the requester
+    log_activity(
+        user=user,
+        activity_type='revision_requested',
+        message=f"Revision requested for '{design_request.title}'.",
+        related_request=design_request
+    )
+    
+    # Log activity for the designer if assigned
+    if design_request.designer:
+        log_activity(
+            user=design_request.designer,
+            activity_type='revision_requested',
+            message=f"Revision requested for '{design_request.title}' by client.",
+            related_request=design_request
+        )
+    
+    from django.http import JsonResponse
+    return JsonResponse({
+        'success': True,
+        'message': 'Revision requested successfully. The designer will be notified.'
+    })
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
 def delete_design_request(request, request_id):
     # delete a design request (only for the requester or admin)
     user = request.user

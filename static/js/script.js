@@ -799,7 +799,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.dataset.requester,
                 link.dataset.deadline,
                 link.dataset.budget,
-                link.dataset.completedAt
+                link.dataset.completedAt,
+                link.dataset.revisionNotes
             );
         });
     });
@@ -984,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt) {
+function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt, revisionNotes) {
     currentDesignId = id;
     document.getElementById('modalDesignId').value = id;
     document.getElementById('modalProjectTitle').textContent = title;
@@ -992,6 +993,16 @@ function openProjectModal(id, title, description, status, requester, deadline, b
     document.getElementById('modalRequester').textContent = requester;
     document.getElementById('modalDeadline').textContent = deadline;
     document.getElementById('modalBudget').textContent = budget;
+    
+    // Handle revision notes
+    var revisionNotesSection = document.getElementById('revisionNotesSection');
+    var modalRevisionNotes = document.getElementById('modalRevisionNotes');
+    if (revisionNotes && revisionNotes.trim() !== '') {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'block';
+        if (modalRevisionNotes) modalRevisionNotes.innerHTML = '<p class="revision-notes-text">' + revisionNotes + '</p>';
+    } else {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'none';
+    }
 
     var statusBadge = document.getElementById('modalProjectStatus');
     statusBadge.className = 'status-badge status-' + status;
@@ -2354,6 +2365,12 @@ document.addEventListener('DOMContentLoaded', function () {
 function openCompletionModal(requestId) {
     console.log('Opening completion modal for request ID:', requestId);
     openModal('completionModal');
+    
+    // Store request ID in the modal for revision button
+    var completionModal = document.getElementById('completionModal');
+    if (completionModal) {
+        completionModal.setAttribute('data-request-id', requestId);
+    }
 
     // Fetch completion details from API
     fetch('/api/completion-details/' + requestId + '/')
@@ -3512,7 +3529,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function () {
             var designId = this.getAttribute('data-design-id');
             if (designId && typeof openProjectModal === 'function') {
-                openProjectModal(parseInt(designId));
+                openProjectModal(parseInt(designId), null, null, null, null, null, null, null, null);
             }
         });
     });

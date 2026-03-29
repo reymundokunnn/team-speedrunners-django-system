@@ -7304,6 +7304,34 @@ body.dark-mode .activity-icon.status-status_changed {
     color: #ea580c;
 }
 
+/* Revision Notes Section */
+.revision-notes-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff7ed;
+    border-left: 4px solid #f97316;
+    border-radius: 4px;
+}
+
+.revision-notes-section h4 {
+    margin: 0 0 10px 0;
+    color: #ea580c;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.revision-notes-content {
+    margin: 0;
+}
+
+.revision-notes-text {
+    margin: 0;
+    color: #9a3412;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
 .activity-icon.status-request_rejected,
 .activity-icon.status-request_cancelled {
     background-color: #fee2e2;

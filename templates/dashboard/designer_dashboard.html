@@ -319,7 +319,7 @@
                                             {% elif design.design_type == 'poster' %}
                                             <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                             {% endif %}
-                                            <a href="#" class="project-link" data-id="{{ design.id }}" data-title="{{ design.title|escapejs }}" data-description="{{ design.description|escapejs }}" data-status="{{ design.status }}" data-requester="{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name|escapejs }}{% else %}User{% endif %}" data-deadline="{% if design.deadline %}{{ design.deadline|date:'M d, Y' }}{% else %}No deadline{% endif %}" data-budget="{% if design.budget %}{{ design.currency|currency_symbol }}{{ design.budget }}{% else %}No budget{% endif %}" data-completed-at="{% if design.completed_at %}{{ design.completed_at|date:'M d, Y' }}{% else %}Not completed{% endif %}">
+                                            <a href="#" class="project-link" data-id="{{ design.id }}" data-title="{{ design.title|escapejs }}" data-description="{{ design.description|escapejs }}" data-status="{{ design.status }}" data-requester="{% if design.requester %}{{ design.requester.first_name }} {{ design.requester.last_name|escapejs }}{% else %}User{% endif %}" data-deadline="{% if design.deadline %}{{ design.deadline|date:'M d, Y' }}{% else %}No deadline{% endif %}" data-budget="{% if design.budget %}{{ design.currency|currency_symbol }}{{ design.budget }}{% else %}No budget{% endif %}" data-completed-at="{% if design.completed_at %}{{ design.completed_at|date:'M d, Y' }}{% else %}Not completed{% endif %}" data-revision-notes="{{ design.revision_notes|default_if_none:''|escapejs }}">
                                                 {{ design.title }}
                                             </a>
                                         </div>
@@ -411,6 +411,15 @@
                 <h4>Description</h4>
                 <p id="modalDescription">-</p>
             </div>
+            
+            <!-- Revision Notes Section (shown when revision notes exist) -->
+            <div class="revision-notes-section" id="revisionNotesSection" style="display: none;">
+                <h4>Revision Notes</h4>
+                <div class="revision-notes-content" id="modalRevisionNotes">
+                    <p class="revision-notes-text">-</p>
+                </div>
+            </div>
+            
             <div class="modal-files-section" id="modalFilesSection" style="display: block;">
                 <h4>Reference Files</h4>
                 <ul id="modalReferenceFilesList" class="file-list-modal">

@@ -191,6 +191,7 @@ class DesignRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    revision_notes = models.TextField(blank=True, null=True, help_text="Notes from client when requesting revision")
     
     class Meta:
         ordering = ['-created_at']
