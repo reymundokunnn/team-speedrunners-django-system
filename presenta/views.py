@@ -232,27 +232,7 @@ def logout_view(request):
     return redirect('index')
 
 def contact(request):
-    """Contact page with form submission."""
-    from .forms import ContactForm
-    from django.contrib import messages
-    
-    if request.method == 'POST':
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            # Process the form data
-            name = form.cleaned_data['name']
-            email = form.cleaned_data['email']
-            subject = form.cleaned_data['subject']
-            message = form.cleaned_data['message']
-            
-            # Here you would typically send an email or save to database
-            # For now, we'll just show a success message
-            messages.success(request, f'Thank you {name}! Your message has been sent. We\'ll get back to you soon.')
-            return redirect('contact')
-    else:
-        form = ContactForm()
-    
-    return render(request, 'contact.html', {'form': form})
+    return render(request, 'contact.html')
 
 def pricing(request):
     return render(request, 'pricing.html')
