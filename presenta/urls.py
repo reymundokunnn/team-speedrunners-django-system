@@ -26,6 +26,7 @@ urlpatterns = [
     path('design-request/<int:request_id>/delete/', views.delete_design_request, name='delete_design_request'),
     path('design-request/<int:request_id>/edit/', views.edit_design_request, name='edit_design_request'),
     path('design-request/<int:request_id>/request-revision/', views.request_revision, name='request_revision'),
+    path('design-request/<int:request_id>/download-receipt/', views.download_receipt, name='download_receipt'),
     
     # Profile
     path('profile/', views.profile_view, name='profile'),
@@ -38,6 +39,7 @@ urlpatterns = [
     # API endpoints
     path('api/notifications/', views.api_notifications, name='api_notifications'),
     path('api/activities/', views.api_activities, name='api_activities'),
+    path('api/system-status/', views.api_system_status, name='api_system_status'),
     path('api/completion-details/<int:request_id>/', views.get_completion_details, name='completion_details'),
     path('api/save-designer-rating/<int:request_id>/', views.save_designer_rating, name='save_designer_rating'),
     path('api/get-designer-rating/<int:request_id>/', views.get_designer_rating, name='get_designer_rating'),

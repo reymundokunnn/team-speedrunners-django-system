@@ -13,6 +13,8 @@ import uuid
 from PIL import Image
 from io import BytesIO
 import base64
+import psutil
+import datetime
 
 
 def get_presenta_user_safe(django_user):
@@ -456,6 +458,39 @@ def user_dashboard(request):
     except Exception:
         user_tz = 'UTC'
     
+    # Get user's preferred currency
+    user_currency = 'USD'
+    try:
+        if hasattr(user, 'user_settings') and user.user_settings.currency_preference:
+            user_currency = user.user_settings.currency_preference
+    except Exception:
+        pass
+    
+    # Calculate payment amounts based on user's preferred currency
+    from django.db.models import Sum, Q
+    
+    # Get all design requests with budget
+    requests_with_budget = design_requests.exclude(budget__isnull=True)
+    
+    # Total budget (all requests with budget)
+    total_budget = requests_with_budget.aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
+    # Pending payment (for_payment status)
+    pending_payment_amount = requests_with_budget.filter(
+        status='for_payment'
+    ).aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
+    # Completed payment (completed status)
+    completed_payment_amount = requests_with_budget.filter(
+        status='completed'
+    ).aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
     context = {
         'profile': user.profile,
         'design_requests': design_requests,
@@ -465,8 +500,69 @@ def user_dashboard(request):
         'for_payment': design_requests.filter(status='for_payment').count(),
         'completed': design_requests.filter(status='completed').count(),
         'user_timezone': user_tz,
+        'user_currency': user_currency,
+        'total_budget': total_budget,
+        'pending_payment_amount': pending_payment_amount,
+        'completed_payment_amount': completed_payment_amount,
     }
     return render(request, 'dashboard/user_dashboard.html', context)
+
+
+@login_required(login_url='signin')
+def download_receipt(request, request_id):
+    """Generate and download a PDF receipt for a completed design request."""
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from django.utils import timezone
+    from weasyprint import HTML
+    from django.conf import settings
+    import os
+    import io
+    
+    user = request.user
+    
+    try:
+        design_request = DesignRequest.objects.get(
+            id=request_id,
+            requester=user,
+            status='completed'
+        )
+    except DesignRequest.DoesNotExist:
+        return HttpResponse('Receipt not found', status=404)
+    
+    # Get user's preferred currency
+    user_currency = 'USD'
+    try:
+        if hasattr(user, 'user_settings') and user.user_settings.currency_preference:
+            user_currency = user.user_settings.currency_preference
+    except Exception:
+        pass
+    
+    # Get absolute path to static files for weasyprint
+    static_root = settings.STATIC_ROOT or os.path.join(settings.BASE_DIR, 'static')
+    logo_path = os.path.join(static_root, 'img', 'logo.png')
+    
+    # Prepare receipt data
+    receipt_data = {
+        'request': design_request,
+        'user': user,
+        'currency_code': user_currency,
+        'generated_at': timezone.now(),
+        'receipt_number': f"RCP-{user.id:04d}-{design_request.id:06d}-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+        'logo_path': f'file://{logo_path}',
+    }
+    
+    # Generate HTML receipt
+    html_content = render_to_string('receipts/receipt.html', receipt_data)
+    
+    # Generate PDF from HTML
+    pdf_file = HTML(string=html_content).write_pdf()
+    
+    # Create PDF response
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="receipt_{design_request.id}.pdf"'
+    
+    return response
 
 
 @login_required(login_url='signin')
@@ -595,6 +691,91 @@ def admin_dashboard(request):
         'user_timezone': user_tz,
     }
     return render(request, 'dashboard/admin_dashboard.html', context)
+
+
+@login_required(login_url='signin')
+def api_system_status(request):
+    """API endpoint to fetch system status information."""
+    try:
+        # Get CPU usage (no interval for faster response)
+        cpu_percent = psutil.cpu_percent(interval=0)
+        cpu_count = psutil.cpu_count()
+        cpu_load_avg = psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0
+        
+        # Get memory usage
+        memory = psutil.virtual_memory()
+        memory_total = memory.total
+        memory_available = memory.available
+        memory_percent = memory.percent
+        memory_used = memory.total - memory.available
+        
+        # Get disk usage for all partitions
+        disk_partitions = psutil.disk_partitions()
+        disks = []
+        for partition in disk_partitions:
+            try:
+                disk_usage = psutil.disk_usage(partition.mountpoint)
+                disks.append({
+                    'device': partition.device,
+                    'mountpoint': partition.mountpoint,
+                    'fstype': partition.fstype,
+                    'total': disk_usage.total,
+                    'used': disk_usage.used,
+                    'free': disk_usage.free,
+                    'percent': disk_usage.percent,
+                })
+            except (PermissionError, OSError):
+                # Skip partitions that can't be accessed
+                pass
+        
+        # Get system uptime
+        boot_time = psutil.boot_time()
+        uptime_seconds = datetime.datetime.now().timestamp() - boot_time
+        uptime_days = int(uptime_seconds // 86400)
+        uptime_hours = int((uptime_seconds % 86400) // 3600)
+        uptime_minutes = int((uptime_seconds % 3600) // 60)
+        
+        # Get currently logged in users
+        from django.utils import timezone as tz
+        five_minutes_ago = tz.now() - datetime.timedelta(minutes=5)
+        logged_in_users = PresentaUser.objects.filter(
+            online_status='online'
+        ).count()
+        
+        # Get total active users (registered)
+        total_users = PresentaUser.objects.count()
+        
+        # Get new users today
+        today = tz.now().date()
+        new_users_today = PresentaUser.objects.filter(
+            created_at__date=today
+        ).count()
+        
+        data = {
+            'system': {
+                'cpu_percent': cpu_percent,
+                'cpu_count': cpu_count,
+                'cpu_load_avg': round(cpu_load_avg, 2),
+                'memory_total': memory_total,
+                'memory_available': memory_available,
+                'memory_used': memory_used,
+                'memory_percent': memory_percent,
+                'disks': disks,
+                'uptime_days': uptime_days,
+                'uptime_hours': uptime_hours,
+                'uptime_minutes': uptime_minutes,
+            },
+            'users': {
+                'logged_in': logged_in_users,
+                'total': total_users,
+                'new_today': new_users_today,
+            },
+            'timestamp': tz.now().isoformat(),
+        }
+        
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required(login_url='signin')
