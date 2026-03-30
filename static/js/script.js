@@ -2550,6 +2550,51 @@ function closeCompletionModal() {
     closeModal('completionModal');
 }
 
+function requestRevisionFromModal() {
+    // Get request ID from the completion modal
+    var completionModal = document.getElementById('completionModal');
+    if (!completionModal) {
+        console.error('Completion modal not found');
+        return;
+    }
+    
+    var requestId = completionModal.getAttribute('data-request-id');
+    if (!requestId) {
+        console.error('Request ID not found in completion modal');
+        alert('Error: Could not get request ID');
+        return;
+    }
+    
+    // Get the title from the completion modal
+    var titleEl = document.getElementById('completionTitle');
+    var title = titleEl ? titleEl.textContent : 'Unknown Project';
+    
+    // Close the completion modal
+    closeCompletionModal();
+    
+    // Open the revision modal
+    var revisionModal = document.getElementById('revisionModal');
+    var form = document.getElementById('revisionForm');
+    var titleElRevision = document.getElementById('revisionRequestTitle');
+    var notesField = document.getElementById('revision_notes');
+    
+    if (revisionModal && form && titleElRevision) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/request-revision/';
+        
+        // Set the title
+        titleElRevision.textContent = title;
+        
+        // Clear the notes field
+        if (notesField) notesField.value = '';
+        
+        // Show the revision modal
+        openModal('revisionModal');
+    } else {
+        console.error('Revision modal elements not found');
+    }
+}
+
 // Rating System Functions
 let currentRequestId = null;
 let selectedRating = 0;
