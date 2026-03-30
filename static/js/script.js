@@ -1349,6 +1349,99 @@ function confirmDelete(btn) {
     return false;
 }
 
+/* User Dashboard - Revision Request Modal */
+function openRevisionModal(button) {
+    console.log('openRevisionModal called', button);
+    var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
+    var title = button.dataset.title;
+    
+    // Get the modal
+    var modal = document.getElementById('revisionModal');
+    console.log('Revision modal:', modal);
+    var form = document.getElementById('revisionForm');
+    var titleEl = document.getElementById('revisionRequestTitle');
+    var notesField = document.getElementById('revision_notes');
+    
+    if (modal && form && titleEl) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/request-revision/';
+        
+        // Set the title
+        titleEl.textContent = title;
+        
+        // Clear the notes field
+        if (notesField) notesField.value = '';
+        
+        // Show the modal using openModal for consistency
+        openModal('revisionModal');
+    } else {
+        console.error('Revision modal elements not found:', { modal: modal, form: form, titleEl: titleEl });
+    }
+}
+
+function closeRevisionModal() {
+    var modal = document.getElementById('revisionModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+function confirmRevision(btn) {
+    var form = document.getElementById('revisionForm');
+    if (form) {
+        // Extract request ID from form action
+        var action = form.action;
+        var match = action.match(/\/design-request\/(\d+)\/request-revision\//);
+        var requestId = match ? match[1] : null;
+        
+        if (!requestId) {
+            alert('Error: Could not get request ID');
+            return false;
+        }
+        
+        // Get revision notes
+        var revisionNotes = document.getElementById('revision_notes').value.trim();
+        
+        if (!revisionNotes) {
+            alert('Please enter revision notes.');
+            return false;
+        }
+        
+        // Get CSRF token
+        var csrftoken = getCookie('csrftoken');
+        
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'revision_notes=' + encodeURIComponent(revisionNotes)
+        })
+        .then(function(response) {
+            if (response.ok) {
+                // Close modal
+                closeRevisionModal();
+                // Reload the page to show updated status
+                window.location.reload();
+            } else {
+                response.json().then(function(data) {
+                    alert(data.error || 'Error requesting revision. Please try again.');
+                }).catch(function() {
+                    alert('Error requesting revision. Please try again.');
+                });
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error requesting revision. Please try again.');
+        });
+    }
+    return false;
+}
+
 // Helper function to get CSRF token
 function getCookie(name) {
     var cookieValue = null;
