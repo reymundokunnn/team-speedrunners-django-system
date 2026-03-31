@@ -297,6 +297,16 @@
                 <h1 id="greeting-assignments">Your <span class="orange">Assignments</span></h1>
                 <div class="your-assignments-full">
                     {% if assigned_designs %}
+                        <!-- Filter Tabs -->
+                        <div class="assignment-filter-tabs">
+                            <button class="filter-tab active" data-filter="all">All</button>
+                            <button class="filter-tab" data-filter="pending">Pending</button>
+                            <button class="filter-tab" data-filter="assigned">Assigned</button>
+                            <button class="filter-tab" data-filter="in_progress">In Progress</button>
+                            <button class="filter-tab" data-filter="review">Review</button>
+                            <button class="filter-tab" data-filter="for_payment">For Payment</button>
+                            <button class="filter-tab" data-filter="completed">Completed</button>
+                        </div>
                         <table class="recent-designs-table">
                             <thead>
                                 <tr>
@@ -309,7 +319,7 @@
                             </thead>
                             <tbody>
                                 {% for design in assigned_designs %}
-                                <tr>
+                                <tr data-status="{{ design.status }}">
                                     <td>
                                         <div class="title-with-icon">
                                             {% if design.design_type == 'presentation' %}
@@ -519,5 +529,86 @@
     </div>
 </div>
 
+<script>
+// Assignment filter tabs functionality
+document.querySelectorAll('.assignment-filter-tabs .filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.assignment-filter-tabs .filter-tab').forEach(t => t.classList.remove('active'));
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        const filter = this.getAttribute('data-filter');
+        const rows = document.querySelectorAll('.recent-designs-table tbody tr');
+        
+        rows.forEach(row => {
+            const status = row.getAttribute('data-status');
+            let show = false;
+            
+            switch(filter) {
+                case 'all':
+                    show = true;
+                    break;
+                case 'pending':
+                    show = status === 'pending';
+                    break;
+                case 'assigned':
+                    show = status === 'assigned';
+                    break;
+                case 'in_progress':
+                    show = status === 'in_progress';
+                    break;
+                case 'review':
+                    show = status === 'review';
+                    break;
+                case 'for_payment':
+                    show = status === 'for_payment';
+                    break;
+                case 'completed':
+                    show = status === 'completed';
+                    break;
+            }
+            
+            if (show) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update "no results" message if needed
+        updateAssignmentNoResultsMessage();
+    });
+});
+
+// Function to show/hide "no results" message for assignments
+function updateAssignmentNoResultsMessage() {
+    const visibleRows = document.querySelectorAll('.recent-designs-table tbody tr');
+    const visibleCount = Array.from(visibleRows).filter(row => row.style.display !== 'none').length;
+    
+    // Check if there's a no-results message element
+    let noResultsMsg = document.querySelector('.assignment-no-results-message');
+    
+    if (visibleCount === 0) {
+        if (!noResultsMsg) {
+            // Create and insert "no results" message
+            const tableContainer = document.querySelector('.recent-designs-table').parentElement;
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'assignment-no-results-message empty-state';
+            noResultsMsg.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                <span>No assignments found</span>
+                <p>No assignments match the selected filter.</p>
+            `;
+            tableContainer.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'flex';
+    } else {
+        if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+}
+</script>
 
 {% endblock %}

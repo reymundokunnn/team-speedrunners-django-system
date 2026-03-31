@@ -6,6 +6,251 @@
     display: none !important;
 }
 
+/* Pricing Page Styles */
+.pricing {
+    min-height: 100vh;
+    padding: clamp(100px, 12vw, 140px) clamp(20px, 4vw, 60px) clamp(60px, 8vw, 100px);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #e87f14, #ff9a3d, #e87f14);
+}
+
+.pricing .parent {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: clamp(20px, 3vw, 40px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.pricing-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: clamp(30px, 4vw, 50px);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.pricing-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #e87f14, #ff9a3d);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(232, 127, 20, 0.15);
+    border-color: #e87f14;
+}
+
+.pricing-card:hover::before {
+    transform: scaleX(1);
+}
+
+.pricing-card h2 {
+    font-size: clamp(1.5rem, 2.5vw, 1.75rem);
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.pricing-card .price {
+    font-size: clamp(2rem, 3vw, 2.5rem);
+    color: #e87f14;
+    font-weight: 800;
+    margin-bottom: 25px;
+    line-height: 1.2;
+}
+
+.pricing-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 30px 0;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.pricing-card ul li {
+    padding: 12px 0;
+    color: #555;
+    font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pricing-card ul li:last-child {
+    border-bottom: none;
+}
+
+.pricing-card ul li::before {
+    content: '✓';
+    color: #e87f14;
+    font-weight: bold;
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+.pricing-card button {
+    width: 100%;
+    padding: 14px 28px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e87f14 0%, #ff9a3d 100%);
+    color: white;
+    font-weight: 700;
+    border: none;
+    font-size: clamp(1rem, 1.5vw, 1.1rem);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(232, 127, 20, 0.3);
+}
+
+.pricing-card button:hover {
+    background: linear-gradient(135deg, #a15509 0%, #e87f14 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232, 127, 20, 0.4);
+}
+
+.pricing-card button:active {
+    transform: translateY(0);
+}
+
+/* Featured card styling */
+.pricing-card.div4 {
+    border: 2px solid #e87f14;
+    transform: scale(1.02);
+}
+
+.pricing-card.div4::after {
+    content: 'POPULAR';
+    position: absolute;
+    top: 20px;
+    right: -35px;
+    background: linear-gradient(135deg, #e87f14 0%, #ff9a3d 100%);
+    color: white;
+    padding: 8px 40px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    transform: rotate(45deg);
+    letter-spacing: 1px;
+}
+
+.pricing-card.div4:hover {
+    transform: scale(1.02) translateY(-10px);
+}
+
+/* Dark mode styles */
+body.dark-mode .pricing {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+body.dark-mode .pricing-card {
+    background: #2d2d2d;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .pricing-card h2 {
+    color: #ffffff;
+}
+
+body.dark-mode .pricing-card .price {
+    color: #e87f14;
+}
+
+body.dark-mode .pricing-card ul li {
+    color: #b0b0b0;
+    border-bottom-color: #3d3d3d;
+}
+
+body.dark-mode .pricing-card:hover {
+    box-shadow: 0 20px 40px rgba(232, 127, 20, 0.25);
+}
+
+body.dark-mode .pricing-card.div4 {
+    border-color: #e87f14;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .pricing .parent {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-card.div4 {
+        transform: scale(1);
+    }
+
+    .pricing-card.div4:hover {
+        transform: translateY(-10px);
+    }
+
+    .pricing-card.div4::after {
+        top: 15px;
+        right: -40px;
+        padding: 6px 35px;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pricing-card {
+        padding: 25px 20px;
+    }
+
+    .pricing-card ul li {
+        padding: 10px 0;
+    }
+}
+
+/* Animation for pricing cards */
+@keyframes pricingCardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pricing-card {
+    animation: pricingCardFadeIn 0.6s ease-out forwards;
+}
+
+.pricing-card:nth-child(1) { animation-delay: 0.1s; }
+.pricing-card:nth-child(2) { animation-delay: 0.2s; }
+.pricing-card:nth-child(3) { animation-delay: 0.3s; }
+.pricing-card:nth-child(4) { animation-delay: 0.4s; }
+.pricing-card:nth-child(5) { animation-delay: 0.5s; }
+.pricing-card:nth-child(6) { animation-delay: 0.6s; }
+
 /* Dark Mode & Animation Styles */
 @keyframes fadeInDarkMode {
     from {
@@ -57,6 +302,19 @@
 @keyframes statCardSlideUp {
     from {
         transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Section 3 Card Fade-In Animation */
+@keyframes section3CardFadeIn {
+    from {
+        transform: translateY(40px);
         opacity: 0;
     }
 
@@ -181,7 +439,43 @@ body.dark-mode .section-2 h2 {
 }
 
 body.dark-mode .section-3 {
-    background: linear-gradient(180deg, #2d2d2d, #1a1a1a00);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+body.dark-mode .section-3::before {
+    background: linear-gradient(90deg, #e87f14, #ff9a3d, #e87f14);
+}
+
+body.dark-mode .section-3-title {
+    color: #ffffff;
+}
+
+body.dark-mode .section-3-subtitle {
+    color: #b0b0b0;
+}
+
+body.dark-mode .section-3 .diagram-container .diagram-card {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
+}
+
+body.dark-mode .section-3 .diagram-container .diagram-card:hover {
+    box-shadow: 0 12px 30px rgba(232, 127, 20, 0.25);
+    border-color: #e87f14;
+}
+
+body.dark-mode .section-3 .diagram-container .diagram-card .step-number {
+    background: #3d3d3d;
+    color: #e87f14;
+    border-color: #e87f14;
+}
+
+body.dark-mode .section-3 .diagram-container .diagram-card h3 {
+    color: #ffffff;
+}
+
+body.dark-mode .section-3 .diagram-container .diagram-card p {
+    color: #b0b0b0;
 }
 
 body.dark-mode .section-2-cards .card {
@@ -557,7 +851,9 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
     animation: modalSlideIn 0.3s ease-out forwards;
@@ -582,6 +878,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     align-items: center;
     padding: 20px 24px;
     border-bottom: 1px solid #eee;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -626,6 +923,8 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
 /* Unified Modal Body */
 .modal-body {
     padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 /* Unified Modal Actions */
@@ -642,8 +941,9 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
     animation: modalSlideIn 0.3s ease-out forwards;
@@ -801,6 +1101,7 @@ body.dark-mode .modal-body {
     padding: 20px 24px;
     border-bottom: 1px solid #eee;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -1172,63 +1473,143 @@ main {
 
 .section-3 {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    gap: clamp(15px, 3vw, 30px);
-    background: linear-gradient(180deg, #c0c0c0, #d1d1d100);
-    padding: clamp(30px, 5vw, 60px);
-    height: auto;
-    min-height: clamp(100px, 20vh, 200px);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: clamp(40px, 6vw, 80px) clamp(20px, 4vw, 60px);
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.section-3::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #e87f14, #ff9a3d, #e87f14);
+}
+
+.section-3-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: #333;
+    margin-bottom: clamp(10px, 2vw, 20px);
+    text-align: center;
+    font-weight: 700;
+}
+
+.section-3-subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: #666;
+    margin-bottom: clamp(30px, 5vw, 50px);
+    text-align: center;
+    max-width: 600px;
 }
 
 .section-3 .diagram-container {
     display: flex;
-    gap: clamp(10px, 2vw, 20px);
+    gap: clamp(20px, 3vw, 40px);
     flex-wrap: wrap;
     width: 100%;
+    max-width: 1400px;
+    justify-content: center;
 }
 
 .section-3 .diagram-container .diagram-card {
-    padding: clamp(10px, 2vw, 20px);
-    border-radius: 10px;
-    flex: 1 1 clamp(150px, 30vw, 300px);
-    margin-bottom: 0;
+    background: #ffffff;
+    border-radius: 16px;
+    flex: 1 1 clamp(200px, 25vw, 280px);
+    max-width: 280px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: clamp(25px, 3vw, 40px) clamp(15px, 2vw, 25px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    border: 1px solid #f0f0f0;
+    opacity: 0;
+    animation: section3CardFadeIn 0.6s ease-out forwards;
+}
+
+.section-3 .diagram-container .diagram-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.section-3 .diagram-container .diagram-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.section-3 .diagram-container .diagram-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.section-3 .diagram-container .diagram-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.section-3 .diagram-container .diagram-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.section-3 .diagram-container .diagram-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(232, 127, 20, 0.15);
+    border-color: #e87f14;
+}
+
+.section-3 .diagram-container .diagram-card .icon-circle {
+    width: clamp(60px, 8vw, 80px);
+    height: clamp(60px, 8vw, 80px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e87f14 0%, #ff9a3d 100%);
+    display: flex;
+    align-items: center;
     justify-content: center;
+    margin-bottom: clamp(15px, 2vw, 25px);
+    box-shadow: 0 4px 15px rgba(232, 127, 20, 0.3);
+}
+
+.section-3 .diagram-container .diagram-card .icon-circle i {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: #ffffff;
+}
+
+.section-3 .diagram-container .diagram-card .step-number {
+    position: absolute;
+    top: clamp(10px, 1.5vw, 15px);
+    right: clamp(10px, 1.5vw, 15px);
+    width: clamp(28px, 3vw, 36px);
+    height: clamp(28px, 3vw, 36px);
+    border-radius: 50%;
+    background: #f8f9fa;
+    color: #e87f14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(0.85rem, 1.5vw, 1rem);
+    border: 2px solid #e87f14;
 }
 
 .section-3 .diagram-container .diagram-card h3 {
-    margin: clamp(5px, 1vw, 15px) 0;
-    font-size: clamp(1.25rem, 3vw, 2.5rem);
+    margin: 0 0 clamp(10px, 1.5vw, 15px) 0;
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+    color: #333;
+    font-weight: 600;
     word-break: break-word;
 }
 
 .section-3 .diagram-container .diagram-card p {
-    text-align: justify;
-    font-size: clamp(0.85rem, 2vw, 1.1rem);
-    margin: clamp(5px, 1vw, 10px) 0;
+    text-align: center;
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
     word-break: break-word;
-}
-
-.section-3 .diagram-container .diagram-card .circled-number {
-    width: clamp(70px, 12vw, 130px);
-    height: clamp(70px, 12vw, 130px);
-    min-width: clamp(70px, 12vw, 130px);
-    min-height: clamp(70px, 12vw, 130px);
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a15509, #583723);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: clamp(1.5rem, 5vw, 3rem);
-    margin: clamp(5px, 2vw, 20px) auto clamp(5px, 1vw, 15px);
 }
 
 /* signin section */
@@ -2772,7 +3153,9 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     width: 90%;
     max-width: 500px;
     max-height: 70vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
     animation: slideUp 0.3s ease-out;
@@ -3287,7 +3670,9 @@ body.dark-mode .confirm-note {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
     animation: modalSlideIn 0.3s ease-out;
@@ -4053,6 +4438,7 @@ body.dark-mode .modal-header {
     font-size: 1.3em;
     color: #333;
     font-weight: 600;
+    max-width: 60%;
 }
 
 body.dark-mode .modal-header h2 {
@@ -6102,7 +6488,7 @@ body.dark-mode .edit-profile-form select#id_gender {
 }
 
 #modalProjectStatus {
-    margin-right: 30px;
+    margin-right: 70px;
 }
 
 /* Status Badges */
@@ -12892,7 +13278,9 @@ body:not(.dark-mode) .empty-state span {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     animation: modalSlideIn 0.3s ease-out;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
@@ -12911,6 +13299,7 @@ body:not(.dark-mode) .profile-container .modal-content {
     justify-content: space-between;
     padding: 20px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 body:not(.dark-mode) .profile-container .modal-header {
@@ -12937,6 +13326,8 @@ body:not(.dark-mode) .profile-container .modal-header h2 {
 
 .profile-container .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .profile-container .modal-body p {
@@ -14294,7 +14685,9 @@ body.has-sticky-footer main {
 }
 
 /* Payment Filter Tabs */
-.payment-filter-tabs {
+.payment-filter-tabs,
+.design-request-filter-tabs,
+.assignment-filter-tabs {
     display: flex;
     gap: 10px;
     margin-bottom: 24px;
@@ -14590,7 +14983,9 @@ body.dark-mode .filter-tab.active {
     border-bottom-color: #e87f14;
 }
 
-body.dark-mode .payment-filter-tabs {
+body.dark-mode .payment-filter-tabs,
+body.dark-mode .design-request-filter-tabs,
+body.dark-mode .assignment-filter-tabs {
     border-bottom-color: #404040;
 }
 
@@ -14644,7 +15039,9 @@ body.dark-mode .btn-view-receipt:hover {
         height: 20px;
     }
     
-    .payment-filter-tabs {
+    .payment-filter-tabs,
+    .design-request-filter-tabs,
+    .assignment-filter-tabs {
         flex-wrap: wrap;
     }
     
@@ -14692,13 +15089,13 @@ body.dark-mode .btn-view-receipt:hover {
 .contact-hero {
     background: linear-gradient(135deg, #e87f14 0%, #ff9a3c 100%);
     color: white;
-    padding: 80px 20px;
+    padding: 50px 20px;
     text-align: center;
     margin-top: 60px;
 }
 
 .contact-hero h1 {
-    font-size: 3rem;
+    font-size: 5rem;
     font-weight: 700;
     margin-bottom: 15px;
 }
@@ -14714,7 +15111,7 @@ body.dark-mode .btn-view-receipt:hover {
 .contact-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 60px 20px;
+    padding: 60px 20px 0;
 }
 
 .contact-grid {
@@ -14778,9 +15175,9 @@ body.dark-mode .btn-view-receipt:hover {
 }
 
 .contact-card-content h3 {
-    font-size: 1.1rem;
+    font-size: 1.6rem;
     color: #333;
-    margin-bottom: 5px;
+    margin-bottom: -5px;
     font-weight: 600;
 }
 
@@ -14988,7 +15385,7 @@ body.dark-mode .contact-form textarea::placeholder {
 }
 
 body.dark-mode .social-section {
-    background: #1a1a1a;
+    background: #0f0f0f;
 }
 
 body.dark-mode .social-link {
