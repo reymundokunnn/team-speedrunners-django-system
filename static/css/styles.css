@@ -13250,6 +13250,7 @@ body.dark-mode .clear-notifications-btn:hover {
 .notification-list {
     max-height: 400px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .notification-item {
