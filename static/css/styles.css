@@ -7474,7 +7474,6 @@ body.dark-mode .empty-widget {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -7635,18 +7634,15 @@ body.dark-mode .empty-widget {
 }
 
 /* Dark Mode Support for System Status */
-body.dark-mode .system-status-container {
-    background: #1f2937;
-}
+
 
 body.dark-mode .status-section-title {
     color: #e5e7eb;
-    border-bottom-color: #e87f14;
+    font-size: 2rem;
 }
 
 body.dark-mode .status-card {
-    background: #374151;
-    border-color: #4b5563;
+    background: #222;
 }
 
 body.dark-mode .status-card-title {
