@@ -689,24 +689,63 @@ def api_system_status(request):
         memory_percent = memory.percent
         memory_used = memory.total - memory.available
         
-        # Get disk usage for all partitions
+        # Get disk usage grouped by device (not by partition)
         disk_partitions = psutil.disk_partitions()
-        disks = []
+        device_disks = {}
         for partition in disk_partitions:
             try:
+                # Skip virtual/loop filesystems and small system partitions
+                if partition.fstype in ('tmpfs', 'devtmpfs', 'squashfs', 'overlay'):
+                    continue
+                if partition.device.startswith('/dev/loop'):
+                    continue
+                
+                # Get the base device name (e.g., /dev/sda from /dev/sda1)
+                import os
+                device_name = os.path.basename(partition.device)
+                base_device = ''.join([c for c in device_name if not c.isdigit()])
+                
+                # Get disk usage
                 disk_usage = psutil.disk_usage(partition.mountpoint)
-                disks.append({
-                    'device': partition.device,
-                    'mountpoint': partition.mountpoint,
-                    'fstype': partition.fstype,
-                    'total': disk_usage.total,
-                    'used': disk_usage.used,
-                    'free': disk_usage.free,
-                    'percent': disk_usage.percent,
-                })
+                
+                # For Windows, handle differently
+                if partition.device.startswith('\\\\'):
+                    base_device = partition.device
+                    
+                if base_device not in device_disks:
+                    device_disks[base_device] = {
+                        'device': base_device,
+                        'mountpoint': partition.mountpoint,
+                        'fstype': partition.fstype,
+                        'total': 0,
+                        'used': 0,
+                        'free': 0,
+                        'percent': 0
+                    }
+                
+                # Use the largest partition's total as the device total (to avoid double counting)
+                # This is more accurate since partitions don't overlap
+                if disk_usage.total > device_disks[base_device]['total']:
+                    # If this partition is larger, use its total as the base
+                    # but we need to recalculate used space proportionally
+                    device_disks[base_device]['total'] = disk_usage.total
+                    device_disks[base_device]['free'] = disk_usage.free
+                    device_disks[base_device]['mountpoint'] = partition.mountpoint
+                    device_disks[base_device]['fstype'] = partition.fstype
+                    
+                # Add up used space across all partitions
+                device_disks[base_device]['used'] += disk_usage.used
+                
             except (PermissionError, OSError):
                 # Skip partitions that can't be accessed
                 pass
+        
+        # Calculate percentage for each device based on total
+        for device in device_disks.values():
+            if device['total'] > 0:
+                device['percent'] = (device['used'] / device['total']) * 100
+        
+        disks = list(device_disks.values())
         
         # Get system uptime
         boot_time = psutil.boot_time()
@@ -714,6 +753,10 @@ def api_system_status(request):
         uptime_days = int(uptime_seconds // 86400)
         uptime_hours = int((uptime_seconds % 86400) // 3600)
         uptime_minutes = int((uptime_seconds % 3600) // 60)
+        
+        # Format boot time as a readable string
+        boot_datetime = datetime.datetime.fromtimestamp(boot_time)
+        boot_time_str = boot_datetime.strftime('%Y-%m-%d %H:%M:%S')
         
         # Get currently logged in users
         from django.utils import timezone as tz
@@ -744,6 +787,7 @@ def api_system_status(request):
                 'uptime_days': uptime_days,
                 'uptime_hours': uptime_hours,
                 'uptime_minutes': uptime_minutes,
+                'boot_time': boot_time_str,
             },
             'users': {
                 'logged_in': logged_in_users,

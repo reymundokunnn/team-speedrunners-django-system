@@ -309,16 +309,8 @@
                                         </div>
                                         <div class="status-details-list">
                                             <div class="detail-row">
-                                                <span class="detail-label">Days</span>
-                                                <span class="detail-value" id="uptime-days-detail">0</span>
-                                            </div>
-                                            <div class="detail-row">
-                                                <span class="detail-label">Hours</span>
-                                                <span class="detail-value" id="uptime-hours-detail">0</span>
-                                            </div>
-                                            <div class="detail-row">
-                                                <span class="detail-label">Minutes</span>
-                                                <span class="detail-value" id="uptime-minutes-detail">0</span>
+                                                <span class="detail-label">Last Boot</span>
+                                                <span class="detail-value" id="boot-time">--</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1103,9 +1095,14 @@ function fetchSystemStatus() {
             data.system.disks.forEach(disk => {
                 const diskItem = document.createElement('div');
                 diskItem.className = 'disk-item';
+                // Format device name for display (e.g., sda -> /dev/sda, C: -> C:)
+                let deviceDisplay = disk.device;
+                if (!disk.device.includes(':') && !disk.device.startsWith('\\\\')) {
+                    deviceDisplay = '/dev/' + disk.device;
+                }
                 diskItem.innerHTML = `
                     <div class="disk-header">
-                        <span class="disk-device">${disk.device}</span>
+                        <span class="disk-device">${deviceDisplay}</span>
                         <span class="disk-percent">${disk.percent.toFixed(1)}%</span>
                     </div>
                     <div class="progress-bar-container">
@@ -1113,20 +1110,12 @@ function fetchSystemStatus() {
                     </div>
                     <div class="status-details-list">
                         <div class="detail-row">
-                            <span class="detail-label">Mount Point</span>
-                            <span class="detail-value">${disk.mountpoint}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">File System</span>
-                            <span class="detail-value">${disk.fstype}</span>
+                            <span class="detail-label">Total</span>
+                            <span class="detail-value">${formatBytes(disk.total)}</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Used</span>
                             <span class="detail-value">${formatBytes(disk.used)}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Total</span>
-                            <span class="detail-value">${formatBytes(disk.total)}</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Free</span>
@@ -1141,9 +1130,7 @@ function fetchSystemStatus() {
             document.getElementById('uptime-days').textContent = data.system.uptime_days;
             document.getElementById('uptime-hours').textContent = data.system.uptime_hours;
             document.getElementById('uptime-minutes').textContent = data.system.uptime_minutes;
-            document.getElementById('uptime-days-detail').textContent = data.system.uptime_days;
-            document.getElementById('uptime-hours-detail').textContent = data.system.uptime_hours;
-            document.getElementById('uptime-minutes-detail').textContent = data.system.uptime_minutes;
+            document.getElementById('boot-time').textContent = data.system.boot_time || '--';
             
             // Update Users
             document.getElementById('logged-in-users').textContent = data.users.logged_in;
