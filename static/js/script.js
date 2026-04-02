@@ -1458,6 +1458,56 @@ function getCookie(name) {
     return cookieValue;
 }
 
+/* Toggle Favorite Designer from User Dashboard Request Table */
+function toggleFavoriteFromRequest(button) {
+    var designerId = button.dataset.designerId;
+    var csrftoken = getCookie('csrftoken');
+    
+    fetch('/api/favorite-designer/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ designer_id: designerId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            var isFavorited = data.is_favorited;
+            var starIcon = button.querySelector('.favorite-star');
+            
+            // Toggle the button's favorited class
+            button.classList.toggle('favorited', isFavorited);
+            button.title = isFavorited ? 'Remove from favorites' : 'Add to favorites';
+            
+            // Update the star icon
+            if (starIcon) {
+                starIcon.setAttribute('fill', isFavorited ? 'currentColor' : 'none');
+                starIcon.classList.toggle('favorited', isFavorited);
+            }
+            
+            // Update the preferred designer dropdown if it exists
+            var optionToUpdate = document.querySelector(
+                '.preferred-designer-select option[value="' + designerId + '"]'
+            );
+            if (optionToUpdate && isFavorited) {
+                // Designer was favorited, ensure star is in the dropdown
+                if (!optionToUpdate.textContent.includes('★')) {
+                    var name = optionToUpdate.textContent.trim();
+                    optionToUpdate.textContent = name + ' ★';
+                }
+            } else if (optionToUpdate && !isFavorited) {
+                // Designer was unfavorited, remove star from dropdown
+                optionToUpdate.textContent = optionToUpdate.textContent.replace(' ★', '').trim();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling favorite:', error);
+    });
+}
+
 /* User Dashboard - Bulk Delete Design Requests */
 function toggleSelectAllDesignRequests() {
     var selectAllCheckbox = document.getElementById('selectAllDesignRequests');

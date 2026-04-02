@@ -1,3 +1,4 @@
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import logout, login, authenticate
@@ -7,26 +8,24 @@ from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner
 from django.utils import timezone
 import uuid
 from PIL import Image
 from io import BytesIO
 import base64
-import psutil
-import datetime
 
 
 def get_presenta_user_safe(django_user):
     # Safely get or create PresentaUser for a DjangoUser (handles superusers).
     from .models import Profile, User as PresentaUser
-    
+
     # Check if already exists
     try:
         return django_user.presenta_user
-    except PresentaUser.RelatedObjectDoesNotExist:
+    except Exception:
         pass
-    
+
     # Create PresentaUser
     username = django_user.username or django_user.email
     presenta_user = PresentaUser.objects.create(
@@ -39,12 +38,12 @@ def get_presenta_user_safe(django_user):
         admin_approval_status='approved',
         online_status='online'
     )
-    
+
     # Ensure Profile bridge exists
     profile, created = Profile.objects.get_or_create(user=django_user)
     profile.presenta_user = presenta_user
     profile.save()
-    
+
     return presenta_user
 
 
@@ -64,26 +63,26 @@ def api_notifications(request):
     """API endpoint to fetch notifications dynamically."""
     try:
         from .models import Activity, User as PresentaUser
-        
+
         # Get the presenta user object
         presenta_user = PresentaUser.objects.filter(
             email=getattr(request.user, 'email', '')
         ).first() or PresentaUser.objects.filter(
             username=getattr(request.user, 'username', '')
         ).first()
-        
+
         if not presenta_user:
             return JsonResponse({'notifications': []})
-        
+
         # Get user role
         user_role = getattr(presenta_user, 'user_role', 'user')
-        
+
         # Use auth_user for Activity queries
         auth_user = getattr(presenta_user, 'auth_user', None)
-        
+
         if not auth_user:
             return JsonResponse({'notifications': []})
-        
+
         # Get recent activities (last 10)
         if user_role == 'designer':
             from django.db.models import Q
@@ -95,10 +94,11 @@ def api_notifications(request):
         else:
             activities = Activity.objects.filter(
                 user=auth_user,
-                activity_type__in=['designer_assigned', 'status_changed', 'completed', 'payment_received', 'payment_confirmed'],
+                activity_type__in=['designer_assigned', 'status_changed',
+                                   'completed', 'payment_received', 'payment_confirmed'],
                 is_cleared=False
             ).order_by('-created_at')[:10]
-        
+
         # Format notifications
         notifications = []
         for activity in activities:
@@ -110,7 +110,7 @@ def api_notifications(request):
                 'time_ago': _get_time_ago(activity.created_at),
             }
             notifications.append(notification)
-        
+
         return JsonResponse({'notifications': notifications})
     except Exception as e:
         import sys
@@ -119,26 +119,89 @@ def api_notifications(request):
 
 
 @login_required(login_url='signin')
+def api_search_users(request):
+    """API endpoint to search for users (clients and designers)."""
+    from django.db.models import Q
+
+    query = request.GET.get('q', '').strip()
+
+    if len(query) < 2:
+        return JsonResponse({'users': []})
+
+    # Search in both Django User and Presenta User models
+    # Get users whose username, first_name, or last_name match the query
+    django_users = DjangoUser.objects.filter(
+        Q(username__icontains=query) |
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(email__icontains=query)
+    ).exclude(id=request.user.id)[:10]  # Exclude current user
+
+    users = []
+    for django_user in django_users:
+        try:
+            presenta_user = PresentaUser.objects.get(auth_user=django_user)
+            role = presenta_user.user_role
+
+            # Get user's full name
+            full_name = f"{presenta_user.first_name or ''} {presenta_user.last_name or ''}".strip(
+            )
+            if not full_name:
+                full_name = django_user.username
+
+            # Get initials
+            initials = ''
+            if presenta_user.first_name:
+                initials += presenta_user.first_name[0].upper()
+            if presenta_user.last_name:
+                initials += presenta_user.last_name[0].upper()
+            if not initials:
+                initials = django_user.username[0].upper(
+                ) if django_user.username else '?'
+
+            user_data = {
+                'id': django_user.id,
+                'username': django_user.username,
+                'name': full_name,
+                'role': role,
+                'initials': initials,
+                'profile_picture': None
+            }
+
+            # Get profile picture if available
+            if hasattr(django_user, 'profile_picture') and django_user.profile_picture:
+                user_data['profile_picture'] = django_user.profile_picture.url
+
+            users.append(user_data)
+        except PresentaUser.DoesNotExist:
+            pass
+
+    return JsonResponse({'users': users})
+
+
+@login_required(login_url='signin')
 def api_activities(request):
     """API endpoint to fetch recent activities dynamically."""
     try:
         from .models import Activity, DesignRequest, User as PresentaUser
         from django.db.models import Q
-        
+
         user = request.user
-        
+
         # Get user role
         presenta_user = PresentaUser.objects.filter(
             email=getattr(user, 'email', '')
         ).first() or PresentaUser.objects.filter(
             username=getattr(user, 'username', '')
         ).first()
-        
-        user_role = getattr(presenta_user, 'user_role', 'user') if presenta_user else 'user'
-        
+
+        user_role = getattr(presenta_user, 'user_role',
+                            'user') if presenta_user else 'user'
+
         # Get user's design request IDs
-        user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
-        
+        user_request_ids = DesignRequest.objects.filter(
+            requester=user).values_list('id', flat=True)
+
         # Get user's recent activities (not cleared)
         # Exclude 'designer_assigned' and 'assigned' since they show in notifications
         # For designers, also exclude payment-related activities (only show on user dashboard)
@@ -150,10 +213,11 @@ def api_activities(request):
         else:
             activities = Activity.objects.filter(
                 Q(user=user) |  # User's own activities
-                Q(related_request_id__in=user_request_ids),  # Activities on user's requests
+                # Activities on user's requests
+                Q(related_request_id__in=user_request_ids),
                 is_cleared=False
             ).exclude(activity_type__in=['designer_assigned', 'assigned']).select_related('related_request', 'user').order_by('-created_at')[:10]
-        
+
         # Format activities
         activities_list = []
         for activity in activities:
@@ -165,7 +229,7 @@ def api_activities(request):
                 'time_ago': _get_time_ago(activity.created_at),
             }
             activities_list.append(activity_data)
-        
+
         return JsonResponse({'activities': activities_list})
     except Exception as e:
         import sys
@@ -178,7 +242,7 @@ def _get_time_ago(timestamp):
     from django.utils import timezone
     now = timezone.now()
     diff = now - timestamp
-    
+
     if diff.days > 0:
         return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
     elif diff.seconds > 3600:
@@ -218,8 +282,10 @@ def index(request):
             pass
     return render(request, 'index.html')
 
+
 def services(request):
     return render(request, 'services.html')
+
 
 def logout_view(request):
     """Log out the user and redirect to index immediately (accepts GET)."""
@@ -233,16 +299,19 @@ def logout_view(request):
     logout(request)
     return redirect('index')
 
+
 def contact(request):
     return render(request, 'contact.html')
+
 
 def pricing(request):
     return render(request, 'pricing.html')
 
+
 def samples(request):
     """Samples page - displays portfolio samples organized by category"""
     from .models import SampleCategory, SampleItem
-    
+
     # Get active categories with their active items
     categories = SampleCategory.objects.filter(
         is_active=True
@@ -253,10 +322,10 @@ def samples(request):
             to_attr='active_items'
         )
     ).order_by('order', 'name')
-    
+
     # Filter out categories with no active items
     categories_with_items = [cat for cat in categories if cat.active_items]
-    
+
     return render(request, 'samples.html', {
         'categories': categories_with_items
     })
@@ -278,25 +347,25 @@ def login_view(request):
                 return redirect('user_dashboard')
         except Profile.DoesNotExist:
             pass
-    
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me') == 'on'
-        
+
         # Try to authenticate the user
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
             login(request, user, backend='presenta.auth_backend.PresentaBackend')
-            
+
             # Log login activity
             log_activity(
                 user=user,
                 activity_type='login',
                 message="User logged in."
             )
-            
+
             # Block pending admins (defense in depth, though backend should block)
             try:
                 profile = user.profile
@@ -309,7 +378,7 @@ def login_view(request):
                     })
             except (Profile.DoesNotExist, AttributeError):
                 pass
-            
+
             # Handle "Remember me" checkbox
             if remember_me:
                 # Session will last for SESSION_COOKIE_AGE (2 weeks)
@@ -317,11 +386,11 @@ def login_view(request):
             else:
                 # Session expires when browser closes
                 request.session.set_expiry(0)
-            
+
             # Always redirect to dashboard based on role, ignoring any 'next' parameter
             if user.is_superuser:
                 return redirect('admin_dashboard')
-            
+
             # Get user profile and redirect based on role
             try:
                 profile = user.profile
@@ -338,7 +407,8 @@ def login_view(request):
             # Check if pending admin
             from .models import User as PresentaUser
             try:
-                p_user = PresentaUser.objects.filter(email=username).first() or PresentaUser.objects.filter(username=username).first()
+                p_user = PresentaUser.objects.filter(email=username).first(
+                ) or PresentaUser.objects.filter(username=username).first()
                 if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status == 'pending':
                     return render(request, 'signin.html', {
                         'login_error': 'Your admin account is pending superuser approval. Please contact the site administrator.',
@@ -346,13 +416,13 @@ def login_view(request):
                     })
             except:
                 pass
-            
+
             # Generic auth failure
             return render(request, 'signin.html', {
                 'login_error': 'Invalid username or password.',
                 'username': username
             })
-    
+
     return render(request, 'signin.html')
 
 
@@ -363,27 +433,30 @@ def register(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             django_user = form.save()
-            
+
             # Get the linked PresentaUser safely
             try:
                 presenta_user = django_user.presenta_user
                 if not presenta_user:
                     # Fallback lookup
-                    presenta_user = PresentaUser.objects.filter(auth_user=django_user).first()
+                    presenta_user = PresentaUser.objects.filter(
+                        auth_user=django_user).first()
                 user_role = presenta_user.user_role if presenta_user else 'user'
-                print(f"[DEBUG] Registration: DjangoUser={django_user.username}, PresentaUser={presenta_user}, role={user_role}")
+                print(
+                    f"[DEBUG] Registration: DjangoUser={django_user.username}, PresentaUser={presenta_user}, role={user_role}")
             except Exception as e:
                 print(f"[DEBUG] Registration error: {e}")
                 user_role = 'user'
-            
+
             # Handle admin approval
             if user_role == 'admin':
                 if presenta_user:
                     presenta_user.auth_user.is_active = False
                     presenta_user.auth_user.save()
-            
-            login(request, django_user, backend='presenta.auth_backend.PresentaBackend')
-            
+
+            login(request, django_user,
+                  backend='presenta.auth_backend.PresentaBackend')
+
             # Redirect based on role
             if user_role == 'designer':
                 return redirect('designer_dashboard')
@@ -400,7 +473,7 @@ def register(request):
 def user_dashboard(request):
     """Dashboard for Clients - view and request designs."""
     user = request.user
-    
+
     # Check user role and redirect to correct dashboard if needed
     try:
         profile = user.profile
@@ -410,23 +483,26 @@ def user_dashboard(request):
             return redirect('admin_dashboard')
     except Profile.DoesNotExist:
         pass
-    
+
     # Get user's design requests with related files
-    design_requests = DesignRequest.objects.filter(requester=user).prefetch_related('files').order_by('-created_at')
-    
+    design_requests = DesignRequest.objects.filter(
+        requester=user).prefetch_related('files').order_by('-created_at')
+
     # Get user's recent activities (not cleared)
     # Include: user's own activities + activities on their design requests from designers/admins
     # Exclude 'designer_assigned', 'assigned', 'completed', 'request_rejected' since they now show in notifications
     from django.db.models import Q
-    
-    user_request_ids = DesignRequest.objects.filter(requester=user).values_list('id', flat=True)
-    
+
+    user_request_ids = DesignRequest.objects.filter(
+        requester=user).values_list('id', flat=True)
+
     activities = Activity.objects.filter(
         Q(user=user) |  # User's own activities
-        Q(related_request_id__in=user_request_ids),  # Activities on user's requests
+        # Activities on user's requests
+        Q(related_request_id__in=user_request_ids),
         is_cleared=False
     ).exclude(activity_type__in=['designer_assigned', 'assigned', 'completed', 'request_rejected']).select_related('related_request', 'user').order_by('-created_at')[:10]
-    
+
     # Get user timezone, default to browser timezone or UTC
     user_tz = 'UTC'
     try:
@@ -437,40 +513,15 @@ def user_dashboard(request):
             user_tz = 'UTC'
     except Exception:
         user_tz = 'UTC'
-    
-    # Get user's preferred currency
-    user_currency = 'USD'
-    try:
-        if hasattr(user, 'user_settings') and user.user_settings.currency_preference:
-            user_currency = user.user_settings.currency_preference
-    except Exception:
-        pass
-    
-    # Calculate payment amounts based on user's preferred currency
-    from django.db.models import Sum, Q
-    
-    # Get all design requests with budget
-    requests_with_budget = design_requests.exclude(budget__isnull=True)
-    
-    # Total budget (all requests with budget)
-    total_budget = requests_with_budget.aggregate(
-        total=Sum('budget')
-    )['total'] or 0
-    
-    # Pending payment (for_payment status)
-    pending_payment_amount = requests_with_budget.filter(
-        status='for_payment'
-    ).aggregate(
-        total=Sum('budget')
-    )['total'] or 0
-    
-    # Completed payment (completed status)
-    completed_payment_amount = requests_with_budget.filter(
-        status='completed'
-    ).aggregate(
-        total=Sum('budget')
-    )['total'] or 0
-    
+
+    # Get user's favorite designers as a list and set of IDs
+    favorite_designers_list = list(FavoriteDesigner.objects.filter(client=user).select_related('designer').values(
+        'designer__id', 'designer__username', 'designer__first_name', 'designer__last_name'
+    ))
+    favorited_designer_ids = set(fav['designer__id']
+                                 for fav in favorite_designers_list)
+    favorite_count = len(favorite_designers_list)
+
     context = {
         'profile': user.profile,
         'design_requests': design_requests,
@@ -480,76 +531,19 @@ def user_dashboard(request):
         'for_payment': design_requests.filter(status='for_payment').count(),
         'completed': design_requests.filter(status='completed').count(),
         'user_timezone': user_tz,
-        'user_currency': user_currency,
-        'total_budget': total_budget,
-        'pending_payment_amount': pending_payment_amount,
-        'completed_payment_amount': completed_payment_amount,
+        'favorite_designers': favorite_designers_list,
+        'favorited_designer_ids': list(favorited_designer_ids),
+        'favorite_count': favorite_count,
+        'show_search_bar': True,
     }
     return render(request, 'dashboard/user_dashboard.html', context)
-
-
-@login_required(login_url='signin')
-def download_receipt(request, request_id):
-    """Generate and download a PDF receipt for a completed design request."""
-    from django.http import HttpResponse
-    from django.template.loader import render_to_string
-    from django.utils import timezone
-    from weasyprint import HTML
-    from django.conf import settings
-    import os
-    import io
-    
-    user = request.user
-    
-    try:
-        design_request = DesignRequest.objects.get(
-            id=request_id,
-            requester=user,
-            status='completed'
-        )
-    except DesignRequest.DoesNotExist:
-        return HttpResponse('Receipt not found', status=404)
-    
-    # Get user's preferred currency
-    user_currency = 'USD'
-    try:
-        if hasattr(user, 'user_settings') and user.user_settings.currency_preference:
-            user_currency = user.user_settings.currency_preference
-    except Exception:
-        pass
-    
-    # Get absolute path to static files for weasyprint
-    static_root = settings.STATIC_ROOT or os.path.join(settings.BASE_DIR, 'static')
-    logo_path = os.path.join(static_root, 'img', 'logo.png')
-    
-    # Prepare receipt data
-    receipt_data = {
-        'request': design_request,
-        'user': user,
-        'currency_code': user_currency,
-        'generated_at': timezone.now(),
-        'receipt_number': f"RCP-{user.id:04d}-{design_request.id:06d}-{timezone.now().strftime('%Y%m%d%H%M%S')}",
-        'logo_path': f'file://{logo_path}',
-    }
-    
-    # Generate HTML receipt
-    html_content = render_to_string('receipts/receipt.html', receipt_data)
-    
-    # Generate PDF from HTML
-    pdf_file = HTML(string=html_content).write_pdf()
-    
-    # Create PDF response
-    response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="receipt_{design_request.id}.pdf"'
-    
-    return response
 
 
 @login_required(login_url='signin')
 def designer_dashboard(request):
     """Dashboard for designers - manage design requests."""
     user = request.user
-    
+
     # Check user role and redirect to correct dashboard if needed
     try:
         profile = user.profile
@@ -559,13 +553,15 @@ def designer_dashboard(request):
             return redirect('user_dashboard')
     except Profile.DoesNotExist:
         return redirect('user_dashboard')
-    
+
     # Get assigned designs with related files
-    assigned_designs = DesignRequest.objects.filter(designer=user).prefetch_related('files').order_by('-created_at')
-    
+    assigned_designs = DesignRequest.objects.filter(
+        designer=user).prefetch_related('files').order_by('-created_at')
+
     # Get available requests (not yet assigned) with related files
-    available_requests = DesignRequest.objects.filter(designer=None, status='pending').prefetch_related('files').order_by('-created_at')
-    
+    available_requests = DesignRequest.objects.filter(
+        designer=None, status='pending').prefetch_related('files').order_by('-created_at')
+
     # Get designer's recent activities (not cleared)
     # Only show activities performed BY the designer (their own actions)
     # Designers should NOT see activities performed by clients on their requests
@@ -574,7 +570,7 @@ def designer_dashboard(request):
         user=user,  # Only activities performed by the designer themselves
         is_cleared=False
     ).exclude(activity_type__in=['payment_received', 'payment_confirmed']).select_related('related_request', 'user').order_by('-created_at')[:10]
-    
+
     # Get user timezone
     user_tz = 'UTC'
     try:
@@ -582,7 +578,7 @@ def designer_dashboard(request):
             user_tz = user.user_settings.timezone
     except Exception:
         user_tz = 'UTC'
-    
+
     context = {
         'profile': user.profile,
         'assigned_designs': assigned_designs,
@@ -594,6 +590,7 @@ def designer_dashboard(request):
         'completed': assigned_designs.filter(status='completed').count(),
         'pending': assigned_designs.filter(status='pending').count(),
         'user_timezone': user_tz,
+        'show_search_bar': True,
     }
     return render(request, 'dashboard/designer_dashboard.html', context)
 
@@ -602,18 +599,18 @@ def designer_dashboard(request):
 def admin_dashboard(request):
     """Dashboard for administrators."""
     user = request.user
-    
+
     # Check if user is superuser or has admin role
     is_admin = user.is_superuser
     profile = None
-    
+
     if not is_admin:
         try:
             profile = user.profile
             is_admin = profile.user_role == 'admin'
         except Profile.DoesNotExist:
             pass
-    
+
     # Check if approved admin before allowing access
     try:
         profile_obj = user.profile
@@ -624,7 +621,7 @@ def admin_dashboard(request):
             })
     except (Profile.DoesNotExist, AttributeError):
         pass
-    
+
     # Redirect non-admin users to their correct dashboard
     if not is_admin:
         try:
@@ -635,21 +632,22 @@ def admin_dashboard(request):
                 return redirect('user_dashboard')
         except Profile.DoesNotExist:
             return redirect('user_dashboard')
-    
+
     # get all design requests
     all_requests = DesignRequest.objects.all().order_by('-created_at')
-    
+
 # get all users
     all_users = PresentaUser.objects.all()
-    
+
 # get pending admin approvals
-    pending_admins = PresentaUser.objects.filter(user_role='admin', admin_approval_status='pending')
-    
+    pending_admins = PresentaUser.objects.filter(
+        user_role='admin', admin_approval_status='pending')
+
     # Get admin's recent activities (not cleared) - admins see ALL platform activities
     activities = Activity.objects.filter(
         is_cleared=False
     ).select_related('related_request', 'user').order_by('-created_at')[:20]
-    
+
     # Get user timezone
     user_tz = 'UTC'
     try:
@@ -657,7 +655,7 @@ def admin_dashboard(request):
             user_tz = user.user_settings.timezone
     except Exception:
         user_tz = 'UTC'
-    
+
     context = {
         'profile': profile,
         'all_requests': all_requests,
@@ -669,137 +667,9 @@ def admin_dashboard(request):
         'in_progress': all_requests.filter(status='in_progress').count(),
         'completed': all_requests.filter(status='completed').count(),
         'user_timezone': user_tz,
+        'show_search_bar': True,
     }
     return render(request, 'dashboard/admin_dashboard.html', context)
-
-
-@login_required(login_url='signin')
-def api_system_status(request):
-    """API endpoint to fetch system status information."""
-    try:
-        # Get CPU usage (no interval for faster response)
-        cpu_percent = psutil.cpu_percent(interval=0)
-        cpu_count = psutil.cpu_count()
-        cpu_load_avg = psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0
-        
-        # Get memory usage
-        memory = psutil.virtual_memory()
-        memory_total = memory.total
-        memory_available = memory.available
-        memory_percent = memory.percent
-        memory_used = memory.total - memory.available
-        
-        # Get disk usage grouped by device (not by partition)
-        disk_partitions = psutil.disk_partitions()
-        device_disks = {}
-        for partition in disk_partitions:
-            try:
-                # Skip virtual/loop filesystems and small system partitions
-                if partition.fstype in ('tmpfs', 'devtmpfs', 'squashfs', 'overlay'):
-                    continue
-                if partition.device.startswith('/dev/loop'):
-                    continue
-                
-                # Get the base device name (e.g., /dev/sda from /dev/sda1)
-                import os
-                device_name = os.path.basename(partition.device)
-                base_device = ''.join([c for c in device_name if not c.isdigit()])
-                
-                # Get disk usage
-                disk_usage = psutil.disk_usage(partition.mountpoint)
-                
-                # For Windows, handle differently
-                if partition.device.startswith('\\\\'):
-                    base_device = partition.device
-                    
-                if base_device not in device_disks:
-                    device_disks[base_device] = {
-                        'device': base_device,
-                        'mountpoint': partition.mountpoint,
-                        'fstype': partition.fstype,
-                        'total': 0,
-                        'used': 0,
-                        'free': 0,
-                        'percent': 0
-                    }
-                
-                # Use the largest partition's total as the device total (to avoid double counting)
-                # This is more accurate since partitions don't overlap
-                if disk_usage.total > device_disks[base_device]['total']:
-                    # If this partition is larger, use its total as the base
-                    # but we need to recalculate used space proportionally
-                    device_disks[base_device]['total'] = disk_usage.total
-                    device_disks[base_device]['free'] = disk_usage.free
-                    device_disks[base_device]['mountpoint'] = partition.mountpoint
-                    device_disks[base_device]['fstype'] = partition.fstype
-                    
-                # Add up used space across all partitions
-                device_disks[base_device]['used'] += disk_usage.used
-                
-            except (PermissionError, OSError):
-                # Skip partitions that can't be accessed
-                pass
-        
-        # Calculate percentage for each device based on total
-        for device in device_disks.values():
-            if device['total'] > 0:
-                device['percent'] = (device['used'] / device['total']) * 100
-        
-        disks = list(device_disks.values())
-        
-        # Get system uptime
-        boot_time = psutil.boot_time()
-        uptime_seconds = datetime.datetime.now().timestamp() - boot_time
-        uptime_days = int(uptime_seconds // 86400)
-        uptime_hours = int((uptime_seconds % 86400) // 3600)
-        uptime_minutes = int((uptime_seconds % 3600) // 60)
-        
-        # Format boot time as a readable string
-        boot_datetime = datetime.datetime.fromtimestamp(boot_time)
-        boot_time_str = boot_datetime.strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Get currently logged in users
-        from django.utils import timezone as tz
-        five_minutes_ago = tz.now() - datetime.timedelta(minutes=5)
-        logged_in_users = PresentaUser.objects.filter(
-            online_status='online'
-        ).count()
-        
-        # Get total active users (registered)
-        total_users = PresentaUser.objects.count()
-        
-        # Get new users today
-        today = tz.now().date()
-        new_users_today = PresentaUser.objects.filter(
-            created_at__date=today
-        ).count()
-        
-        data = {
-            'system': {
-                'cpu_percent': cpu_percent,
-                'cpu_count': cpu_count,
-                'cpu_load_avg': round(cpu_load_avg, 2),
-                'memory_total': memory_total,
-                'memory_available': memory_available,
-                'memory_used': memory_used,
-                'memory_percent': memory_percent,
-                'disks': disks,
-                'uptime_days': uptime_days,
-                'uptime_hours': uptime_hours,
-                'uptime_minutes': uptime_minutes,
-                'boot_time': boot_time_str,
-            },
-            'users': {
-                'logged_in': logged_in_users,
-                'total': total_users,
-                'new_today': new_users_today,
-            },
-            'timestamp': tz.now().isoformat(),
-        }
-        
-        return JsonResponse(data)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required(login_url='signin')
@@ -807,14 +677,15 @@ def api_system_status(request):
 def request_design(request):
     # create a new design request (Clients)
     user = request.user
-    
+
     title = request.POST.get('title')
     design_type = request.POST.get('design_type')
     description = request.POST.get('description')
     budget = request.POST.get('budget')
     currency = request.POST.get('currency', 'USD')
     deadline = request.POST.get('deadline')
-    
+    preferred_designer_id = request.POST.get('preferred_designer')
+
     if title and design_type and description:
         design_request = DesignRequest.objects.create(
             requester=user,
@@ -825,7 +696,29 @@ def request_design(request):
             currency=currency,
             deadline=deadline if deadline else None,
         )
-        
+
+        # If client selected a preferred designer from their favorites
+        if preferred_designer_id:
+            try:
+                preferred_designer = DjangoUser.objects.get(
+                    id=preferred_designer_id)
+                # Verify the selected user is a designer
+                try:
+                    designer_profile = PresentaUser.objects.get(
+                        auth_user=preferred_designer)
+                    if designer_profile.user_role == 'designer':
+                        # Log the preference - the designer can see this request as a suggestion
+                        log_activity(
+                            user=user,
+                            activity_type='request_submitted',
+                            message=f"Submitted request with preference for {preferred_designer.get_full_name() or preferred_designer.username}.",
+                            related_request=design_request
+                        )
+                except PresentaUser.DoesNotExist:
+                    pass
+            except DjangoUser.DoesNotExist:
+                pass
+
         # handle file uploads
         files = request.FILES.getlist('reference_files')
         file_count = 0
@@ -836,7 +729,7 @@ def request_design(request):
                 file_type='reference'
             )
             file_count += 1
-        
+
         # Log file upload activity if files were uploaded
         if file_count > 0:
             log_activity(
@@ -845,18 +738,19 @@ def request_design(request):
                 message=f"Uploaded {file_count} reference file{'s' if file_count > 1 else ''} for '{title}'.",
                 related_request=design_request
             )
-        
+
         # Log activity for user
-        design_type_display = dict(DesignRequest.DESIGN_TYPE_CHOICES).get(design_type, design_type)
+        design_type_display = dict(DesignRequest.DESIGN_TYPE_CHOICES).get(
+            design_type, design_type)
         log_activity(
             user=user,
             activity_type='request_submitted',
             message=f"{design_type_display} '{title}' submitted.",
             related_request=design_request
         )
-        
+
         return redirect('user_dashboard')
-    
+
     return redirect('user_dashboard')
 
 
@@ -866,12 +760,12 @@ def accept_design_request(request, request_id):
     # tinanggap ng designer yung request
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     if user.profile.user_role == 'designer':
         design_request.designer = user
         design_request.status = 'in_progress'
         design_request.save()
-        
+
         # Log activity for designer
         log_activity(
             user=user,
@@ -879,17 +773,18 @@ def accept_design_request(request, request_id):
             message=f"You accepted the design request '{design_request.title}'.",
             related_request=design_request
         )
-        
+
         # Log activity for requester (notify them that a designer has been assigned)
         if design_request.requester:
-            designer_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            designer_name = f"{user.first_name} {user.last_name}".strip(
+            ) or user.username
             log_activity(
                 user=design_request.requester,
                 activity_type='designer_assigned',
                 message=f"Designer <b>{designer_name}</b> accepted your design request '{design_request.title}'.",
                 related_request=design_request
             )
-    
+
     return redirect('designer_dashboard')
 
 
@@ -899,13 +794,13 @@ def complete_design_request(request, request_id):
     # minarkahan ni designer yung design as completed
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     if user == design_request.designer or user.profile.user_role == 'admin':
         from django.utils import timezone
         design_request.status = 'completed'
         design_request.completed_at = timezone.now()
         design_request.save()
-        
+
         # Log activity for designer
         if user == design_request.designer:
             log_activity(
@@ -914,7 +809,7 @@ def complete_design_request(request, request_id):
                 message=f"'{design_request.title}' marked as Completed.",
                 related_request=design_request
             )
-        
+
         # Log activity for requester
         if design_request.requester:
             log_activity(
@@ -923,7 +818,7 @@ def complete_design_request(request, request_id):
                 message=f"'{design_request.title}' marked as Completed.",
                 related_request=design_request
             )
-    
+
     return redirect('designer_dashboard')
 
 
@@ -933,12 +828,12 @@ def reject_design_request(request, request_id):
     # tinanggihan ng designer yung request (wtf?)
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     if user.profile.user_role == 'designer' or user.profile.user_role == 'admin':
         design_request.status = 'rejected'
         design_request.designer = None
         design_request.save()
-        
+
         # Log activity for requester
         if design_request.requester:
             log_activity(
@@ -947,7 +842,7 @@ def reject_design_request(request, request_id):
                 message=f"'{design_request.title}' was rejected.",
                 related_request=design_request
             )
-    
+
     return redirect('designer_dashboard')
 
 
@@ -957,12 +852,12 @@ def cancel_design_request(request, request_id):
     # designer cancelled an assigned project
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     if user == design_request.designer or user.profile.user_role == 'admin':
         design_request.status = 'cancelled'
         design_request.designer = None
         design_request.save()
-        
+
         # Log activity for requester
         if design_request.requester:
             log_activity(
@@ -971,7 +866,7 @@ def cancel_design_request(request, request_id):
                 message=f"'{design_request.title}' was cancelled.",
                 related_request=design_request
             )
-    
+
     return redirect('designer_dashboard')
 
 
@@ -981,23 +876,23 @@ def update_design_status(request, request_id):
     # update design request status and upload finished files
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     # tingnan kung pag-aari ng designer yung request or admin
     if design_request.designer != user and not user.is_superuser:
         return redirect('designer_dashboard')
-    
+
     status = request.POST.get('status')
     old_status = design_request.status
-    
+
     if status in ['pending', 'in_progress', 'for_payment', 'completed']:
         design_request.status = status
-        
+
         if status == 'completed':
             from django.utils import timezone
             design_request.completed_at = timezone.now()
-        
+
         design_request.save()
-        
+
         # Handle finished file uploads
         files = request.FILES.getlist('finished_file')
         file_count = 0
@@ -1008,7 +903,7 @@ def update_design_status(request, request_id):
                 file_type='finished'
             )
             file_count += 1
-        
+
         # Log file upload activity if files were uploaded
         if file_count > 0:
             log_activity(
@@ -1017,11 +912,12 @@ def update_design_status(request, request_id):
                 message=f"Uploaded {file_count} finished file{'s' if file_count > 1 else ''} for '{design_request.title}'.",
                 related_request=design_request
             )
-        
+
         # Log activity if status changed
         if status != old_status:
-            status_display = dict(DesignRequest.STATUS_CHOICES).get(status, status)
-            
+            status_display = dict(
+                DesignRequest.STATUS_CHOICES).get(status, status)
+
             # Log for designer
             log_activity(
                 user=user,
@@ -1029,7 +925,7 @@ def update_design_status(request, request_id):
                 message=f"'{design_request.title}' moved to {status_display}.",
                 related_request=design_request
             )
-            
+
             # Log for requester
             if design_request.requester:
                 log_activity(
@@ -1038,58 +934,8 @@ def update_design_status(request, request_id):
                     message=f"'{design_request.title}' is now {status_display.lower()}.",
                     related_request=design_request
                 )
-    
+
     return redirect('designer_dashboard')
-
-
-@login_required(login_url='signin')
-@require_http_methods(["POST"])
-def request_revision(request, request_id):
-    """Client requests a revision for a completed design request."""
-    user = request.user
-    design_request = get_object_or_404(DesignRequest, id=request_id)
-    
-    # Only the requester can request a revision
-    if design_request.requester != user:
-        from django.http import JsonResponse
-        return JsonResponse({'error': 'Access denied'}, status=403)
-    
-    # Only allow revision for completed requests
-    if design_request.status != 'completed':
-        from django.http import JsonResponse
-        return JsonResponse({'error': 'Revision can only be requested for completed designs'}, status=400)
-    
-    # Get revision notes from request
-    revision_notes = request.POST.get('revision_notes', '').strip()
-    
-    # Update status back to in_progress and save revision notes
-    design_request.status = 'in_progress'
-    design_request.completed_at = None
-    design_request.revision_notes = revision_notes
-    design_request.save()
-    
-    # Log activity for the requester
-    log_activity(
-        user=user,
-        activity_type='revision_requested',
-        message=f"Revision requested for '{design_request.title}'.",
-        related_request=design_request
-    )
-    
-    # Log activity for the designer if assigned
-    if design_request.designer:
-        log_activity(
-            user=design_request.designer,
-            activity_type='revision_requested',
-            message=f"Revision requested for '{design_request.title}' by client.",
-            related_request=design_request
-        )
-    
-    from django.http import JsonResponse
-    return JsonResponse({
-        'success': True,
-        'message': 'Revision requested successfully. The designer will be notified.'
-    })
 
 
 @login_required(login_url='signin')
@@ -1098,11 +944,11 @@ def delete_design_request(request, request_id):
     # delete a design request (only for the requester or admin)
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     # only allow deletion by the requester or admin
     if design_request.requester == user or user.is_superuser or user.profile.user_role == 'admin':
         design_request.delete()
-    
+
     return redirect('user_dashboard')
 
 
@@ -1112,11 +958,11 @@ def edit_design_request(request, request_id):
     # edit a design request (only for the requester or admin).
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     # only allow editing by the requester or admin
     if design_request.requester != user and not user.is_superuser and user.profile.user_role != 'admin':
         return redirect('user_dashboard')
-    
+
     if request.method == 'POST':
         title = request.POST.get('title')
         design_type = request.POST.get('design_type')
@@ -1124,7 +970,7 @@ def edit_design_request(request, request_id):
         budget = request.POST.get('budget')
         currency = request.POST.get('currency', 'USD')
         deadline = request.POST.get('deadline')
-        
+
         if title and design_type and description:
             design_request.title = title
             design_request.design_type = design_type
@@ -1133,7 +979,7 @@ def edit_design_request(request, request_id):
             design_request.currency = currency
             design_request.deadline = deadline if deadline else None
             design_request.save()
-            
+
             # Handle new file uploads
             files = request.FILES.getlist('reference_files')
             for file in files:
@@ -1141,9 +987,9 @@ def edit_design_request(request, request_id):
                     design_request=design_request,
                     file=file
                 )
-        
+
         return redirect('user_dashboard')
-    
+
     # for GET request, render edit form
     return redirect('user_dashboard')
 
@@ -1159,10 +1005,11 @@ def edit_profile(request):
 def get_completion_details(request, request_id):
     # API endpoint to get completion details for a design request.
     from django.http import JsonResponse
-    
-    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
+
+    design_request = get_object_or_404(
+        DesignRequest, id=request_id, requester=request.user)
     finished_files = design_request.get_finished_files()
-    
+
     files_data = []
     for f in finished_files:
         files_data.append({
@@ -1171,7 +1018,7 @@ def get_completion_details(request, request_id):
             'url': f.file.url,
             'uploaded_at': f.uploaded_at.strftime('%Y-%m-%d %H:%M')
         })
-    
+
     # Get designer info
     designer_data = None
     if design_request.designer:
@@ -1184,7 +1031,7 @@ def get_completion_details(request, request_id):
             'initials': (designer.first_name[0] if designer.first_name else '') + (designer.last_name[0] if designer.last_name else '') or designer.username[0].upper(),
             'username': designer.username
         }
-    
+
     return JsonResponse({
         'title': design_request.title,
         'completed_at': design_request.completed_at.strftime('%Y-%m-%d %H:%M') if design_request.completed_at else '',
@@ -1198,26 +1045,27 @@ def save_designer_rating(request, request_id):
     # API endpoint to save a designer rating.
     from django.http import JsonResponse
     import json
-    
+
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
-    
+
+    design_request = get_object_or_404(
+        DesignRequest, id=request_id, requester=request.user)
+
     if not design_request.designer:
         return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
-    
+
     try:
         data = json.loads(request.body)
         rating_value = data.get('rating')
-        
+
         if rating_value is None:
             return JsonResponse({'error': 'Rating is required'}, status=400)
-        
+
         rating_value = int(rating_value)
         if rating_value < 1 or rating_value > 5:
             return JsonResponse({'error': 'Rating must be between 1 and 5'}, status=400)
-        
+
         # Create or update the rating
         rating, created = DesignerRating.objects.update_or_create(
             designer=design_request.designer,
@@ -1225,11 +1073,11 @@ def save_designer_rating(request, request_id):
             design_request=design_request,
             defaults={'rating': rating_value}
         )
-        
+
         # Get updated average rating
         avg_rating = DesignerRating.get_average_rating(design_request.designer)
         rating_count = DesignerRating.get_rating_count(design_request.designer)
-        
+
         return JsonResponse({
             'success': True,
             'rating': rating.rating,
@@ -1247,12 +1095,13 @@ def save_designer_rating(request, request_id):
 def get_designer_rating(request, request_id):
     # API endpoint to get the user's rating for a design request.
     from django.http import JsonResponse
-    
-    design_request = get_object_or_404(DesignRequest, id=request_id, requester=request.user)
-    
+
+    design_request = get_object_or_404(
+        DesignRequest, id=request_id, requester=request.user)
+
     if not design_request.designer:
         return JsonResponse({'error': 'No designer assigned to this request'}, status=400)
-    
+
     # Get user's rating for this request
     try:
         user_rating = DesignerRating.objects.get(
@@ -1263,11 +1112,11 @@ def get_designer_rating(request, request_id):
         user_rating_value = user_rating.rating
     except DesignerRating.DoesNotExist:
         user_rating_value = None
-    
+
     # Get average rating
     avg_rating = DesignerRating.get_average_rating(design_request.designer)
     rating_count = DesignerRating.get_rating_count(design_request.designer)
-    
+
     return JsonResponse({
         'user_rating': user_rating_value,
         'average_rating': round(avg_rating, 1),
@@ -1279,25 +1128,25 @@ def get_designer_rating(request, request_id):
 def get_reference_files(request, request_id):
     # API endpoint to get reference files for a design request (for designers).
     from django.http import JsonResponse
-    
+
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     # verify the designer has access to this request
     # allow access if:
     # 1. designer is assigned to the request
     # 2. user is superuser
     # 3. request is available (designer is None) and user is a designer
     has_access = (
-        design_request.designer == request.user or 
+        design_request.designer == request.user or
         request.user.is_superuser or
         (design_request.designer is None and request.user.profile.user_role == 'designer')
     )
-    
+
     if not has_access:
         return JsonResponse({'error': 'Access denied'}, status=403)
-    
+
     reference_files = design_request.get_reference_files()
-    
+
     files_data = []
     for f in reference_files:
         files_data.append({
@@ -1306,7 +1155,7 @@ def get_reference_files(request, request_id):
             'url': f.file.url,
             'uploaded_at': f.uploaded_at.strftime('%Y-%m-%d %H:%M')
         })
-    
+
     return JsonResponse({
         'title': design_request.title,
         'description': design_request.description,
@@ -1318,22 +1167,22 @@ def get_reference_files(request, request_id):
 def get_finished_files(request, request_id):
     # API endpoint to get finished files for a design request.
     from django.http import JsonResponse
-    
+
     design_request = get_object_or_404(DesignRequest, id=request_id)
-    
+
     # verify access - designer who owns it, requester, or admin
     has_access = (
-        design_request.designer == request.user or 
+        design_request.designer == request.user or
         design_request.requester == request.user or
         request.user.is_superuser or
         request.user.profile.user_role == 'admin'
     )
-    
+
     if not has_access:
         return JsonResponse({'error': 'Access denied'}, status=403)
-    
+
     finished_files = design_request.get_finished_files()
-    
+
     files_data = []
     for f in finished_files:
         files_data.append({
@@ -1342,7 +1191,7 @@ def get_finished_files(request, request_id):
             'url': f.file.url,
             'uploaded_at': f.uploaded_at.strftime('%Y-%m-%d %H:%M')
         })
-    
+
     return JsonResponse({
         'title': design_request.title,
         'files': files_data
@@ -1367,12 +1216,12 @@ def create_user(request):
     """Create a new user by admin."""
     from django.http import JsonResponse
     from .models import User
-    
+
     if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
-    
+
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -1384,20 +1233,20 @@ def create_user(request):
         phone_number = request.POST.get('phone_number') or None
         company = request.POST.get('company') or None
         location = request.POST.get('location') or None
-        
+
         # Validation
         if not username or not email or not password:
             return JsonResponse({'error': 'Username, email, and password are required'}, status=400)
-        
+
         if not first_name or not last_name:
             return JsonResponse({'error': 'First name and last name are required'}, status=400)
-        
+
         if User.objects.filter(username=username).exists():
             return JsonResponse({'error': 'Username already exists'}, status=400)
-        
+
         if User.objects.filter(email=email).exists():
             return JsonResponse({'error': 'Email already exists'}, status=400)
-        
+
         # Create the user
         # Auto-approve if superuser is creating the account, otherwise keep pending for admins
         is_superuser_creating = request.user.is_superuser
@@ -1415,7 +1264,7 @@ def create_user(request):
         )
         user.set_password(password)
         user.save()
-        
+
         # Also create Django User for authentication
         django_user = DjangoUser.objects.create_user(
             username=username,
@@ -1425,16 +1274,16 @@ def create_user(request):
             last_name=last_name,
             is_active=False if user_role == 'admin' and not is_superuser_creating else True
         )
-        
+
         # Link them together
         user.auth_user = django_user
         user.save()
-        
+
         # Create profile linking both
         profile, _ = Profile.objects.get_or_create(user=django_user)
         profile.presenta_user = user
         profile.save()
-        
+
         # Log user creation activity
         log_activity(
             user=request.user,
@@ -1442,7 +1291,7 @@ def create_user(request):
             message=f"Created new user: {first_name} {last_name} ({username}) with role {user_role}.",
             target_user=django_user
         )
-        
+
         # Return user data for dynamic table update
         return JsonResponse({
             'success': True,
@@ -1464,7 +1313,7 @@ def create_user(request):
                 'is_superuser': user.auth_user.is_superuser if user.auth_user else False,
             }
         })
-    
+
     # Return empty data for GET request (modal will show empty form)
     return JsonResponse({})
 
@@ -1474,18 +1323,19 @@ def view_user(request, user_id):
     """API endpoint to get user details as JSON."""
     from django.http import JsonResponse
     from .models import User
-    
+
     if not is_admin_user(request):
         return JsonResponse({'error': 'Access denied'}, status=403)
-    
+
     # Get the user
     user = get_object_or_404(User, id=user_id)
-    
+
     # Get design request count for this user
     design_requests_count = 0
     if user.auth_user:
-        design_requests_count = DesignRequest.objects.filter(requester=user.auth_user).count()
-    
+        design_requests_count = DesignRequest.objects.filter(
+            requester=user.auth_user).count()
+
     return JsonResponse({
         'id': user.id,
         'username': user.username,
@@ -1512,45 +1362,49 @@ def edit_user(request, user_id):
     """Edit user by admin."""
     from django.http import JsonResponse
     from .models import User
-    
+
     if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
-    
+
     user = get_object_or_404(User, id=user_id)
-    
+
     if request.method == 'POST':
         # Handle AJAX POST request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             # Update user fields
-            user.first_name = request.POST.get('first_name', user.first_name or '')
-            user.last_name = request.POST.get('last_name', user.last_name or '')
+            user.first_name = request.POST.get(
+                'first_name', user.first_name or '')
+            user.last_name = request.POST.get(
+                'last_name', user.last_name or '')
             user.email = request.POST.get('email', user.email or '')
-            user.user_role = request.POST.get('user_role', user.user_role or 'user')
+            user.user_role = request.POST.get(
+                'user_role', user.user_role or 'user')
             user.gender = request.POST.get('gender') or None
             user.phone_number = request.POST.get('phone_number') or None
             user.company = request.POST.get('company') or None
             user.location = request.POST.get('location') or None
             user.bio = request.POST.get('bio') or None
-            
+
             date_of_birth = request.POST.get('date_of_birth')
             if date_of_birth:
                 from datetime import datetime
                 try:
-                    user.date_of_birth = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+                    user.date_of_birth = datetime.strptime(
+                        date_of_birth, '%Y-%m-%d').date()
                 except ValueError:
                     pass
-            
+
             user.save()
-            
+
             # Also update Django auth user if linked
             if user.auth_user:
                 user.auth_user.first_name = user.first_name
                 user.auth_user.last_name = user.last_name
                 user.auth_user.email = user.email
                 user.auth_user.save()
-            
+
             # Log user update activity
             log_activity(
                 user=request.user,
@@ -1558,12 +1412,12 @@ def edit_user(request, user_id):
                 message=f"Updated user: {user.first_name} {user.last_name} ({user.username}).",
                 target_user=user.auth_user
             )
-            
+
             return JsonResponse({'success': True, 'message': 'User updated successfully'})
-        
+
         # Regular POST - redirect back to dashboard
         return redirect('admin_dashboard')
-    
+
     # GET request - return user data as JSON for modal
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
@@ -1580,7 +1434,7 @@ def edit_user(request, user_id):
             'location': user.location or '',
             'bio': user.bio or '',
         })
-    
+
     # Regular GET - just redirect to dashboard
     return redirect('admin_dashboard')
 
@@ -1591,36 +1445,36 @@ def delete_user(request, user_id):
     """Delete user by admin."""
     from django.http import JsonResponse
     from .models import User, Profile
-    
+
     if not is_admin_user(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Access denied'}, status=403)
         return redirect('admin_dashboard')
-    
+
     user = get_object_or_404(User, id=user_id)
-    
+
 # Prevent admin from deleting themselves - universal check (username/email primary)
     current_presenta = None
     try:
         current_presenta = get_presenta_user_safe(request.user)
     except:
         pass
-    
+
     is_self = (user.id == current_presenta.id if current_presenta else False) or \
               (user.username == current_presenta.username if current_presenta else False) or \
               (user.email.lower() == current_presenta.email.lower() if current_presenta else False) or \
               (user.auth_user == request.user if user.auth_user else False)
-    
+
     if is_self:
         error_msg = "You cannot delete yourself. That would leave the system supervised by nobody, which sounds like a terrible reality show."
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': error_msg})
         return redirect('admin_dashboard')
-    
+
     # Store username for success message
     username = user.username
     target_user = user.auth_user
-    
+
     # Log user deletion activity before deleting
     log_activity(
         user=request.user,
@@ -1628,7 +1482,7 @@ def delete_user(request, user_id):
         message=f"Deleted user: {user.first_name} {user.last_name} ({username}).",
         target_user=target_user
     )
-    
+
     # Delete the linked Django user if exists
     if user.auth_user:
         # Also delete the profile if exists
@@ -1638,13 +1492,13 @@ def delete_user(request, user_id):
         except (Profile.DoesNotExist, AttributeError):
             pass
         user.auth_user.delete()
-    
+
     # Delete the custom user
     user.delete()
-    
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'message': f'User {username} deleted successfully'})
-    
+
     return redirect('admin_dashboard')
 
 
@@ -1655,26 +1509,26 @@ def approve_admin(request, user_id):
     if not request.user.is_superuser:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Superuser access only'}, status=403)
-    
+
     user = get_object_or_404(PresentaUser, id=user_id)
     if user.user_role != 'admin':
         from django.http import JsonResponse
         return JsonResponse({'error': 'Not an admin account'}, status=400)
-    
+
     user.admin_approval_status = 'approved'
     user.save()
-    
+
     if user.auth_user:
         user.auth_user.is_staff = True
         user.auth_user.save()
-    
+
     log_activity(
         user=request.user,
         activity_type='user_updated',
         message=f'Approved admin account: {user.username}',
         target_user=user.auth_user
     )
-    
+
     from django.http import JsonResponse
     return JsonResponse({'success': True, 'message': f'Admin {user.username} approved successfully'})
 
@@ -1686,30 +1540,30 @@ def reject_admin(request, user_id):
     if not request.user.is_superuser:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Superuser access only'}, status=403)
-    
+
     user = get_object_or_404(PresentaUser, id=user_id)
     if user.user_role != 'admin':
         from django.http import JsonResponse
         return JsonResponse({'error': 'Not an admin account'}, status=400)
-    
+
     # Store username for log message before deletion
     username = user.username
     auth_user = user.auth_user
-    
+
     # Delete the Presenta User
     user.delete()
-    
+
     # Also delete the Django auth user if it exists
     if auth_user:
         auth_user.delete()
-    
+
     log_activity(
         user=request.user,
         activity_type='user_deleted',
         message=f'Rejected and deleted pending admin account: {username}',
         target_user=None
     )
-    
+
     from django.http import JsonResponse
     return JsonResponse({'success': True, 'message': f'Admin {username} has been deleted'})
 
@@ -1720,7 +1574,7 @@ def clear_activities(request):
     """Clear all activities for the current user."""
     from django.db.models import Q
     user = request.user
-    
+
     # Check if user is admin
     is_admin = user.is_superuser
     if not is_admin:
@@ -1728,7 +1582,7 @@ def clear_activities(request):
             is_admin = user.profile.user_role == 'admin'
         except Profile.DoesNotExist:
             pass
-    
+
     if is_admin:
         # Admins see ALL platform activities, so clear all
         Activity.objects.filter(is_cleared=False).update(is_cleared=True)
@@ -1739,27 +1593,27 @@ def clear_activities(request):
         user_request_ids = DesignRequest.objects.filter(
             Q(requester=user) | Q(designer=user)
         ).values_list('id', flat=True)
-        
+
         # Mark all activities as cleared:
         # 1. User's own activities
         # 2. Activities on user's requests (submitted requests or assigned projects)
         Activity.objects.filter(
-            Q(user=user) | 
+            Q(user=user) |
             Q(related_request_id__in=user_request_ids),
             is_cleared=False
         ).update(is_cleared=True)
-    
+
     # Redirect back to the referring page or dashboard
     referer = request.META.get('HTTP_REFERER')
-    
+
     # Check if it's an AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         from django.http import JsonResponse
         return JsonResponse({'success': True})
-    
+
     if referer:
         return redirect(referer)
-    
+
     # Default redirect based on role
     try:
         profile = user.profile
@@ -1777,31 +1631,34 @@ def clear_activities(request):
 def password_reset_lookup(request):
     """AJAX endpoint to lookup user by email or username."""
     from django.http import JsonResponse
-    
+
     identifier = request.POST.get('identifier', '').strip()
-    
+
     if not identifier:
         return JsonResponse({'found': False, 'error': 'Please enter an email or username.'})
-    
+
     # Try to find user by email or username in both Django User and Presenta User
     user = None
     presenta_user = None
-    
+
     # First check Django User model
     try:
         user = DjangoUser.objects.filter(email__iexact=identifier).first()
         if not user:
-            user = DjangoUser.objects.filter(username__iexact=identifier).first()
+            user = DjangoUser.objects.filter(
+                username__iexact=identifier).first()
     except Exception:
         pass
-    
+
     # If not found in Django User, check Presenta User
     if not user:
         try:
-            presenta_user = User.objects.filter(email__iexact=identifier).first()
+            presenta_user = User.objects.filter(
+                email__iexact=identifier).first()
             if not presenta_user:
-                presenta_user = User.objects.filter(username__iexact=identifier).first()
-            
+                presenta_user = User.objects.filter(
+                    username__iexact=identifier).first()
+
             # If found in Presenta User, get or create linked Django User
             if presenta_user:
                 if presenta_user.auth_user:
@@ -1825,7 +1682,7 @@ def password_reset_lookup(request):
                     presenta_user.save()
         except Exception:
             pass
-    
+
     if user:
         return JsonResponse({
             'found': True,
@@ -1833,7 +1690,7 @@ def password_reset_lookup(request):
             'email': user.email,
             'username': user.username
         })
-    
+
     return JsonResponse({'found': False, 'error': 'No account found with that email or username.'})
 
 
@@ -1841,28 +1698,28 @@ def password_reset_lookup(request):
 def password_reset_form(request, user_id):
     """Display and process the password reset form."""
     from django.http import JsonResponse
-    
+
     # Get the user
     user = get_object_or_404(DjangoUser, id=user_id)
-    
+
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         new_password = request.POST.get('new_password', '')
         confirm_password = request.POST.get('confirm_password', '')
-        
+
         # Validation
         if not new_password or not confirm_password:
             return JsonResponse({'success': False, 'error': 'Both password fields are required.'})
-        
+
         if new_password != confirm_password:
             return JsonResponse({'success': False, 'error': 'Passwords do not match.'})
-        
+
         if len(new_password) < 8:
             return JsonResponse({'success': False, 'error': 'Password must be at least 8 characters long.'})
-        
+
         # Update Django User password
         user.set_password(new_password)
         user.save()
-        
+
         # Update Presenta User password if linked
         try:
             presenta_user = user.presenta_user
@@ -1870,16 +1727,16 @@ def password_reset_form(request, user_id):
             presenta_user.save()
         except (User.DoesNotExist, AttributeError):
             pass
-        
+
         # Log password change activity
         log_activity(
             user=user,
             activity_type='password_changed',
             message="Password was changed."
         )
-        
+
         return JsonResponse({'success': True, 'message': 'Password has been reset successfully.'})
-    
+
     # For GET requests, return user info for the form
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
@@ -1887,7 +1744,7 @@ def password_reset_form(request, user_id):
             'email': user.email,
             'username': user.username
         })
-    
+
     # Regular GET - redirect to signin page
     return redirect('signin')
 
@@ -1896,26 +1753,26 @@ def password_reset_form(request, user_id):
 def password_reset_confirm(request, user_id):
     """Process password reset confirmation (alternative endpoint)."""
     from django.http import JsonResponse
-    
+
     user = get_object_or_404(DjangoUser, id=user_id)
-    
+
     new_password = request.POST.get('new_password', '')
     confirm_password = request.POST.get('confirm_password', '')
-    
+
     # Validation
     if not new_password or not confirm_password:
         return JsonResponse({'success': False, 'error': 'Both password fields are required.'})
-    
+
     if new_password != confirm_password:
         return JsonResponse({'success': False, 'error': 'Passwords do not match.'})
-    
+
     if len(new_password) < 8:
         return JsonResponse({'success': False, 'error': 'Password must be at least 8 characters long.'})
-    
+
     # Update Django User password
     user.set_password(new_password)
     user.save()
-    
+
     # Update Presenta User password if linked
     try:
         presenta_user = user.presenta_user
@@ -1923,19 +1780,20 @@ def password_reset_confirm(request, user_id):
         presenta_user.save()
     except (User.DoesNotExist, AttributeError):
         pass
-    
+
     # Log password change activity
     log_activity(
         user=user,
         activity_type='password_changed',
         message="Password was changed."
     )
-    
+
     return JsonResponse({'success': True, 'message': 'Password has been reset successfully.'})
 
 # ========================
 # SETTINGS VIEWS
 # ========================
+
 
 @login_required
 def settings_page(request):
@@ -1949,23 +1807,23 @@ def unified_settings(request):
     from .forms import UserSettingsForm, DesignerSettingsForm, AdminSettingsForm, EditProfileForm, ProfileSettingsForm
     from django.contrib import messages
     import json
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
-    
+
     # Initialize all forms
     account_form = UserSettingsForm()
     profile_form = EditProfileForm(instance=presenta_user)
     profile_settings_form = ProfileSettingsForm()
     designer_form = None
     admin_form = None
-    
+
     # Parse social media links from JSON
     social_media = user_settings.social_media_links or {}
-    
+
     # Profile Settings form initialization
     profile_settings_form = ProfileSettingsForm(initial={
         'social_media_links': json.dumps(social_media) if social_media else '{}',
@@ -1975,7 +1833,7 @@ def unified_settings(request):
         'emergency_contact_name': user_settings.emergency_contact_name,
         'emergency_contact_phone': user_settings.emergency_contact_phone,
     })
-    
+
     # Designer forms
     if user.profile.user_role == 'designer':
         designer_form = DesignerSettingsForm(initial={
@@ -2001,7 +1859,7 @@ def unified_settings(request):
             'payout_method': user_settings.payout_method,
             'payout_frequency': user_settings.payout_frequency,
         })
-    
+
     # Admin forms
     if user.is_superuser or user.profile.user_role == 'admin':
         admin_form = AdminSettingsForm(initial={
@@ -2031,107 +1889,166 @@ def unified_settings(request):
             'seasonal_end_date': user_settings.seasonal_end_date,
             'seasonal_fee_multiplier': user_settings.seasonal_fee_multiplier,
         })
-    
+
     # Handle POST requests for different sections
     if request.method == 'POST':
         # Check which form was submitted using the hidden form_type field
         form_type = request.POST.get('form_type', '')
-        
+
         if form_type == 'profile-settings':
             # Profile settings form
             profile_settings_form = ProfileSettingsForm(request.POST)
             if profile_settings_form.is_valid():
                 # Update social media links from JSON
-                social_media_json = profile_settings_form.cleaned_data.get('social_media_links', '{}')
+                social_media_json = profile_settings_form.cleaned_data.get(
+                    'social_media_links', '{}')
                 try:
-                    user_settings.social_media_links = json.loads(social_media_json)
+                    user_settings.social_media_links = json.loads(
+                        social_media_json)
                 except json.JSONDecodeError:
                     user_settings.social_media_links = {}
-                user_settings.availability_hours = profile_settings_form.cleaned_data.get('availability_hours', user_settings.availability_hours)
-                user_settings.custom_hours = profile_settings_form.cleaned_data.get('custom_hours', user_settings.custom_hours)
-                user_settings.preferred_contact_method = profile_settings_form.cleaned_data.get('preferred_contact_method', user_settings.preferred_contact_method)
-                user_settings.emergency_contact_name = profile_settings_form.cleaned_data.get('emergency_contact_name', user_settings.emergency_contact_name)
-                user_settings.emergency_contact_phone = profile_settings_form.cleaned_data.get('emergency_contact_phone', user_settings.emergency_contact_phone)
+                user_settings.availability_hours = profile_settings_form.cleaned_data.get(
+                    'availability_hours', user_settings.availability_hours)
+                user_settings.custom_hours = profile_settings_form.cleaned_data.get(
+                    'custom_hours', user_settings.custom_hours)
+                user_settings.preferred_contact_method = profile_settings_form.cleaned_data.get(
+                    'preferred_contact_method', user_settings.preferred_contact_method)
+                user_settings.emergency_contact_name = profile_settings_form.cleaned_data.get(
+                    'emergency_contact_name', user_settings.emergency_contact_name)
+                user_settings.emergency_contact_phone = profile_settings_form.cleaned_data.get(
+                    'emergency_contact_phone', user_settings.emergency_contact_phone)
                 user_settings.save()
-                messages.success(request, 'Profile settings updated successfully.')
+                messages.success(
+                    request, 'Profile settings updated successfully.')
             else:
-                messages.error(request, 'Error updating profile settings. Please check the form.')
+                messages.error(
+                    request, 'Error updating profile settings. Please check the form.')
         elif form_type == 'designer':
             # Designer settings form
             designer_form = DesignerSettingsForm(request.POST)
             if designer_form.is_valid():
-                user_settings.designer_availability = designer_form.cleaned_data.get('designer_availability', user_settings.designer_availability)
-                user_settings.availability_hours = designer_form.cleaned_data.get('availability_hours', user_settings.availability_hours)
-                user_settings.custom_hours = designer_form.cleaned_data.get('custom_hours', user_settings.custom_hours)
-                user_settings.timezone = designer_form.cleaned_data.get('timezone', user_settings.timezone)
-                user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
-                user_settings.turnaround_time_days = designer_form.cleaned_data.get('turnaround_time_days') or user_settings.turnaround_time_days
-                user_settings.extra_revision_price = designer_form.cleaned_data.get('extra_revision_price') or user_settings.extra_revision_price
-                user_settings.rush_job_multiplier = designer_form.cleaned_data.get('rush_job_multiplier') or user_settings.rush_job_multiplier
-                user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
-                user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
-                user_settings.industry_expertise = designer_form.cleaned_data.get('industry_expertise', user_settings.industry_expertise)
-                user_settings.software_tools = designer_form.cleaned_data.get('software_tools', user_settings.software_tools)
-                user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
-                user_settings.max_concurrent_projects = designer_form.cleaned_data.get('max_concurrent_projects') or user_settings.max_concurrent_projects
-                user_settings.revision_limit = designer_form.cleaned_data.get('revision_limit') or user_settings.revision_limit
-                user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
-                user_settings.portfolio_public = designer_form.cleaned_data.get('portfolio_public', False)
-                user_settings.show_testimonials = designer_form.cleaned_data.get('show_testimonials', False)
-                user_settings.communication_preference = designer_form.cleaned_data.get('communication_preference', user_settings.communication_preference)
-                user_settings.payout_method = designer_form.cleaned_data.get('payout_method', user_settings.payout_method)
-                user_settings.payout_frequency = designer_form.cleaned_data.get('payout_frequency', user_settings.payout_frequency)
+                user_settings.designer_availability = designer_form.cleaned_data.get(
+                    'designer_availability', user_settings.designer_availability)
+                user_settings.availability_hours = designer_form.cleaned_data.get(
+                    'availability_hours', user_settings.availability_hours)
+                user_settings.custom_hours = designer_form.cleaned_data.get(
+                    'custom_hours', user_settings.custom_hours)
+                user_settings.timezone = designer_form.cleaned_data.get(
+                    'timezone', user_settings.timezone)
+                user_settings.designer_rate = designer_form.cleaned_data.get(
+                    'designer_rate') or user_settings.designer_rate
+                user_settings.turnaround_time_days = designer_form.cleaned_data.get(
+                    'turnaround_time_days') or user_settings.turnaround_time_days
+                user_settings.extra_revision_price = designer_form.cleaned_data.get(
+                    'extra_revision_price') or user_settings.extra_revision_price
+                user_settings.rush_job_multiplier = designer_form.cleaned_data.get(
+                    'rush_job_multiplier') or user_settings.rush_job_multiplier
+                user_settings.minimum_project_budget = designer_form.cleaned_data.get(
+                    'minimum_project_budget') or user_settings.minimum_project_budget
+                user_settings.designer_specializations = designer_form.cleaned_data.get(
+                    'designer_specializations', user_settings.designer_specializations)
+                user_settings.industry_expertise = designer_form.cleaned_data.get(
+                    'industry_expertise', user_settings.industry_expertise)
+                user_settings.software_tools = designer_form.cleaned_data.get(
+                    'software_tools', user_settings.software_tools)
+                user_settings.accept_project_requests = designer_form.cleaned_data.get(
+                    'accept_project_requests', False)
+                user_settings.max_concurrent_projects = designer_form.cleaned_data.get(
+                    'max_concurrent_projects') or user_settings.max_concurrent_projects
+                user_settings.revision_limit = designer_form.cleaned_data.get(
+                    'revision_limit') or user_settings.revision_limit
+                user_settings.portfolio_url = designer_form.cleaned_data.get(
+                    'portfolio_url') or user_settings.portfolio_url
+                user_settings.portfolio_public = designer_form.cleaned_data.get(
+                    'portfolio_public', False)
+                user_settings.show_testimonials = designer_form.cleaned_data.get(
+                    'show_testimonials', False)
+                user_settings.communication_preference = designer_form.cleaned_data.get(
+                    'communication_preference', user_settings.communication_preference)
+                user_settings.payout_method = designer_form.cleaned_data.get(
+                    'payout_method', user_settings.payout_method)
+                user_settings.payout_frequency = designer_form.cleaned_data.get(
+                    'payout_frequency', user_settings.payout_frequency)
                 user_settings.save()
-                messages.success(request, 'Designer settings updated successfully.')
+                messages.success(
+                    request, 'Designer settings updated successfully.')
             else:
-                messages.error(request, 'Error updating designer settings. Please check the form.')
+                messages.error(
+                    request, 'Error updating designer settings. Please check the form.')
         elif form_type == 'admin':
             # Admin settings form
             admin_form = AdminSettingsForm(request.POST)
             if admin_form.is_valid():
-                user_settings.user_approval_required = admin_form.cleaned_data.get('user_approval_required', False)
-                user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
-                user_settings.platform_commission_percent = admin_form.cleaned_data.get('platform_commission_percent') or user_settings.platform_commission_percent
-                user_settings.email_template_welcome = admin_form.cleaned_data.get('email_template_welcome', user_settings.email_template_welcome)
-                user_settings.email_template_notification = admin_form.cleaned_data.get('email_template_notification', user_settings.email_template_notification)
-                user_settings.announcement_banner = admin_form.cleaned_data.get('announcement_banner', user_settings.announcement_banner)
-                user_settings.announcement_banner_visible = admin_form.cleaned_data.get('announcement_banner_visible', False)
-                user_settings.announcement_banner_type = admin_form.cleaned_data.get('announcement_banner_type', user_settings.announcement_banner_type)
-                user_settings.announcement_banner_bg_color = admin_form.cleaned_data.get('announcement_banner_bg_color', user_settings.announcement_banner_bg_color)
-                user_settings.announcement_banner_text_color = admin_form.cleaned_data.get('announcement_banner_text_color', user_settings.announcement_banner_text_color)
-                user_settings.moderation_keywords = admin_form.cleaned_data.get('moderation_keywords', user_settings.moderation_keywords)
-                user_settings.backup_schedule = admin_form.cleaned_data.get('backup_schedule', user_settings.backup_schedule)
-                user_settings.api_rate_limit = admin_form.cleaned_data.get('api_rate_limit') or user_settings.api_rate_limit
-                user_settings.form_submission_limit = admin_form.cleaned_data.get('form_submission_limit') or user_settings.form_submission_limit
-                user_settings.grant_analytics_to_roles = admin_form.cleaned_data.get('grant_analytics_to_roles', user_settings.grant_analytics_to_roles)
-                user_settings.dispute_resolution_days = admin_form.cleaned_data.get('dispute_resolution_days') or user_settings.dispute_resolution_days
-                user_settings.auto_refund_enabled = admin_form.cleaned_data.get('auto_refund_enabled', False)
-                user_settings.seasonal_active = admin_form.cleaned_data.get('seasonal_active', False)
-                user_settings.seasonal_name = admin_form.cleaned_data.get('seasonal_name', user_settings.seasonal_name)
-                user_settings.seasonal_start_date = admin_form.cleaned_data.get('seasonal_start_date') or user_settings.seasonal_start_date
-                user_settings.seasonal_end_date = admin_form.cleaned_data.get('seasonal_end_date') or user_settings.seasonal_end_date
-                user_settings.seasonal_fee_multiplier = admin_form.cleaned_data.get('seasonal_fee_multiplier') or user_settings.seasonal_fee_multiplier
+                user_settings.user_approval_required = admin_form.cleaned_data.get(
+                    'user_approval_required', False)
+                user_settings.maintenance_mode = admin_form.cleaned_data.get(
+                    'maintenance_mode', False)
+                user_settings.platform_commission_percent = admin_form.cleaned_data.get(
+                    'platform_commission_percent') or user_settings.platform_commission_percent
+                user_settings.email_template_welcome = admin_form.cleaned_data.get(
+                    'email_template_welcome', user_settings.email_template_welcome)
+                user_settings.email_template_notification = admin_form.cleaned_data.get(
+                    'email_template_notification', user_settings.email_template_notification)
+                user_settings.announcement_banner = admin_form.cleaned_data.get(
+                    'announcement_banner', user_settings.announcement_banner)
+                user_settings.announcement_banner_visible = admin_form.cleaned_data.get(
+                    'announcement_banner_visible', False)
+                user_settings.announcement_banner_type = admin_form.cleaned_data.get(
+                    'announcement_banner_type', user_settings.announcement_banner_type)
+                user_settings.announcement_banner_bg_color = admin_form.cleaned_data.get(
+                    'announcement_banner_bg_color', user_settings.announcement_banner_bg_color)
+                user_settings.announcement_banner_text_color = admin_form.cleaned_data.get(
+                    'announcement_banner_text_color', user_settings.announcement_banner_text_color)
+                user_settings.moderation_keywords = admin_form.cleaned_data.get(
+                    'moderation_keywords', user_settings.moderation_keywords)
+                user_settings.backup_schedule = admin_form.cleaned_data.get(
+                    'backup_schedule', user_settings.backup_schedule)
+                user_settings.api_rate_limit = admin_form.cleaned_data.get(
+                    'api_rate_limit') or user_settings.api_rate_limit
+                user_settings.form_submission_limit = admin_form.cleaned_data.get(
+                    'form_submission_limit') or user_settings.form_submission_limit
+                user_settings.grant_analytics_to_roles = admin_form.cleaned_data.get(
+                    'grant_analytics_to_roles', user_settings.grant_analytics_to_roles)
+                user_settings.dispute_resolution_days = admin_form.cleaned_data.get(
+                    'dispute_resolution_days') or user_settings.dispute_resolution_days
+                user_settings.auto_refund_enabled = admin_form.cleaned_data.get(
+                    'auto_refund_enabled', False)
+                user_settings.seasonal_active = admin_form.cleaned_data.get(
+                    'seasonal_active', False)
+                user_settings.seasonal_name = admin_form.cleaned_data.get(
+                    'seasonal_name', user_settings.seasonal_name)
+                user_settings.seasonal_start_date = admin_form.cleaned_data.get(
+                    'seasonal_start_date') or user_settings.seasonal_start_date
+                user_settings.seasonal_end_date = admin_form.cleaned_data.get(
+                    'seasonal_end_date') or user_settings.seasonal_end_date
+                user_settings.seasonal_fee_multiplier = admin_form.cleaned_data.get(
+                    'seasonal_fee_multiplier') or user_settings.seasonal_fee_multiplier
                 user_settings.save()
-                messages.success(request, 'Admin settings updated successfully.')
+                messages.success(
+                    request, 'Admin settings updated successfully.')
             else:
-                messages.error(request, 'Error updating admin settings. Please check the form.')
+                messages.error(
+                    request, 'Error updating admin settings. Please check the form.')
         elif form_type == 'edit-profile':
             # Edit Profile form
-            profile_form = EditProfileForm(request.POST, instance=presenta_user)
+            profile_form = EditProfileForm(
+                request.POST, instance=presenta_user)
             if profile_form.is_valid():
                 profile = profile_form.save(commit=False)
-                
+
                 # Handle profile picture cropping
                 cropped_image_data = request.POST.get('cropped_image_data')
-                remove_picture = request.POST.get('cropped_image_data') == 'remove'
-                
+                remove_picture = request.POST.get(
+                    'cropped_image_data') == 'remove'
+
                 if remove_picture:
                     if profile.profile_picture:
                         profile.profile_picture.delete(save=True)
                     profile.profile_picture = None
                 elif cropped_image_data and not cropped_image_data.startswith('remove'):
                     try:
-                        format_part, imgstr = cropped_image_data.split(';base64,')
+                        format_part, imgstr = cropped_image_data.split(
+                            ';base64,')
                         image_data = base64.b64decode(imgstr)
                         image = Image.open(BytesIO(image_data))
                         if image.mode in ('RGBA', 'P'):
@@ -2148,18 +2065,21 @@ def unified_settings(request):
                         profile.profile_picture = cropped_file
                     except Exception as e:
                         print(f"Error processing image: {e}")
-                
+
                 # Handle cover photo cropping
-                cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
-                remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
-                
+                cover_cropped_image_data = request.POST.get(
+                    'cover_cropped_image_data')
+                remove_cover = request.POST.get(
+                    'cover_cropped_image_data') == 'remove'
+
                 if remove_cover:
                     if presenta_user.cover_photo:
                         presenta_user.cover_photo.delete(save=True)
                     presenta_user.cover_photo = None
                 elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
                     try:
-                        format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                        format_part, imgstr = cover_cropped_image_data.split(
+                            ';base64,')
                         image_data = base64.b64decode(imgstr)
                         image = Image.open(BytesIO(image_data))
                         if image.mode in ('RGBA', 'P'):
@@ -2176,9 +2096,9 @@ def unified_settings(request):
                         presenta_user.cover_photo = cropped_file
                     except Exception as e:
                         print(f"Error processing cover image: {e}")
-                
+
                 profile.save()
-                
+
                 # Also update Django user first_name, last_name, and username
                 if profile.first_name:
                     user.first_name = profile.first_name
@@ -2188,29 +2108,33 @@ def unified_settings(request):
                     user.username = profile.username
                 if profile.first_name or profile.last_name or profile.username:
                     user.save()
-                
+
                 messages.success(request, 'Profile updated successfully.')
             else:
-                messages.error(request, 'Error updating profile. Please check the form.')
+                messages.error(
+                    request, 'Error updating profile. Please check the form.')
         else:
             # Account settings form (default)
             # First handle profile update if it has first_name, last_name, or username
             if 'first_name' in request.POST or 'last_name' in request.POST or 'username' in request.POST:
-                profile_form = EditProfileForm(request.POST, instance=presenta_user)
+                profile_form = EditProfileForm(
+                    request.POST, instance=presenta_user)
                 if profile_form.is_valid():
                     profile = profile_form.save(commit=False)
-                    
+
                     # Handle profile picture cropping
                     cropped_image_data = request.POST.get('cropped_image_data')
-                    remove_picture = request.POST.get('cropped_image_data') == 'remove'
-                    
+                    remove_picture = request.POST.get(
+                        'cropped_image_data') == 'remove'
+
                     if remove_picture:
                         if profile.profile_picture:
                             profile.profile_picture.delete(save=True)
                         profile.profile_picture = None
                     elif cropped_image_data and not cropped_image_data.startswith('remove'):
                         try:
-                            format_part, imgstr = cropped_image_data.split(';base64,')
+                            format_part, imgstr = cropped_image_data.split(
+                                ';base64,')
                             image_data = base64.b64decode(imgstr)
                             image = Image.open(BytesIO(image_data))
                             if image.mode in ('RGBA', 'P'):
@@ -2227,18 +2151,21 @@ def unified_settings(request):
                             profile.profile_picture = cropped_file
                         except Exception as e:
                             print(f"Error processing image: {e}")
-                        
+
                         # Handle cover photo cropping
-                        cover_cropped_image_data = request.POST.get('cover_cropped_image_data')
-                        remove_cover = request.POST.get('cover_cropped_image_data') == 'remove'
-                        
+                        cover_cropped_image_data = request.POST.get(
+                            'cover_cropped_image_data')
+                        remove_cover = request.POST.get(
+                            'cover_cropped_image_data') == 'remove'
+
                         if remove_cover:
                             if presenta_user.cover_photo:
                                 presenta_user.cover_photo.delete(save=True)
                             presenta_user.cover_photo = None
                         elif cover_cropped_image_data and not cover_cropped_image_data.startswith('remove'):
                             try:
-                                format_part, imgstr = cover_cropped_image_data.split(';base64,')
+                                format_part, imgstr = cover_cropped_image_data.split(
+                                    ';base64,')
                                 image_data = base64.b64decode(imgstr)
                                 image = Image.open(BytesIO(image_data))
                                 if image.mode in ('RGBA', 'P'):
@@ -2255,9 +2182,9 @@ def unified_settings(request):
                                 presenta_user.cover_photo = cropped_file
                             except Exception as e:
                                 print(f"Error processing cover image: {e}")
-                        
+
                         profile.save()
-                        
+
                         # Also update Django user first_name, last_name, and username
                     if profile.first_name:
                         user.first_name = profile.first_name
@@ -2267,21 +2194,32 @@ def unified_settings(request):
                         user.username = profile.username
                     if profile.first_name or profile.last_name or profile.username:
                         user.save()
-            
+
             # Handle account settings
             account_form = UserSettingsForm(request.POST)
             if account_form.is_valid():
-                user_settings.timezone = account_form.cleaned_data.get('timezone', user_settings.timezone)
-                user_settings.language = account_form.cleaned_data.get('language', user_settings.language)
-                user_settings.greeting_name_preference = account_form.cleaned_data.get('greeting_name_preference', user_settings.greeting_name_preference)
-                user_settings.show_time_date = account_form.cleaned_data.get('show_time_date', False)
-                user_settings.currency_preference = account_form.cleaned_data.get('currency_preference', user_settings.currency_preference)
-                user_settings.email_notifications_enabled = account_form.cleaned_data.get('email_notifications_enabled', False)
-                user_settings.order_updates_email = account_form.cleaned_data.get('order_updates_email', False)
-                user_settings.marketing_emails = account_form.cleaned_data.get('marketing_emails', False)
-                user_settings.notification_frequency = account_form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
-                user_settings.profile_visibility = account_form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
-                user_settings.show_user_status = account_form.cleaned_data.get('show_user_status', False)
+                user_settings.timezone = account_form.cleaned_data.get(
+                    'timezone', user_settings.timezone)
+                user_settings.language = account_form.cleaned_data.get(
+                    'language', user_settings.language)
+                user_settings.greeting_name_preference = account_form.cleaned_data.get(
+                    'greeting_name_preference', user_settings.greeting_name_preference)
+                user_settings.show_time_date = account_form.cleaned_data.get(
+                    'show_time_date', False)
+                user_settings.currency_preference = account_form.cleaned_data.get(
+                    'currency_preference', user_settings.currency_preference)
+                user_settings.email_notifications_enabled = account_form.cleaned_data.get(
+                    'email_notifications_enabled', False)
+                user_settings.order_updates_email = account_form.cleaned_data.get(
+                    'order_updates_email', False)
+                user_settings.marketing_emails = account_form.cleaned_data.get(
+                    'marketing_emails', False)
+                user_settings.notification_frequency = account_form.cleaned_data.get(
+                    'notification_frequency', user_settings.notification_frequency)
+                user_settings.profile_visibility = account_form.cleaned_data.get(
+                    'profile_visibility', user_settings.profile_visibility)
+                user_settings.show_user_status = account_form.cleaned_data.get(
+                    'show_user_status', False)
                 user_settings.save()
                 messages.success(request, 'Settings updated successfully.')
             else:
@@ -2289,9 +2227,9 @@ def unified_settings(request):
                 for field, errors in account_form.errors.items():
                     for error in errors:
                         messages.error(request, f'{field}: {error}')
-        
+
         return redirect('unified_settings')
-    
+
     # Populate account form with current settings
     account_form = UserSettingsForm(initial={
         'timezone': user_settings.timezone,
@@ -2306,12 +2244,13 @@ def unified_settings(request):
         'profile_visibility': user_settings.profile_visibility,
         'show_user_status': user_settings.show_user_status,
     })
-    
+
     # Get sample categories for admin
     sample_categories = []
     if user.is_superuser or user.profile.user_role == 'admin':
-        sample_categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
-    
+        sample_categories = SampleCategory.objects.prefetch_related(
+            'items').order_by('order', 'name')
+
     context = {
         'form': account_form,
         'profile_form': profile_form,
@@ -2346,13 +2285,13 @@ def account_settings(request):
     """Account and notification settings for all users."""
     from .forms import UserSettingsForm
     from django.contrib import messages
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
-    
+
     if request.method == 'POST':
         form = UserSettingsForm(request.POST)
         if form.is_valid():
@@ -2360,45 +2299,59 @@ def account_settings(request):
             current_password = form.cleaned_data.get('current_password')
             new_password = form.cleaned_data.get('new_password')
             confirm_password = form.cleaned_data.get('confirm_password')
-            
+
             if new_password:
                 if not presenta_user.check_password(current_password):
-                    form.add_error('current_password', 'Current password is incorrect.')
+                    form.add_error('current_password',
+                                   'Current password is incorrect.')
                 elif new_password != confirm_password:
-                    form.add_error('confirm_password', 'Passwords do not match.')
+                    form.add_error('confirm_password',
+                                   'Passwords do not match.')
                 elif len(new_password) < 8:
-                    form.add_error('new_password', 'Password must be at least 8 characters.')
+                    form.add_error(
+                        'new_password', 'Password must be at least 8 characters.')
                 else:
                     # Update both Presenta User and Django User passwords
                     presenta_user.set_password(new_password)
                     presenta_user.save()
                     user.set_password(new_password)
                     user.save()
-                    
+
                     # Log the password change
                     log_activity(
                         user=user,
                         activity_type='password_changed',
                         message="Password was changed from settings."
                     )
-                    
+
                     messages.success(request, 'Password changed successfully.')
                     return redirect('account_settings')
-            
+
             # Update user settings
-            user_settings.timezone = form.cleaned_data.get('timezone', user_settings.timezone)
-            user_settings.language = form.cleaned_data.get('language', user_settings.language)
-            user_settings.greeting_name_preference = form.cleaned_data.get('greeting_name_preference', user_settings.greeting_name_preference)
-            user_settings.show_time_date = form.cleaned_data.get('show_time_date', False)
-            user_settings.currency_preference = form.cleaned_data.get('currency_preference', user_settings.currency_preference)
-            user_settings.email_notifications_enabled = form.cleaned_data.get('email_notifications_enabled', False)
-            user_settings.order_updates_email = form.cleaned_data.get('order_updates_email', False)
-            user_settings.marketing_emails = form.cleaned_data.get('marketing_emails', False)
-            user_settings.notification_frequency = form.cleaned_data.get('notification_frequency', user_settings.notification_frequency)
-            user_settings.profile_visibility = form.cleaned_data.get('profile_visibility', user_settings.profile_visibility)
-            user_settings.show_user_status = form.cleaned_data.get('show_user_status', False)
+            user_settings.timezone = form.cleaned_data.get(
+                'timezone', user_settings.timezone)
+            user_settings.language = form.cleaned_data.get(
+                'language', user_settings.language)
+            user_settings.greeting_name_preference = form.cleaned_data.get(
+                'greeting_name_preference', user_settings.greeting_name_preference)
+            user_settings.show_time_date = form.cleaned_data.get(
+                'show_time_date', False)
+            user_settings.currency_preference = form.cleaned_data.get(
+                'currency_preference', user_settings.currency_preference)
+            user_settings.email_notifications_enabled = form.cleaned_data.get(
+                'email_notifications_enabled', False)
+            user_settings.order_updates_email = form.cleaned_data.get(
+                'order_updates_email', False)
+            user_settings.marketing_emails = form.cleaned_data.get(
+                'marketing_emails', False)
+            user_settings.notification_frequency = form.cleaned_data.get(
+                'notification_frequency', user_settings.notification_frequency)
+            user_settings.profile_visibility = form.cleaned_data.get(
+                'profile_visibility', user_settings.profile_visibility)
+            user_settings.show_user_status = form.cleaned_data.get(
+                'show_user_status', False)
             user_settings.save()
-            
+
             messages.success(request, 'Settings updated successfully.')
             return redirect('account_settings')
     else:
@@ -2417,7 +2370,7 @@ def account_settings(request):
             'show_user_status': user_settings.show_user_status,
         }
         form = UserSettingsForm(initial=initial_data)
-    
+
     context = {
         'form': form,
         'settings_section': 'account',
@@ -2431,33 +2384,43 @@ def designer_settings(request):
     """Settings page for designers."""
     from .forms import DesignerSettingsForm
     from django.contrib import messages
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Check if user is a designer
     if user.profile.user_role != 'designer':
-        messages.error(request, 'You do not have permission to access designer settings.')
+        messages.error(
+            request, 'You do not have permission to access designer settings.')
         return redirect('account_settings')
-    
+
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
-    
+
     if request.method == 'POST':
         designer_form = DesignerSettingsForm(request.POST)
-        
+
         if designer_form.is_valid():
-            user_settings.designer_availability = designer_form.cleaned_data.get('designer_availability', user_settings.designer_availability)
-            user_settings.designer_rate = designer_form.cleaned_data.get('designer_rate') or user_settings.designer_rate
-            user_settings.designer_specializations = designer_form.cleaned_data.get('designer_specializations', user_settings.designer_specializations)
-            user_settings.accept_project_requests = designer_form.cleaned_data.get('accept_project_requests', False)
-            user_settings.portfolio_url = designer_form.cleaned_data.get('portfolio_url') or user_settings.portfolio_url
-            user_settings.max_concurrent_projects = designer_form.cleaned_data.get('max_concurrent_projects') or user_settings.max_concurrent_projects
-            user_settings.revision_limit = designer_form.cleaned_data.get('revision_limit') or user_settings.revision_limit
-            user_settings.minimum_project_budget = designer_form.cleaned_data.get('minimum_project_budget') or user_settings.minimum_project_budget
+            user_settings.designer_availability = designer_form.cleaned_data.get(
+                'designer_availability', user_settings.designer_availability)
+            user_settings.designer_rate = designer_form.cleaned_data.get(
+                'designer_rate') or user_settings.designer_rate
+            user_settings.designer_specializations = designer_form.cleaned_data.get(
+                'designer_specializations', user_settings.designer_specializations)
+            user_settings.accept_project_requests = designer_form.cleaned_data.get(
+                'accept_project_requests', False)
+            user_settings.portfolio_url = designer_form.cleaned_data.get(
+                'portfolio_url') or user_settings.portfolio_url
+            user_settings.max_concurrent_projects = designer_form.cleaned_data.get(
+                'max_concurrent_projects') or user_settings.max_concurrent_projects
+            user_settings.revision_limit = designer_form.cleaned_data.get(
+                'revision_limit') or user_settings.revision_limit
+            user_settings.minimum_project_budget = designer_form.cleaned_data.get(
+                'minimum_project_budget') or user_settings.minimum_project_budget
             user_settings.save()
-            
-            messages.success(request, 'Designer settings updated successfully.')
+
+            messages.success(
+                request, 'Designer settings updated successfully.')
             return redirect('designer_settings')
     else:
         # Populate form with current settings
@@ -2472,7 +2435,7 @@ def designer_settings(request):
             'minimum_project_budget': user_settings.minimum_project_budget,
         }
         designer_form = DesignerSettingsForm(initial=initial_data)
-    
+
     context = {
         'designer_form': designer_form,
         'settings_section': 'designer',
@@ -2486,25 +2449,27 @@ def admin_settings(request):
     """Settings page for administrators."""
     from .forms import AdminSettingsForm
     from django.contrib import messages
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Check if user is an admin
     if not (user.is_superuser or user.profile.user_role == 'admin'):
-        messages.error(request, 'You do not have permission to access admin settings.')
+        messages.error(
+            request, 'You do not have permission to access admin settings.')
         return redirect('account_settings')
-    
+
     # Get or create user settings
     user_settings, created = UserSettings.objects.get_or_create(user=user)
-    
+
     if request.method == 'POST':
         admin_form = AdminSettingsForm(request.POST)
-        
+
         if admin_form.is_valid():
-            user_settings.maintenance_mode = admin_form.cleaned_data.get('maintenance_mode', False)
+            user_settings.maintenance_mode = admin_form.cleaned_data.get(
+                'maintenance_mode', False)
             user_settings.save()
-            
+
             messages.success(request, 'Admin settings updated successfully.')
             return redirect('admin_settings')
     else:
@@ -2515,7 +2480,7 @@ def admin_settings(request):
             'support_email': 'support@presenta.com',
         }
         admin_form = AdminSettingsForm(initial=initial_data)
-    
+
     context = {
         'admin_form': admin_form,
         'settings_section': 'admin',
@@ -2530,57 +2495,57 @@ def change_password_ajax(request):
     """AJAX endpoint to change password from settings page."""
     from django.http import JsonResponse
     from django.contrib import messages
-    
+
     user = request.user
     presenta_user = user.presenta_user
-    
+
     current_password = request.POST.get('current_password', '')
     new_password = request.POST.get('new_password', '')
     confirm_password = request.POST.get('confirm_password', '')
-    
+
     errors = {}
-    
+
     # Validation
     if not current_password:
         errors['current_password'] = 'Current password is required'
-    
+
     if not new_password:
         errors['new_password'] = 'New password is required'
     elif len(new_password) < 8:
         errors['new_password'] = 'Password must be at least 8 characters'
-    
+
     if not confirm_password:
         errors['confirm_password'] = 'Please confirm your password'
     elif new_password != confirm_password:
         errors['confirm_password'] = 'Passwords do not match'
-    
+
     # Check current password
     if current_password and not presenta_user.check_password(current_password):
         errors['current_password'] = 'Current password is incorrect'
-    
+
     if errors:
         return JsonResponse({
             'success': False,
             'error': 'Please fix the errors below',
             'errors': errors
         })
-    
+
     # Update password
     try:
         presenta_user.set_password(new_password)
         presenta_user.save()
-        
+
         # Also update Django User password
         user.set_password(new_password)
         user.save()
-        
+
         # Log the password change
         log_activity(
             user=user,
             activity_type='password_changed',
             message="Password was changed from settings."
         )
-        
+
         return JsonResponse({
             'success': True,
             'message': 'Password changed successfully!'
@@ -2615,7 +2580,8 @@ def profile_view(request, username=None):
         target_presenta = get_presenta_user_safe(request.user)
         is_self = True
     else:
-        target_presenta = get_object_or_404(PresentaUser, username__iexact=username)
+        target_presenta = get_object_or_404(
+            PresentaUser, username__iexact=username)
         is_self = (target_presenta.auth_user == request.user)
 
     target_django = target_presenta.auth_user
@@ -2623,21 +2589,24 @@ def profile_view(request, username=None):
 
     # Check if viewer blocked target
     is_blocked = Block.objects.filter(
-        blocker=request.user, 
+        blocker=request.user,
         blocked_user=target_django
     ).exists()
 
     # Privacy check - simplified
     try:
-        target_settings, _ = UserSettings.objects.get_or_create(user=target_django)
-        is_private = (target_settings.profile_visibility == 'private' and not is_self)
+        target_settings, _ = UserSettings.objects.get_or_create(
+            user=target_django)
+        is_private = (target_settings.profile_visibility ==
+                      'private' and not is_self)
     except:
         is_private = False
 
     if is_blocked or (is_private and not viewer_is_admin):
         # Show limited/blocked view or 404
         if is_blocked:
-            context = {'message': 'You have blocked this user.', 'is_blocked': True}
+            context = {'message': 'You have blocked this user.',
+                       'is_blocked': True}
         else:
             raise Http404("Profile not found or private.")
         return render(request, 'profile.html', context)
@@ -2652,7 +2621,7 @@ def profile_view(request, username=None):
             Q(requester=target_django) | Q(designer=target_django),
             status='completed'
         ).count()
-        
+
         # Add average rating for designers
         if target_presenta.user_role == 'designer':
             from .models import DesignerRating
@@ -2660,6 +2629,31 @@ def profile_view(request, username=None):
             rating_count = DesignerRating.get_rating_count(target_django)
             stats['average_rating'] = round(avg_rating, 1)
             stats['rating_count'] = rating_count
+
+            # Add favorite count for designers
+            from .models import FavoriteDesigner
+            stats['favorite_count'] = FavoriteDesigner.get_favorite_count(
+                target_django)
+
+            # Check if viewer has favorited this designer
+            if request.user.is_authenticated and not is_self:
+                viewer_favorited = FavoriteDesigner.is_favorited(
+                    request.user, target_django)
+            else:
+                viewer_favorited = False
+
+        # Add favorite count for clients
+        elif target_presenta.user_role == 'user':
+            from .models import FavoriteDesigner
+            stats['favorite_count'] = FavoriteDesigner.objects.filter(
+                client=target_django).count()
+
+    # Get client's favorite designers if viewing own profile as client
+    my_favorite_designers = []
+    if is_self and target_presenta.user_role == 'user':
+        my_favorite_designers = list(FavoriteDesigner.objects.filter(
+            client=request.user
+        ).select_related('designer').order_by('-created_at'))
 
     # Recent activities (public)
     activities = Activity.objects.filter(
@@ -2669,7 +2663,7 @@ def profile_view(request, username=None):
 
     # Recent works based on user role
     recent_works = []
-    if target_presenta.user_role == 'client':
+    if target_presenta.user_role == 'user':
         # For clients: show recent design requests they made
         recent_works = DesignRequest.objects.filter(
             requester=target_django
@@ -2691,6 +2685,9 @@ def profile_view(request, username=None):
         'recent_works': recent_works,
         'can_ban': viewer_is_admin,
         'can_delete': viewer_is_admin,
+        'viewer_favorited': viewer_favorited if target_presenta.user_role == 'designer' else False,
+        'my_favorite_designers': my_favorite_designers,
+        'favorite_count': stats.get('favorite_count', 0) if is_self and target_presenta.user_role == 'user' else 0,
     }
     return render(request, 'profile.html', context)
 
@@ -2764,15 +2761,109 @@ def ban_user(request):
     return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
 
 
+@login_required(login_url='signin')
+def toggle_favorite_designer(request):
+    """Toggle favorite status for a designer (POST)."""
+    from django.http import JsonResponse
+    import json
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            designer_id = data.get('designer_id')
+
+            if not designer_id:
+                return JsonResponse({'success': False, 'error': 'Designer ID required'}, status=400)
+
+            designer = get_object_or_404(DjangoUser, id=designer_id)
+
+            # Check if target is actually a designer
+            try:
+                target_presenta = PresentaUser.objects.get(auth_user=designer)
+                if target_presenta.user_role != 'designer':
+                    return JsonResponse({'success': False, 'error': 'User is not a designer'}, status=400)
+            except PresentaUser.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'User is not a designer'}, status=400)
+
+            # Can't favorite self
+            if designer == request.user:
+                return JsonResponse({'success': False, 'error': 'Cannot favorite yourself'}, status=400)
+
+            # Check if already favorited
+            favorite, created = FavoriteDesigner.objects.get_or_create(
+                client=request.user,
+                designer=designer
+            )
+
+            if not created:
+                # Already favorited, so unfavorite
+                favorite.delete()
+                is_favorited = False
+                message = 'Designer removed from favorites'
+            else:
+                is_favorited = True
+                message = 'Designer added to favorites'
+                # Log activity
+                designer_name = f"{designer.first_name} {designer.last_name}".strip(
+                ) or designer.username
+                log_activity(
+                    user=request.user,
+                    activity_type='user_updated',
+                    message=f'Added {designer_name} to favorite designers',
+                    target_user=designer
+                )
+
+            # Get updated favorite count for the client (how many designers the client has favorited)
+            client_favorite_count = FavoriteDesigner.objects.filter(
+                client=request.user).count()
+
+            return JsonResponse({
+                'success': True,
+                'is_favorited': is_favorited,
+                'favorite_count': client_favorite_count,
+                'message': message
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'POST required'}, status=400)
+
+
+@login_required(login_url='signin')
+def get_favorite_designers(request):
+    """Get list of user's favorite designers (GET)."""
+    from django.http import JsonResponse
+
+    favorites = FavoriteDesigner.objects.filter(
+        client=request.user).select_related('designer')
+
+    designer_list = []
+    for fav in favorites:
+        designer = fav.designer
+        designer_list.append({
+            'id': designer.id,
+            'username': designer.username,
+            'first_name': designer.first_name or '',
+            'last_name': designer.last_name or '',
+            'profile_picture': designer.profile_picture.url if designer.profile_picture else None,
+            'favorited_at': fav.created_at.isoformat()
+        })
+
+    return JsonResponse({'success': True, 'favorites': designer_list})
+
+
 def update_user_status(request):
     """Update the user's online status via AJAX."""
     from django.http import JsonResponse
-    
+
     try:
         import json
         data = json.loads(request.body)
         status = data.get('status')
-        
+
         # Validate status
         valid_statuses = ['online', 'idle', 'do_not_disturb']
         if status not in valid_statuses:
@@ -2780,19 +2871,19 @@ def update_user_status(request):
                 'success': False,
                 'error': 'Invalid status'
             }, status=400)
-        
+
         # Update the user's status
         user = request.user.presenta_user
         user.online_status = status
         user.save()
-        
+
         # Log activity
         log_activity(
             user=request.user,
             activity_type='status_changed',
             message=f"Status changed to {status}"
         )
-        
+
         return JsonResponse({
             'success': True,
             'message': 'Status updated successfully',
@@ -2816,17 +2907,19 @@ def update_user_status(request):
 def manage_samples(request):
     """Main page for managing samples - categories and items"""
     from django.contrib import messages
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
-    categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
-    
+
+    categories = SampleCategory.objects.prefetch_related(
+        'items').order_by('order', 'name')
+
     context = {
         'categories': categories,
         'settings_section': 'samples',
@@ -2841,36 +2934,38 @@ def add_sample_category(request):
     """Add a new sample category"""
     from django.contrib import messages
     from django.shortcuts import redirect
-    
+
     user = request.user
     presenta_user = get_presenta_user_safe(user)
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
         description = request.POST.get('description', '').strip()
         icon = request.POST.get('icon', '').strip()
         order = int(request.POST.get('order', 0))
-        
+
         if not name:
             messages.error(request, 'Category name is required.')
             return redirect('manage_samples')
-        
+
         if not slug:
             # Auto-generate slug from name
             from django.utils.text import slugify
             slug = slugify(name)
-        
+
         # Check for duplicate slug
         if SampleCategory.objects.filter(slug=slug).exists():
-            messages.error(request, 'A category with this slug already exists.')
+            messages.error(
+                request, 'A category with this slug already exists.')
             return redirect('manage_samples')
-        
+
         category = SampleCategory.objects.create(
             name=name,
             slug=slug,
@@ -2878,10 +2973,11 @@ def add_sample_category(request):
             icon=icon,
             order=order
         )
-        
-        messages.success(request, f'Category "{category.name}" created successfully.')
+
+        messages.success(
+            request, f'Category "{category.name}" created successfully.')
         return redirect('manage_samples')
-    
+
     return redirect('manage_samples')
 
 
@@ -2891,16 +2987,17 @@ def edit_sample_category(request, category_id):
     """Edit an existing sample category"""
     from django.contrib import messages
     from django.shortcuts import redirect, get_object_or_404
-    
+
     user = request.user
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     category = get_object_or_404(SampleCategory, id=category_id)
-    
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
@@ -2908,16 +3005,17 @@ def edit_sample_category(request, category_id):
         icon = request.POST.get('icon', '').strip()
         order = int(request.POST.get('order', 0))
         is_active = request.POST.get('is_active') == 'on'
-        
+
         if not name:
             messages.error(request, 'Category name is required.')
             return redirect('manage_samples')
-        
+
         # Check for duplicate slug (excluding current category)
         if SampleCategory.objects.filter(slug=slug).exclude(id=category_id).exists():
-            messages.error(request, 'A category with this slug already exists.')
+            messages.error(
+                request, 'A category with this slug already exists.')
             return redirect('manage_samples')
-        
+
         category.name = name
         category.slug = slug
         category.description = description
@@ -2925,10 +3023,11 @@ def edit_sample_category(request, category_id):
         category.order = order
         category.is_active = is_active
         category.save()
-        
-        messages.success(request, f'Category "{category.name}" updated successfully.')
+
+        messages.success(
+            request, f'Category "{category.name}" updated successfully.')
         return redirect('manage_samples')
-    
+
     return redirect('manage_samples')
 
 
@@ -2938,22 +3037,24 @@ def delete_sample_category(request, category_id):
     """Delete a sample category and all its items"""
     from django.contrib import messages
     from django.shortcuts import redirect, get_object_or_404
-    
+
     user = request.user
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     category = get_object_or_404(SampleCategory, id=category_id)
-    
+
     # Delete all items in this category first
     category.items.all().delete()
     category_name = category.name
     category.delete()
-    
-    messages.success(request, f'Category "{category_name}" and all its items have been deleted.')
+
+    messages.success(
+        request, f'Category "{category_name}" and all its items have been deleted.')
     return redirect('manage_samples')
 
 
@@ -2963,14 +3064,15 @@ def add_sample_item(request):
     """Add a new sample item"""
     from django.contrib import messages
     from django.shortcuts import redirect, get_object_or_404
-    
+
     user = request.user
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     if request.method == 'POST':
         category_id = request.POST.get('category')
         title = request.POST.get('title', '').strip()
@@ -2982,27 +3084,27 @@ def add_sample_item(request):
         link = request.POST.get('link', '').strip()
         order = int(request.POST.get('order', 0))
         is_active = request.POST.get('is_active') == 'on'
-        
+
         if not category_id:
             messages.error(request, 'Please select a category.')
             return redirect('manage_samples')
-        
+
         if not title:
             messages.error(request, 'Sample title is required.')
             return redirect('manage_samples')
-        
+
         if not image:
             messages.error(request, 'Sample image is required.')
             return redirect('manage_samples')
-        
+
         category = get_object_or_404(SampleCategory, id=category_id)
-        
+
         # Parse project date
         from django.utils.dateparse import parse_date
         parsed_date = None
         if project_date:
             parsed_date = parse_date(project_date)
-        
+
         item = SampleItem.objects.create(
             category=category,
             title=title,
@@ -3015,10 +3117,11 @@ def add_sample_item(request):
             order=order,
             is_active=is_active
         )
-        
-        messages.success(request, f'Sample "{item.title}" created successfully.')
+
+        messages.success(
+            request, f'Sample "{item.title}" created successfully.')
         return redirect('manage_samples')
-    
+
     return redirect('manage_samples')
 
 
@@ -3028,16 +3131,17 @@ def edit_sample_item(request, item_id):
     """Edit an existing sample item"""
     from django.contrib import messages
     from django.shortcuts import redirect, get_object_or_404
-    
+
     user = request.user
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     item = get_object_or_404(SampleItem, id=item_id)
-    
+
     if request.method == 'POST':
         category_id = request.POST.get('category')
         title = request.POST.get('title', '').strip()
@@ -3049,23 +3153,23 @@ def edit_sample_item(request, item_id):
         link = request.POST.get('link', '').strip()
         order = int(request.POST.get('order', 0))
         is_active = request.POST.get('is_active') == 'on'
-        
+
         if not category_id:
             messages.error(request, 'Please select a category.')
             return redirect('manage_samples')
-        
+
         if not title:
             messages.error(request, 'Sample title is required.')
             return redirect('manage_samples')
-        
+
         category = get_object_or_404(SampleCategory, id=category_id)
-        
+
         # Parse project date
         from django.utils.dateparse import parse_date
         parsed_date = None
         if project_date:
             parsed_date = parse_date(project_date)
-        
+
         item.category = category
         item.title = title
         item.description = description
@@ -3078,10 +3182,11 @@ def edit_sample_item(request, item_id):
         item.order = order
         item.is_active = is_active
         item.save()
-        
-        messages.success(request, f'Sample "{item.title}" updated successfully.')
+
+        messages.success(
+            request, f'Sample "{item.title}" updated successfully.')
         return redirect('manage_samples')
-    
+
     return redirect('manage_samples')
 
 
@@ -3091,18 +3196,19 @@ def delete_sample_item(request, item_id):
     """Delete a sample item"""
     from django.contrib import messages
     from django.shortcuts import redirect, get_object_or_404
-    
+
     user = request.user
-    
+
     # Check if user is an admin
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
-        messages.error(request, 'You do not have permission to manage samples.')
+        messages.error(
+            request, 'You do not have permission to manage samples.')
         return redirect('account_settings')
-    
+
     item = get_object_or_404(SampleItem, id=item_id)
     item_title = item.title
     item.delete()
-    
+
     messages.success(request, f'Sample "{item_title}" has been deleted.')
     return redirect('manage_samples')
 
@@ -3116,13 +3222,14 @@ def api_sample_categories(request):
     """API endpoint to get all sample categories with their items (JSON)"""
     from django.http import JsonResponse
     from django.views.decorators.http import require_http_methods
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
-    categories = SampleCategory.objects.prefetch_related('items').order_by('order', 'name')
-    
+
+    categories = SampleCategory.objects.prefetch_related(
+        'items').order_by('order', 'name')
+
     data = {
         'categories': [
             {
@@ -3153,7 +3260,7 @@ def api_sample_categories(request):
             for cat in categories
         ]
     }
-    
+
     return JsonResponse(data)
 
 
@@ -3164,11 +3271,11 @@ def api_sample_category_detail(request, category_id):
     from django.http import JsonResponse
     from django.contrib import messages
     from django.shortcuts import get_object_or_404
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     if request.method == 'GET':
         # Get category detail
         category = get_object_or_404(SampleCategory, id=category_id)
@@ -3182,7 +3289,7 @@ def api_sample_category_detail(request, category_id):
             'is_active': category.is_active,
         }
         return JsonResponse(data)
-    
+
     elif request.method == 'POST':
         # Update category
         import json
@@ -3190,14 +3297,14 @@ def api_sample_category_detail(request, category_id):
             data = json.loads(request.body)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        
+
         category = get_object_or_404(SampleCategory, id=category_id)
         category.name = data.get('name', category.name)
         category.description = data.get('description', category.description)
         category.icon = data.get('icon', category.icon)
         category.order = data.get('order', category.order)
         category.is_active = data.get('is_active', category.is_active)
-        
+
         # Handle slug
         if 'slug' in data and data['slug'] != category.slug:
             from django.utils.text import slugify
@@ -3205,10 +3312,10 @@ def api_sample_category_detail(request, category_id):
         else:
             from django.utils.text import slugify
             category.slug = slugify(category.name)
-        
+
         category.save()
         return JsonResponse({'success': True, 'message': 'Category updated successfully'})
-    
+
     elif request.method == 'DELETE':
         # Delete category
         category = get_object_or_404(SampleCategory, id=category_id)
@@ -3225,11 +3332,11 @@ def api_sample_item_detail(request, item_id):
     from django.contrib import messages
     from django.shortcuts import get_object_or_404
     import json
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     if request.method == 'GET':
         # Get item detail
         item = get_object_or_404(SampleItem, id=item_id)
@@ -3247,19 +3354,20 @@ def api_sample_item_detail(request, item_id):
             'is_active': item.is_active,
         }
         return JsonResponse(data)
-    
+
     elif request.method == 'POST':
         # Update item
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        
+
         item = get_object_or_404(SampleItem, id=item_id)
-        
+
         if 'category_id' in data:
-            item.category = get_object_or_404(SampleCategory, id=data['category_id'])
-        
+            item.category = get_object_or_404(
+                SampleCategory, id=data['category_id'])
+
         item.title = data.get('title', item.title)
         item.description = data.get('description', item.description)
         item.client_name = data.get('client_name', item.client_name or '')
@@ -3267,14 +3375,15 @@ def api_sample_item_detail(request, item_id):
         item.link = data.get('link', item.link or '')
         item.order = data.get('order', item.order)
         item.is_active = data.get('is_active', item.is_active)
-        
+
         if 'project_date' in data and data['project_date']:
             from datetime import datetime
             try:
-                item.project_date = datetime.strptime(data['project_date'], '%Y-%m-%d').date()
+                item.project_date = datetime.strptime(
+                    data['project_date'], '%Y-%m-%d').date()
             except ValueError:
                 pass
-        
+
         # Handle image upload from file
         if 'image' in request.FILES:
             item.image = request.FILES['image']
@@ -3285,25 +3394,25 @@ def api_sample_item_detail(request, item_id):
                 image_data = data['image_data']
                 if ',' in image_data:
                     image_data = image_data.split(',')[1]
-                
+
                 # Decode base64
                 image_bytes = base64.b64decode(image_data)
-                
+
                 # Create a unique filename
                 filename = f"sample_{uuid.uuid4().hex}.jpg"
-                
+
                 # Delete old image if exists
                 if item.image:
                     item.image.delete()
-                
+
                 # Save to ImageField
                 item.image.save(filename, ContentFile(image_bytes))
             except Exception as e:
                 return JsonResponse({'error': f'Failed to process image: {str(e)}'}, status=400)
-        
+
         item.save()
         return JsonResponse({'success': True, 'message': 'Item updated successfully'})
-    
+
     elif request.method == 'DELETE':
         # Delete item
         item = get_object_or_404(SampleItem, id=item_id)
@@ -3318,36 +3427,32 @@ def api_sample_items_reorder(request):
     """API endpoint to reorder sample items"""
     from django.http import JsonResponse
     import json
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
+
     items = data.get('items', [])
     if not items:
         return JsonResponse({'error': 'No items provided'}, status=400)
-    
+
     try:
         for item_data in items:
             item_id = item_data.get('id')
             order = item_data.get('order', 0)
-            
+
             if item_id:
                 SampleItem.objects.filter(id=item_id).update(order=order)
-        
+
         return JsonResponse({'success': True, 'message': 'Order updated successfully'})
     except Exception as e:
         return JsonResponse({'error': f'Failed to update order: {str(e)}'}, status=500)
 
-
-from django.core.files.base import ContentFile
-import base64
-import uuid
 
 @login_required
 @require_http_methods(["POST"])
@@ -3357,25 +3462,25 @@ def api_sample_item_create(request):
     from django.shortcuts import get_object_or_404
     import json
     from datetime import datetime
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
+
     # Validate required fields
     if not data.get('title'):
         return JsonResponse({'error': 'Title is required'}, status=400)
-    
+
     if not data.get('category_id'):
         return JsonResponse({'error': 'Category is required'}, status=400)
-    
+
     category = get_object_or_404(SampleCategory, id=data['category_id'])
-    
+
     item = SampleItem(
         category=category,
         title=data['title'],
@@ -3386,13 +3491,14 @@ def api_sample_item_create(request):
         order=data.get('order', 0),
         is_active=data.get('is_active', True),
     )
-    
+
     if 'project_date' in data and data['project_date']:
         try:
-            item.project_date = datetime.strptime(data['project_date'], '%Y-%m-%d').date()
+            item.project_date = datetime.strptime(
+                data['project_date'], '%Y-%m-%d').date()
         except ValueError:
             pass
-    
+
     # Handle image upload from file
     if 'image' in request.FILES:
         item.image = request.FILES['image']
@@ -3403,22 +3509,22 @@ def api_sample_item_create(request):
             image_data = data['image_data']
             if ',' in image_data:
                 image_data = image_data.split(',')[1]
-            
+
             # Decode base64
             image_bytes = base64.b64decode(image_data)
-            
+
             # Create a unique filename
             filename = f"sample_{uuid.uuid4().hex}.jpg"
-            
+
             # Save to ImageField
             item.image.save(filename, ContentFile(image_bytes))
         except Exception as e:
             return JsonResponse({'error': f'Failed to process image: {str(e)}'}, status=400)
-    
+
     item.save()
-    
+
     return JsonResponse({
-        'success': True, 
+        'success': True,
         'message': 'Item created successfully',
         'item': {
             'id': item.id,
@@ -3435,27 +3541,27 @@ def api_sample_category_create(request):
     from django.http import JsonResponse
     from django.utils.text import slugify
     import json
-    
+
     user = request.user
     if not (user.is_superuser or (hasattr(user, 'profile') and user.profile.user_role == 'admin')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
+
     # Validate required fields
     if not data.get('name'):
         return JsonResponse({'error': 'Name is required'}, status=400)
-    
+
     # Generate slug
     slug = data.get('slug') or slugify(data['name'])
-    
+
     # Check for duplicate slug
     if SampleCategory.objects.filter(slug=slug).exists():
         return JsonResponse({'error': 'A category with this slug already exists'}, status=400)
-    
+
     category = SampleCategory(
         name=data['name'],
         slug=slug,
@@ -3464,11 +3570,11 @@ def api_sample_category_create(request):
         order=data.get('order', 0),
         is_active=data.get('is_active', True),
     )
-    
+
     category.save()
-    
+
     return JsonResponse({
-        'success': True, 
+        'success': True,
         'message': 'Category created successfully',
         'category': {
             'id': category.id,
@@ -3484,18 +3590,18 @@ def api_upload_cover_photo(request):
     """API endpoint to upload cover photo via AJAX."""
     import json
     from django.core.files.uploadedfile import InMemoryUploadedFile
-    
+
     try:
         data = json.loads(request.body)
         cover_cropped_image_data = data.get('cover_cropped_image_data')
-        
+
         if not cover_cropped_image_data:
             return JsonResponse({'success': False, 'error': 'No cover photo data provided'}, status=400)
-        
+
         # Get the presenta user
         user = request.user
         presenta_user = get_presenta_user_safe(user)
-        
+
         # Process the base64 image data
         try:
             format_part, imgstr = cover_cropped_image_data.split(';base64,')
@@ -3506,14 +3612,14 @@ def api_upload_cover_photo(request):
             # Save as JPEG with high quality to balance quality and file size
             image.save(img_io, format='JPEG', quality=98)
             img_io.seek(0)
-            
+
             filename = f"cover_{user.id}_{uuid.uuid4().hex[:8]}.jpg"
             cropped_file = InMemoryUploadedFile(
                 img_io, None, filename, 'image/jpeg', img_io.tell(), None
             )
             presenta_user.cover_photo = cropped_file
             presenta_user.save()
-            
+
             return JsonResponse({'success': True, 'message': 'Cover photo uploaded successfully'})
         except Exception as e:
             print(f"Error processing cover image: {e}")
@@ -3533,13 +3639,13 @@ def api_clear_cover_photo(request):
         # Get the presenta user
         user = request.user
         presenta_user = get_presenta_user_safe(user)
-        
+
         # Clear the cover photo
         if presenta_user.cover_photo:
             presenta_user.cover_photo.delete(save=True)
         presenta_user.cover_photo = None
         presenta_user.save()
-        
+
         return JsonResponse({'success': True, 'message': 'Cover photo cleared successfully'})
     except Exception as e:
         print(f"Error clearing cover photo: {e}")
