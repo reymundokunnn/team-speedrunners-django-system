@@ -9,7 +9,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner, Report
 from django.utils import timezone
 import uuid
 from PIL import Image
@@ -126,7 +126,7 @@ def api_search_users(request):
 
     query = request.GET.get('q', '').strip()
 
-    if len(query) < 2:
+    if len(query) < 1:
         return JsonResponse({'users': []})
 
     # Search in both Django User and Presenta User models
@@ -142,6 +142,11 @@ def api_search_users(request):
     for django_user in django_users:
         try:
             presenta_user = PresentaUser.objects.get(auth_user=django_user)
+
+            # Skip admin users
+            if presenta_user.user_role == 'admin':
+                continue
+
             role = presenta_user.user_role
 
             # Get user's full name
@@ -170,8 +175,8 @@ def api_search_users(request):
             }
 
             # Get profile picture if available
-            if hasattr(django_user, 'profile_picture') and django_user.profile_picture:
-                user_data['profile_picture'] = django_user.profile_picture.url
+            if presenta_user.profile_picture:
+                user_data['profile_picture'] = presenta_user.profile_picture.url
 
             users.append(user_data)
         except PresentaUser.DoesNotExist:
@@ -691,16 +696,23 @@ def admin_dashboard(request):
     except Exception:
         user_tz = 'UTC'
 
+    all_reports = Report.objects.select_related('reporter', 'target_user').order_by('-created_at')
+
     context = {
         'profile': profile,
         'all_requests': all_requests,
         'all_users': all_users,
+        'all_reports': all_reports,
         'activities': activities,
         'total_users': all_users.count(),
         'total_requests': all_requests.count(),
         'pending_requests': all_requests.filter(status='pending').count(),
         'in_progress': all_requests.filter(status='in_progress').count(),
         'completed': all_requests.filter(status='completed').count(),
+        'pending_reports': all_reports.filter(status='pending').count(),
+        'under_review_reports': all_reports.filter(status='under_review').count(),
+        'resolved_reports': all_reports.filter(status='resolved').count(),
+        'dismissed_reports': all_reports.filter(status='dismissed').count(),
         'user_timezone': user_tz,
         'show_search_bar': True,
     }
@@ -2838,6 +2850,50 @@ def ban_user(request):
             return JsonResponse({'success': True, 'message': 'User banned'})
     from django.http import JsonResponse
     return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def manage_report(request, report_id):
+    """Admin endpoint to update report status and take limited actions."""
+    from django.http import JsonResponse
+
+    if not is_admin_user(request):
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+    report = get_object_or_404(Report, id=report_id)
+    action = request.POST.get('action')
+
+    if action == 'under_review':
+        report.status = 'under_review'
+    elif action == 'resolve':
+        report.status = 'resolved'
+    elif action == 'dismiss':
+        report.status = 'dismissed'
+    elif action == 'ban_user':
+        report.status = 'resolved'
+        try:
+            target_presenta = PresentaUser.objects.get(auth_user=report.target_user)
+            target_presenta.is_banned = True
+            target_presenta.user_role = 'banned'
+            target_presenta.save()
+            report.target_user.is_active = False
+            report.target_user.save()
+        except PresentaUser.DoesNotExist:
+            pass
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
+
+    report.save()
+
+    log_activity(
+        user=request.user,
+        activity_type='user_updated',
+        message=f"Report #{report.id} set to {report.status}",
+        target_user=report.target_user
+    )
+
+    return JsonResponse({'success': True, 'message': 'Report updated'})
 
 
 @login_required(login_url='signin')

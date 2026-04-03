@@ -56,6 +56,11 @@
                         <span>Completed</span>
                         <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
                     </div>
+                    <div class="stat-card">
+                        <div class="number pending">{{ pending_reports }}</div>
+                        <span>Pending Reports</span>
+                        <img src="{% static 'img/dashboard/pending.png' %}" alt="Reports">
+                    </div>
                 </div>
                 
                 <!-- Dashboard Widgets - Improved UX Layout -->
@@ -658,6 +663,56 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="dashboard-section-content">
+                <div class="admin-header-flex">
+                    <div class="left">
+                        <h1 id="greeting-reports">Reports <span class="orange">Management</span></h1>
+                        <span class="count-badge">{{ all_reports|length }} reports</span>
+                    </div>
+                </div>
+                <div class="admin-section-full">
+                    {% if all_reports %}
+                    <div class="table-container">
+                        <table class="admin-table reports-table">
+                            <thead>
+                                <tr>
+                                    <th>Reporter</th>
+                                    <th>Target User</th>
+                                    <th>Category</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in all_reports %}
+                                <tr data-report-id="{{ report.id }}">
+                                    <td>{{ report.reporter.username }}</td>
+                                    <td>{{ report.target_user.username }}</td>
+                                    <td>{{ report.category|default:"N/A" }}</td>
+                                    <td>{{ report.reason|truncatechars:60 }}</td>
+                                    <td><span class="status-badge status-{{ report.status }}">{{ report.get_status_display }}</span></td>
+                                    <td>{{ report.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="updateReportStatus({{ report.id }}, 'under_review')">Review</button>
+                                        <button class="btn btn-sm btn-success" onclick="updateReportStatus({{ report.id }}, 'resolve')">Resolve</button>
+                                        <button class="btn btn-sm btn-secondary" onclick="updateReportStatus({{ report.id }}, 'dismiss')">Dismiss</button>
+                                        <button class="btn btn-sm btn-danger" onclick="updateReportStatus({{ report.id }}, 'ban_user')">Ban User</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state"><span>No reports to review</span></div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
         </div>
 
@@ -1145,6 +1200,53 @@ function fetchSystemStatus() {
         .catch(error => {
             console.error('Error fetching system status:', error);
         });
+}
+
+function updateReportStatus(reportId, action) {
+    const csrftoken = getCookie('csrftoken');
+    fetch(`/manage/report/${reportId}/action/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken
+        },
+        body: `action=${encodeURIComponent(action)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.querySelector(`tr[data-report-id="${reportId}"]`);
+            if (row) {
+                if (action === 'dismiss' || action === 'resolve' || action === 'under_review') {
+                    row.querySelector('td:nth-child(5) .status-badge').textContent = action.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    row.querySelector('td:nth-child(5) .status-badge').className = `status-badge status-${action === 'resolve' ? 'resolved' : action}`;
+                }
+                if (action === 'ban_user') {
+                    row.querySelector('td:nth-child(5) .status-badge').textContent = 'Resolved';
+                    row.querySelector('td:nth-child(5) .status-badge').className = 'status-badge status-resolved';
+                }
+            }
+            if (typeof showNotification === 'function') {
+                showNotification(data.message || 'Report updated successfully', 'success');
+            } else {
+                alert(data.message || 'Report updated successfully');
+            }
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification(data.error || 'Could not update report', 'error');
+            } else {
+                alert(data.error || 'Could not update report');
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Report update failed', err);
+        if (typeof showNotification === 'function') {
+            showNotification('Error updating report', 'error');
+        } else {
+            alert('Error updating report');
+        }
+    });
 }
 
 // Start system status updates when page loads

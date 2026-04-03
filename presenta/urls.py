@@ -41,10 +41,10 @@ urlpatterns = [
     # Profile
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
-    path('profile/<str:username>/', views.profile_view, name='profile_detail'),
     path('profile/block/', views.block_user, name='block_user'),
     path('profile/report/', views.report_user, name='report_user'),
     path('profile/ban/', views.ban_user, name='ban_user'),
+    path('profile/<str:username>/', views.profile_view, name='profile_detail'),
 
     # Favorite Designers
     path('api/favorite-designer/', views.toggle_favorite_designer,
@@ -83,6 +83,10 @@ urlpatterns = [
          views.approve_admin, name='approve_admin'),
     path('manage/admin/<int:user_id>/reject/',
          views.reject_admin, name='reject_admin'),
+
+    # Report management
+    path('manage/report/<int:report_id>/action/',
+         views.manage_report, name='manage_report'),
 
     # Activity management
     path('activities/clear/', views.clear_activities, name='clear_activities'),

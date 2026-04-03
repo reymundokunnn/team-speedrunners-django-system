@@ -88,10 +88,32 @@
                         <div class="profile-header-section">
                             <h1 class="profile-name">
                                 {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
+                                {% if target.user_role == 'designer' and not is_self %}
+                                <span id="profileFavoriteIcon" class="profile-favorite-icon {% if viewer_favorited %}favorited{% endif %}" role="button"
+                                    aria-label="{% if viewer_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}"
+                                    title="{% if viewer_favorited %}Favorited{% else %}Not favorited{% endif %}" data-designer-id="{{ target_django.id }}">
+                                    {% if viewer_favorited %}♥{% else %}♡{% endif %}
+                                </span>
+                                {% endif %}
                             </h1>
                             <span class="profile-username">
                                 @{{ target.username }}
                             </span>
+
+                             {% if not is_self %}
+                             <div class="profile-options-menu">
+                                 <button type="button" id="moreOptionsBtn" class="more-options-btn" aria-haspopup="true" aria-expanded="false" aria-label="More profile options">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         <circle cx="12" cy="5" r="1"></circle>
+                                         <circle cx="12" cy="12" r="1"></circle>
+                                         <circle cx="12" cy="19" r="1"></circle>
+                                     </svg>
+                                 </button>
+                                 <div id="moreOptionsMenu" class="more-options-dropdown" hidden>
+                                     <button type="button" id="reportUserBtn" class="more-options-item">Report user</button>
+                                 </div>
+                             </div>
+                             {% endif %}
 
                             <div class="profile-meta">
                                 {% if target.is_superuser %}z
@@ -142,21 +164,7 @@
                             <span class="profile-bio"></span>
                             {% endif %}
 
-                            {% if target.user_role == 'designer' and not is_self %}
-                            <div class="profile-favorite-btn-wrapper">
-                                <span class="favorite-star-icon" aria-hidden="true">{% if viewer_favorited %}★{% else
-                                    %}☆{% endif %}</span>
-                                <button type="button"
-                                    class="favorite-toggle-btn {% if viewer_favorited %}favorited{% endif %}"
-                                    data-designer-id="{{ target_django.id }}"
-                                    data-favorited="{% if viewer_favorited %}true{% else %}false{% endif %}"
-                                    aria-label="{% if viewer_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}"
-                                    title="{% if viewer_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}">
-                                    <span class="favorite-btn-text">{% if viewer_favorited %}Favorited{% else %}Add to
-                                        Favorites{% endif %}</span>
-                                </button>
-                            </div>
-                            {% endif %}
+
                         </div>
                         <div class="profile-stats">
                             <div class="stat-card">
@@ -189,7 +197,7 @@
                                 </div>
                             </div>
                             {% if is_self %}
-                            <div class="stat-card stat-card-profile-favorite">
+                            <div class="stat-card stat-card-profile-favorite" data-designer-id="{{ target_django.id }}">
                                 <div class="stat-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -570,14 +578,117 @@
                         </h2>
                         <button class="modal-close">&times;</button>
                     </div>
-                    <div class="modal-body">
-                        <textarea id="reportReason" placeholder="Describe the issue..." rows="4"
-                            maxlength="500"></textarea>
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary modal-cancel">Cancel</button>
-                            <button class="btn btn-primary confirm-report">Submit Report</button>
-                        </div>
-                    </div>
+                     <div class="modal-body">
+                         <!-- Step 1: Select Reason -->
+                         <div class="report-step report-step-1 active">
+                             <p>Please select the reason for reporting this user:</p>
+                             <form id="reportForm">
+                                 <div class="radio-group">
+                                     <label>
+                                         <input type="radio" name="reason" value="spam">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="10"></circle>
+                                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Spam or unwanted content</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="harassment">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                                 <line x1="12" y1="9" x2="12" y2="13"></line>
+                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Harassment or bullying</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="inappropriate">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="10"></circle>
+                                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Inappropriate content</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="fraud">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                 <line x1="1" y1="10" x2="23" y2="10"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Fraud or scam</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="other">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="3"></circle>
+                                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                             </svg>
+                                         </div>
+                                         <span>Other</span>
+                                     </label>
+                                 </div>
+                                 <div id="otherReasonContainer" style="display:none;">
+                                     <textarea id="otherReason" placeholder="Please describe the issue..." rows="3" maxlength="500"></textarea>
+                                 </div>
+                             </form>
+                             <div class="modal-actions">
+                                 <button class="btn btn-secondary modal-cancel">Cancel</button>
+                                 <button class="btn btn-primary report-next-btn" disabled>Next</button>
+                             </div>
+                         </div>
+                         <!-- Step 2: What Happens Next -->
+                         <div class="report-step report-step-2">
+                             <div class="report-explanation">
+                                 <h4>What happens next?</h4>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <circle cx="11" cy="11" r="8"></circle>
+                                             <path d="M21 21l-4.35-4.35"></path>
+                                             <circle cx="11" cy="11" r="3"></circle>
+                                         </svg>
+                                     </div>
+                                     <p>Your report will be reviewed by our moderation team. We take all reports seriously and investigate them promptly.</p>
+                                 </div>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                             <polyline points="14,2 14,8 20,8"></polyline>
+                                             <line x1="16" y1="13" x2="8" y2="13"></line>
+                                             <line x1="16" y1="17" x2="8" y2="17"></line>
+                                             <polyline points="10,9 9,9 8,9"></polyline>
+                                         </svg>
+                                     </div>
+                                     <p>If the report is found to be valid, appropriate action may be taken against the user, such as warning, suspension, or permanent ban.</p>
+                                 </div>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                             <circle cx="12" cy="16" r="1"></circle>
+                                             <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                         </svg>
+                                     </div>
+                                     <p>You will not receive updates on the status of your report to protect user privacy.</p>
+                                 </div>
+                             </div>
+                             <div class="modal-actions">
+                                 <button class="btn btn-secondary report-back-btn">Back</button>
+                                 <button class="btn btn-primary confirm-report" disabled>Submit Report</button>
+                             </div>
+                         </div>
+                     </div>
                 </div>
             </div>
 
@@ -767,8 +878,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         console.log('DOMContentLoaded event fired!');
         // Favorite toggle functionality
+        const favoriteIcon = document.getElementById('profileFavoriteIcon');
         const favoriteBtn = document.querySelector('.favorite-toggle-btn');
         const favoriteStatCard = document.querySelector('.stat-card-profile-favorite');
+        console.log('favoriteIcon:', favoriteIcon);
         console.log('favoriteBtn:', favoriteBtn);
         console.log('favoriteStatCard:', favoriteStatCard);
 
@@ -852,10 +965,10 @@
                                 textSpan.textContent = isFavorited ? 'Favorited' : 'Add to Favorites';
                             }
 
-                            // Toggle star text (☆ hollow, ★ filled)
+                            // Toggle heart text (♡ hollow, ♥ filled)
                             const starIcon = btn.parentElement.querySelector('.favorite-star-icon');
                             if (starIcon) {
-                                starIcon.textContent = isFavorited ? '★' : '☆';
+                                starIcon.textContent = isFavorited ? '♥' : '♡';
                                 // Trigger animation when favoriting
                                 if (isFavorited) {
                                     starIcon.style.animation = 'none';
@@ -863,6 +976,15 @@
                                     starIcon.style.animation = 'starPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                                 }
                             }
+                        }
+
+                        // Update the inline profile favorite icon
+                        const profileFavoriteIcon = document.getElementById('profileFavoriteIcon');
+                        if (profileFavoriteIcon) {
+                            profileFavoriteIcon.classList.toggle('favorited', isFavorited);
+                            profileFavoriteIcon.textContent = isFavorited ? '♥' : '♡';
+                            profileFavoriteIcon.setAttribute('aria-label', isFavorited ? 'Remove from favorites' : 'Add to favorites');
+                            profileFavoriteIcon.setAttribute('title', isFavorited ? 'Favorited' : 'Not favorited');
                         }
 
                         // Update the stat card favorite icon
@@ -900,18 +1022,19 @@
                 });
         }
 
-        // Attach click handler to favorite toggle button
-        if (favoriteBtn) {
-            console.log('Favorite button found:', favoriteBtn);
-            console.log('Designer ID:', favoriteBtn.dataset.designerId);
-            favoriteBtn.addEventListener('click', function () {
-                console.log('Favorite button clicked!');
-                const designerId = this.dataset.designerId;
-                console.log('Calling toggleFavorite with designerId:', designerId);
-                toggleFavorite(designerId, this);
-            });
+        // Attach click handler to inline profile favorite icon
+        if (favoriteIcon) {
+            console.log('Profile favorite icon found:', favoriteIcon);
+            const designerId = favoriteIcon.dataset.designerId;
+            if (designerId) {
+                favoriteIcon.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    console.log('Profile favorite icon clicked!');
+                    toggleFavorite(designerId, favoriteIcon);
+                });
+            }
         } else {
-            console.log('No favorite button found');
+            console.log('No profile favorite icon found');
         }
 
         // Attach click handler to stat card (for quick toggle)
@@ -924,6 +1047,187 @@
                 }
             });
         }
+
+        // More options menu handling
+        const moreOptionsBtn = document.getElementById('moreOptionsBtn');
+        const moreOptionsMenu = document.getElementById('moreOptionsMenu');
+        const reportUserBtn = document.getElementById('reportUserBtn');
+        const reportModal = document.getElementById('reportModal');
+
+        console.log('moreOptionsBtn:', moreOptionsBtn);
+        console.log('moreOptionsMenu:', moreOptionsMenu);
+        console.log('reportUserBtn:', reportUserBtn);
+        console.log('reportModal:', reportModal);
+
+        if (moreOptionsBtn && moreOptionsMenu) {
+            moreOptionsBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                const expanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', String(!expanded));
+                moreOptionsMenu.hidden = expanded;
+            });
+
+            document.addEventListener('click', function () {
+                if (!moreOptionsMenu.hidden) {
+                    moreOptionsMenu.hidden = true;
+                    moreOptionsBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        if (reportUserBtn && reportModal) {
+            console.log('Adding click handler to reportUserBtn');
+            reportUserBtn.addEventListener('click', function (event) {
+                console.log('reportUserBtn clicked!');
+                event.stopPropagation();
+                moreOptionsMenu.hidden = true;
+                moreOptionsBtn.setAttribute('aria-expanded', 'false');
+                console.log('Adding active class to reportModal');
+                reportModal.classList.add('active');
+                console.log('reportModal classList:', reportModal.classList);
+            });
+        }
+
+        // Report modal functionality
+        const reportForm = document.getElementById('reportForm');
+        const reportNextBtn = document.querySelector('.report-next-btn');
+        const reportBackBtn = document.querySelector('.report-back-btn');
+        const confirmReportBtn = document.querySelector('.confirm-report');
+        const otherReasonContainer = document.getElementById('otherReasonContainer');
+        const radioButtons = document.querySelectorAll('input[name="reason"]');
+        const reportStep1 = document.querySelector('.report-step-1');
+        const reportStep2 = document.querySelector('.report-step-2');
+
+        function updateNextButton() {
+            const selectedReason = document.querySelector('input[name="reason"]:checked');
+            reportNextBtn.disabled = !selectedReason;
+        }
+
+        function handleReasonChange() {
+            // Remove selected class from all labels
+            document.querySelectorAll('.radio-group label').forEach(label => label.classList.remove('selected'));
+
+            const selectedRadio = document.querySelector('input[name="reason"]:checked');
+            if (selectedRadio) {
+                selectedRadio.closest('label').classList.add('selected');
+                const selectedValue = selectedRadio.value;
+                if (selectedValue === 'other') {
+                    otherReasonContainer.style.display = 'block';
+                } else {
+                    otherReasonContainer.style.display = 'none';
+                }
+            } else {
+                otherReasonContainer.style.display = 'none';
+            }
+            updateNextButton();
+        }
+
+        radioButtons.forEach(function(radio) {
+            radio.addEventListener('change', handleReasonChange);
+        });
+
+        // Handle Next button
+        reportNextBtn.addEventListener('click', function() {
+            reportStep1.classList.remove('active');
+            reportStep2.classList.add('active');
+            confirmReportBtn.disabled = false; // Enable submit since reason is selected
+        });
+
+        // Handle Back button
+        reportBackBtn.addEventListener('click', function() {
+            reportStep2.classList.remove('active');
+            reportStep1.classList.add('active');
+            confirmReportBtn.disabled = true;
+        });
+
+        // Reset form when modal is closed
+        document.querySelectorAll('.modal-close, .modal-overlay, .modal-cancel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (this.closest('#reportModal')) {
+                    // Reset form
+                    reportForm.reset();
+                    otherReasonContainer.style.display = 'none';
+                    reportNextBtn.disabled = true;
+                    confirmReportBtn.disabled = true;
+                    // Reset to step 1
+                    reportStep1.classList.add('active');
+                    reportStep2.classList.remove('active');
+                }
+            });
+        });
+
+        // Handle report submission
+        confirmReportBtn.addEventListener('click', function() {
+            const selectedReason = document.querySelector('input[name="reason"]:checked');
+            if (!selectedReason) return;
+
+            let reason = selectedReason.value;
+            if (reason === 'other') {
+                const otherText = document.getElementById('otherReason').value.trim();
+                if (!otherText) {
+                    showToast('Please describe the issue for "Other"', 'error');
+                    return;
+                }
+                reason = otherText;
+            }
+
+            // Disable button and show loading
+            confirmReportBtn.disabled = true;
+            confirmReportBtn.textContent = 'Submitting...';
+
+            // Send report to server
+            const formData = new FormData();
+            formData.append('user_id', '{{ target_django.id }}');
+            formData.append('reason', reason);
+
+            fetch('{% url "report_user" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Report submitted successfully', 'success');
+                    closeModal(reportModal);
+                } else {
+                    showToast('Error submitting report: ' + (data.error || 'Unknown error'), 'error');
+                    confirmReportBtn.disabled = false;
+                    confirmReportBtn.textContent = 'Submit Report';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error submitting report', 'error');
+                confirmReportBtn.disabled = false;
+                confirmReportBtn.textContent = 'Submit Report';
+            });
+        });
+
+        function closeModal(modal) {
+            console.log('closeModal called with:', modal);
+            if (modal) {
+                console.log('Removing active class');
+                modal.classList.remove('active');
+                console.log('modal classList after:', modal.classList);
+            }
+        }
+
+        document.querySelectorAll('.modal-close').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const modal = this.closest('.modal');
+                closeModal(modal);
+            });
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+            overlay.addEventListener('click', function () {
+                const modal = this.closest('.modal');
+                closeModal(modal);
+            });
+        });
 
         // Attach click handler to remove favorite buttons in My Favorites section
         const removeFavoriteBtns = document.querySelectorAll('.btn-remove-favorite');
@@ -1013,6 +1317,82 @@
 {% block styles %}
 <style>
     /* Favorite Toggle Button - Modern Filled Style */
+    .profile-header-section {
+        position: relative;
+    }
+
+    .profile-favorite-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 18px;
+        margin-left: 10px;
+        color: #f59e0b;
+        background: rgba(248, 113, 37, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .profile-favorite-icon:hover {
+        transform: scale(1.08);
+        background: rgba(248, 113, 37, 0.18);
+    }
+
+    .profile-favorite-icon.favorited {
+        color: #d97706;
+        background: rgba(245, 158, 11, 0.18);
+    }
+
+    .profile-options-menu {
+        position: absolute;
+        top: 12px;
+        right: 0;
+    }
+
+    .more-options-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        color: #64748b;
+    }
+
+    .more-options-btn:hover {
+        background: rgba(148, 163, 184, 0.2);
+    }
+
+    .more-options-dropdown {
+        position: absolute;
+        top: 36px;
+        right: 0;
+        min-width: 160px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        border-radius: 10px;
+        z-index: 20;
+        border: 1px solid #e2e8f0;
+    }
+
+    .more-options-item {
+        display: block;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 14px;
+        color: #1f2937;
+        cursor: pointer;
+    }
+
+    .more-options-item:hover {
+        background: #f8fafc;
+    }
+
     .profile-favorite-btn-wrapper {
         display: inline-flex;
         align-items: center;
@@ -1357,6 +1737,230 @@
     .my-favorites-section .empty-state p {
         color: var(--text-muted, #6b7280);
         margin: 0;
+    }
+
+    /* Report Modal Styles */
+    .radio-group {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-color, #1f2937);
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+
+    .radio-group label:hover {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .radio-group label.selected {
+        border-color: #f97316;
+        background: rgba(249, 115, 22, 0.1);
+        color: #1f2937;
+    }
+
+    .radio-group input[type="radio"] {
+        display: none;
+    }
+
+    .radio-group label::before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .radio-group label.selected::before {
+        border-color: #f97316;
+        background: #f97316;
+        box-shadow: inset 0 0 0 3px #ffffff;
+    }
+
+    .radio-option-icon {
+        width: 24px;
+        height: 24px;
+        color: #6b7280;
+        flex-shrink: 0;
+        transition: color 0.2s ease;
+    }
+
+    .radio-group label.selected .radio-option-icon {
+        color: #f97316;
+    }
+
+    #otherReasonContainer textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+        margin-top: 8px;
+    }
+
+    #otherReasonContainer textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+    .report-explanation {
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .report-explanation h4 {
+        margin: 0 0 20px 2px;
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-color, #1f2937);
+    }
+
+    .report-explanation p {
+        margin: 8px 0;
+        font-size: 14px;
+        color: var(--text-muted, #6b7280);
+        line-height: 1.5;
+    }
+
+    body.dark-mode .radio-group label {
+        color: #f9fafb;
+        background: #374151;
+        border-color: #4b5563;
+    }
+
+    body.dark-mode .radio-group label:hover {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+    }
+
+    body.dark-mode .radio-group label.selected {
+        border-color: #f97316;
+        background: rgba(249, 115, 22, 0.15);
+        color: #f9fafb;
+    }
+
+    body.dark-mode .radio-group label::before {
+        border-color: #4b5563;
+    }
+
+    body.dark-mode .radio-group label.selected::before {
+        border-color: #f97316;
+        background: #f97316;
+        box-shadow: inset 0 0 0 3px #ffffff;
+    }
+
+    body.dark-mode .radio-option-icon {
+        color: #9ca3af;
+    }
+
+    body.dark-mode .radio-group label.selected .radio-option-icon {
+        color: #f97316;
+    }
+
+    body.dark-mode #otherReasonContainer textarea {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    body.dark-mode #otherReasonContainer textarea:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+
+    body.dark-mode .report-explanation {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    body.dark-mode .report-explanation h4,
+    body.dark-mode .report-explanation p {
+        color: #e5e7eb;
+    }
+
+    body.dark-mode .explanation-item {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    body.dark-mode .explanation-icon {
+        color: #f97316;
+        background: rgba(249, 115, 22, 0.15);
+    }
+
+    body.dark-mode .modal-body p {
+        color: #f9fafb;
+    }
+
+    /* Report Modal Steps */
+    .report-step {
+        display: none;
+    }
+
+    .report-step.active {
+        display: block;
+    }
+
+    .explanation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: rgba(245, 158, 11, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(245, 158, 11, 0.1);
+    }
+
+    .explanation-icon {
+        flex-shrink: 0;
+        color: #f97316;
+        margin-top: 2px;
+        background: rgba(249, 115, 22, 0.1);
+        padding: 6px;
+        border-radius: 6px;
+    }
+
+    .explanation-item p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-body p {
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .modal-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
     }
 </style>
 {% endblock %}

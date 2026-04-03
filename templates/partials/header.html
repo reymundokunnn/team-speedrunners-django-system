@@ -479,7 +479,7 @@
             }
 
             // Hide dropdown if query is too short
-            if (query.length < 2) {
+            if (query.length < 1) {
                 searchDropdown.innerHTML = '';
                 searchDropdown.style.display = 'none';
                 return;
@@ -497,9 +497,27 @@
                         if (data.users && data.users.length > 0) {
                             let html = '';
                             data.users.forEach(user => {
-                                const roleIcon = user.role === 'designer' ?
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' :
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                                // Get role display text and styling
+                                let roleDisplay = '';
+                                let roleClass = '';
+
+                                if (user.role === 'designer') {
+                                    roleDisplay = 'Designer';
+                                    roleClass = 'role-designer';
+                                } else if (user.role === 'user') {
+                                    roleDisplay = 'Client';
+                                    roleClass = 'role-client';
+                                }
+
+                                // Function to highlight matching text
+                                function highlightMatch(text, query) {
+                                    if (!query) return text;
+                                    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                                    return text.replace(regex, '<span class="search-highlight">$1</span>');
+                                }
+
+                                const highlightedName = highlightMatch(user.name, query);
+
                                 html += `
                                 <a href="/profile/${user.username}/" class="search-result-item">
                                     <div class="search-result-avatar">
@@ -509,8 +527,10 @@
                                     }
                                     </div>
                                     <div class="search-result-info">
-                                        <span class="search-result-name">${user.name}</span>
-                                        <span class="search-result-role">${roleIcon} ${user.role}</span>
+                                        <div class="search-result-name-row">
+                                            <span class="search-result-name">${highlightedName}</span>
+                                            ${roleDisplay ? `<span class="search-result-role-badge ${roleClass}">${roleDisplay}</span>` : ''}
+                                        </div>
                                     </div>
                                 </a>
                             `;
