@@ -1,6 +1,7 @@
 from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -540,6 +541,40 @@ def user_dashboard(request):
 
 
 @login_required(login_url='signin')
+def download_receipt(request, request_id):
+    """Generate and download a PDF receipt for a completed design request."""
+    design_request = get_object_or_404(DesignRequest, pk=request_id, requester=request.user)
+
+    if design_request.status != 'completed':
+        return redirect('user_dashboard')
+
+    logo_path = request.build_absolute_uri('/static/img/logo.png')
+
+    context = {
+        'request': design_request,
+        'user': request.user,
+        'receipt_number': f"REC-{design_request.id:06d}",
+        'generated_at': timezone.now(),
+        'currency_code': design_request.currency or 'USD',
+        'logo_path': logo_path,
+    }
+
+    html_string = render_to_string('receipts/receipt.html', context, request=request)
+
+    try:
+        from weasyprint import HTML
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    except Exception as e:
+        # fallback to HTML render if PDF generation fails
+        print(f"WeasyPrint error: {e}")
+        return HttpResponse(html_string)
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="receipt-{design_request.id}.pdf"'
+    return response
+
+
+@login_required(login_url='signin')
 def designer_dashboard(request):
     """Dashboard for designers - manage design requests."""
     user = request.user
@@ -697,27 +732,29 @@ def request_design(request):
             deadline=deadline if deadline else None,
         )
 
-        # If client selected a preferred designer from their favorites
+        # If client selected a preferred designer from their favorites, assign directly.
         if preferred_designer_id:
+            # Ignore non-numeric values such as the divider item and blank selection
             try:
-                preferred_designer = DjangoUser.objects.get(
-                    id=preferred_designer_id)
-                # Verify the selected user is a designer
+                preferred_designer = DjangoUser.objects.get(id=int(preferred_designer_id))
+            except (DjangoUser.DoesNotExist, ValueError, TypeError):
+                preferred_designer = None
+
+            if preferred_designer:
                 try:
-                    designer_profile = PresentaUser.objects.get(
-                        auth_user=preferred_designer)
+                    designer_profile = PresentaUser.objects.get(auth_user=preferred_designer)
                     if designer_profile.user_role == 'designer':
-                        # Log the preference - the designer can see this request as a suggestion
+                        design_request.designer = preferred_designer
+                        design_request.save(update_fields=['designer'])
+
                         log_activity(
                             user=user,
-                            activity_type='request_submitted',
-                            message=f"Submitted request with preference for {preferred_designer.get_full_name() or preferred_designer.username}.",
+                            activity_type='designer_assigned',
+                            message=f"Submitted request assigned to {preferred_designer.get_full_name() or preferred_designer.username}.",
                             related_request=design_request
                         )
                 except PresentaUser.DoesNotExist:
                     pass
-            except DjangoUser.DoesNotExist:
-                pass
 
         # handle file uploads
         files = request.FILES.getlist('reference_files')
@@ -820,6 +857,48 @@ def complete_design_request(request, request_id):
             )
 
     return redirect('designer_dashboard')
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def request_revision(request, request_id):
+    """Client requests a revision for a completed design request."""
+    user = request.user
+    design_request = get_object_or_404(DesignRequest, id=request_id)
+
+    # Only the requester can ask for revisions
+    if design_request.requester != user:
+        return JsonResponse({'error': 'Access denied.'}, status=403)
+
+    if design_request.status != 'completed':
+        return JsonResponse({'error': 'Revision can only be requested for completed designs.'}, status=400)
+
+    revision_notes = request.POST.get('revision_notes', '').strip()
+
+    design_request.status = 'in_progress'
+    design_request.completed_at = None
+    design_request.revision_notes = revision_notes
+    design_request.save()
+
+    log_activity(
+        user=user,
+        activity_type='revision_requested',
+        message=f"Revision requested for '{design_request.title}'.",
+        related_request=design_request
+    )
+
+    if design_request.designer:
+        log_activity(
+            user=design_request.designer,
+            activity_type='revision_requested',
+            message=f"Revision requested for '{design_request.title}' by client.",
+            related_request=design_request
+        )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Revision requested successfully. The designer will be notified.'
+    })
 
 
 @login_required(login_url='signin')

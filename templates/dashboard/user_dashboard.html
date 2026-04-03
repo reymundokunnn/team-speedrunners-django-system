@@ -646,6 +646,18 @@
                 <option value="poster">Poster</option>
             </select>
 
+            <label for="preferred_designer">Designer Assignment</label>
+            <select id="preferred_designer" name="preferred_designer" class="preferred-designer-select">
+                <option value="" selected>Open to any designer (Available Requests for all designers)</option>
+                {% if favorite_designers %}
+                <option value="manual" disabled>──────────</option>
+                {% for designer in favorite_designers %}
+                <option value="{{ designer.designer__id }}">{{ designer.designer__first_name|default:designer.designer__username }} {{ designer.designer__last_name|default:"" }} ★</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+            <small class="form-hint">Leave as "Open to any designer" to post to Available Requests, or choose a favorite to assign directly.</small>
+
             <label for="project_title">Project Title/Topic *</label>
             <input type="text" id="project_title" name="title" placeholder="Enter your project title or topic" required>
 

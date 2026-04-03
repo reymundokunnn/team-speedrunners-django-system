@@ -16,6 +16,8 @@ urlpatterns = [
     path('dashboard/designer/', views.designer_dashboard,
          name='designer_dashboard'),
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/receipt/<int:request_id>/', views.download_receipt,
+         name='download_receipt'),
 
     # Design request actions
     path('design-request/create/', views.request_design, name='request_design'),
@@ -29,6 +31,8 @@ urlpatterns = [
          views.cancel_design_request, name='cancel_design_request'),
     path('design-request/<int:request_id>/update-status/',
          views.update_design_status, name='update_design_status'),
+    path('design-request/<int:request_id>/request-revision/',
+         views.request_revision, name='request_revision'),
     path('design-request/<int:request_id>/delete/',
          views.delete_design_request, name='delete_design_request'),
     path('design-request/<int:request_id>/edit/',

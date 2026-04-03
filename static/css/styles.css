@@ -1200,7 +1200,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -3413,7 +3413,6 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     width: 90%;
     max-width: 500px;
     max-height: 70vh;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
