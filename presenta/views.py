@@ -696,7 +696,7 @@ def admin_dashboard(request):
     except Exception:
         user_tz = 'UTC'
 
-    all_reports = Report.objects.select_related('reporter', 'target_user').order_by('-created_at')
+    all_reports = Report.objects.select_related('reporter__presenta_user', 'target_user__presenta_user').order_by('-created_at')
 
     context = {
         'profile': profile,
@@ -2744,7 +2744,7 @@ def profile_view(request, username=None):
     if is_self and target_presenta.user_role == 'user':
         my_favorite_designers = list(FavoriteDesigner.objects.filter(
             client=request.user
-        ).select_related('designer').order_by('-created_at'))
+        ).select_related('designer__profile__presenta_user').order_by('-created_at'))
 
     # Recent activities (public)
     activities = Activity.objects.filter(
