@@ -1,8 +1,26 @@
+## Quick Reference (Do This Every Time)
+
+PULL → CODE → PULL → RESOLVE (if needed) → PUSH
+
+Commands:
+
+```id="l9v3hz"
+git pull origin main
+# make changes
+git pull origin main
+# resolve conflicts if any
+git push origin main
+```
+
+Never skip the second pull.
+
+---
+
 ## Critical Git Workflow Policy (READ THIS BEFORE PUSHING)
 
-This project is shared by multiple developers. Because of that, **keeping your local copy in sync with the repository is not optional — it is required**.
+This project is shared by multiple developers. Because of that, keeping your local copy in sync with the repository is required.
 
-Failure to follow the correct workflow has already caused **real problems in this project**, including broken parts of the web app and **loss of newly developed features**. This section explains exactly what you must do and what to do if conflicts happen.
+Failure to follow the correct workflow has already caused real problems in this project, including broken parts of the web app and loss of newly developed features. This section explains exactly what you must do and how to properly handle merge conflicts.
 
 ---
 
@@ -12,7 +30,7 @@ Before you push any code, you MUST follow these steps in order:
 
 ### 1. Pull the latest changes before starting any work
 
-```
+```id="0p5hvw"
 git pull origin main
 ```
 
@@ -24,73 +42,73 @@ Work on your feature, fix, or update as needed.
 
 ---
 
-### 3. Pull AGAIN before pushing (THIS IS THE MOST IMPORTANT STEP)
+### 3. Pull AGAIN before pushing (most important step)
 
-```
+```id="l71t0c"
 git pull origin main
 ```
 
 ---
 
-### 4. If conflicts appear, resolve them properly (see guide below)
+### 4. Resolve any conflicts if they appear (see guide below)
 
 ---
 
 ### 5. Push your changes
 
-```
+```id="f4ot4e"
 git push origin main
 ```
 
 ---
 
-## What Happens If You Skip These Steps?
+## What Happens If You Skip These Steps
 
-This is not theoretical — **THE FOLLOWING ALREADY HAPPENED IN THIS PROJECT**:
+This has already happened in this project:
 
 * Parts of the web app broke
 * Newly added features were lost
 * Other developers’ work was overwritten
-* The app became inconsistent and unstable
+* The application became unstable and inconsistent
 
 ---
 
-## When a Merge Conflict Happens...
+## When a Merge Conflict Happens
 
-A conflict happens when:
+A merge conflict happens when:
 
-* You changed a file
-* Someone else also changed the same part of that file
-* Git cannot decide which version to keep
+* You modified a file
+* Another developer modified the same part of that file
+* Git cannot automatically decide which version to keep
 
-You will see something like this in your files:
+You will see markers like this inside the file:
 
-    ```
+```id="1l2n6o"
     <<<<<<< HEAD
     your code
     =======
     incoming code
     >>>>>>> branch-name
-    ```
-
----
-
-## How to Resolve Conflicts
-
-You have **three main options**, depending on what you want:
-
----
-
-### Option A: Keep the NEW incoming code (discard your changes)
-
-Use this if:
-
-* Your changes are not important
-* The other developer’s version is the correct one
-
-Steps:
-
 ```
+
+---
+
+## How to Properly Read Conflict Markers
+
+* `<<<<<<< HEAD` → your current local code
+* `=======` → separator
+* `>>>>>>> branch-name` → incoming code from repository
+
+Simple view:
+
+TOP = your version
+BOTTOM = incoming version
+
+---
+
+## Option A: Keep the Incoming Code Only
+
+```id="84lf9p"
 git checkout --theirs .
 git add .
 git commit -m "Resolved conflicts by keeping incoming changes"
@@ -98,16 +116,9 @@ git commit -m "Resolved conflicts by keeping incoming changes"
 
 ---
 
-### Option B: Keep YOUR current code (ignore incoming changes)
+## Option B: Keep Your Current Code Only
 
-Use this if:
-
-* You are sure your version is correct
-* You want to override what was pulled
-
-Steps:
-
-```
+```id="xg61l7"
 git checkout --ours .
 git add .
 git commit -m "Resolved conflicts by keeping local changes"
@@ -115,84 +126,96 @@ git commit -m "Resolved conflicts by keeping local changes"
 
 ---
 
-### Option C: Manually merge both (MOST COMMON and SAFEST)
+## Option C: Manually Merge Both Versions (Recommended)
 
-Use this if:
+### Step-by-step guide
 
-* Both versions are important
-* You need to combine changes
+1. Open the file with conflict markers
 
-Steps:
+Example:
 
-1. Open the conflicted file
-
-2. Look for:
-
-   ```
+```id="06ztkj"
     <<<<<<< HEAD
-   your code
-   =======
-   incoming code
-   >>>>>>> branch-name
-   ```
-
-3. Edit the file:
-
-   * Remove the markers (`<<<<<<<`, `=======`, `>>>>>>>`)
-   * Combine or choose the correct code
-
-4. Then run:
-
+    const title = "Old Title";
+    =======
+    const title = "New Title";
+    >>>>>>> main
 ```
+
+---
+
+2. Decide the final result
+
+Keep one or combine:
+
+```id="q9p7c0"
+const title = "New Title";
+```
+
+---
+
+3. Remove ALL conflict markers
+
+Delete:
+
+    <<<<<<< HEAD
+    * =======
+    >>>>>>> main
+
+---
+
+4. Save the file
+
+---
+
+5. Mark as resolved
+
+```id="o9rqhn"
 git add .
+```
+
+---
+
+6. Commit
+
+```id="wcb0qq"
 git commit -m "Manually resolved merge conflicts"
 ```
 
 ---
 
-## Important Notes When Resolving Conflicts
+## Important Rules When Resolving Conflicts
 
-* NEVER leave conflict markers in the code
-* ALWAYS test the app after resolving conflicts
-* If unsure, ASK before pushing
-* DO NOT randomly delete code just to fix the conflict quickly
+* Never leave conflict markers in the code
+* Always review both versions carefully
+* Do not delete code blindly
+* Test the app after resolving conflicts
+* Ask if unsure
 
 ---
 
-## Why Pulling Twice Is Necessary
+## Why Pulling Twice Is Required
 
-Even if you pulled at the start:
-
-* Other developers may have pushed changes while you were working
+Even if you pulled at the start, other developers may have pushed changes while you were working.
 
 The second pull:
 
-* Syncs your work again
-* Prevents overwriting others
-* Reduces risk of breaking the app
-
----
-
-## Golden Rule
-
-**PULL → CODE → PULL → RESOLVE (if needed) → PUSH**
-
-Never skip the second pull.
+* Updates your branch again
+* Prevents overwriting others’ work
+* Reduces the risk of breaking the application
 
 ---
 
 ## Final Reminder
 
-This is a **required workflow**, not a suggestion.
+This is a required workflow for this repository.
 
 We have already experienced:
 
-* Broken features
-* Lost work
-* Time wasted fixing avoidable issues
+* Broken functionality
+* Lost features
+* Wasted time fixing avoidable issues
 
-All because of skipping simple Git steps.
+All of these were caused by skipping basic Git steps.
 
-**Please follow this process every time to protect the project and everyone’s work.**
-
-~ Reymundo (reymundokunnn)
+Following this process protects the project and everyone’s work.
