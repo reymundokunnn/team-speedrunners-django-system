@@ -1183,7 +1183,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showToast('Report submitted successfully', 'success');
+                    showToast(`Report submitted successfully. Report ID: ${data.report_id}`, 'success');
                     closeModal(reportModal);
                 } else {
                     showToast('Error submitting report: ' + (data.error || 'Unknown error'), 'error');

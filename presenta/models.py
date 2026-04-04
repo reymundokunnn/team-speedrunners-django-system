@@ -121,7 +121,14 @@ class Report(models.Model):
         max_length=100, blank=True, help_text="e.g., spam, harassment")
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='pending')
+    report_uid = models.CharField(max_length=64, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.report_uid:
+            import uuid
+            self.report_uid = f"REPORT-{uuid.uuid4().hex[:16].upper()}"
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = ['reporter', 'target_user']

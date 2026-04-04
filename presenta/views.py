@@ -2814,7 +2814,7 @@ def report_user(request):
         if user_id and reason:
             target_django = get_object_or_404(DjangoUser, id=user_id)
             if target_django != request.user:
-                Report.objects.create(
+                report = Report.objects.create(
                     reporter=request.user,
                     target_user=target_django,
                     reason=reason[:500]
@@ -2826,7 +2826,7 @@ def report_user(request):
                     target_user=target_django
                 )
                 from django.http import JsonResponse
-                return JsonResponse({'success': True, 'message': 'Report submitted'})
+                return JsonResponse({'success': True, 'message': 'Report submitted', 'report_id': report.report_uid})
     from django.http import JsonResponse
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
@@ -2838,8 +2838,10 @@ def ban_user(request):
         if user_id:
             target_presenta = get_object_or_404(PresentaUser, id=user_id)
             target_presenta.is_banned = True
-            target_presenta.user_role = 'banned'
             target_presenta.save()
+            # Deactivate auth user to prevent login
+            target_presenta.auth_user.is_active = False
+            target_presenta.auth_user.save()
             log_activity(
                 user=request.user,
                 activity_type='user_updated',
@@ -2853,15 +2855,104 @@ def ban_user(request):
 
 
 @login_required(login_url='signin')
-@require_http_methods(["POST"])
-def manage_report(request, report_id):
-    """Admin endpoint to update report status and take limited actions."""
+@require_http_methods(["GET"])
+def manage_report_detail(request, report_id):
+    """Admin endpoint to fetch report details."""
     from django.http import JsonResponse
+    from django.contrib.staticfiles.storage import staticfiles_storage
 
     if not is_admin_user(request):
         return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
 
     report = get_object_or_404(Report, id=report_id)
+
+    try:
+        reporter_presenta = PresentaUser.objects.get(auth_user=report.reporter)
+        target_presenta = PresentaUser.objects.get(auth_user=report.target_user)
+    except PresentaUser.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User data not found'}, status=404)
+
+    default_avatar = staticfiles_storage.url('img/default-avatar.png')
+
+    report_data = {
+        'id': report.id,
+        'uid': report.report_uid,
+        'reporter': {
+            'id': report.reporter.id,
+            'username': report.reporter.username,
+            'name': f"{reporter_presenta.first_name} {reporter_presenta.last_name}",
+            'email': report.reporter.email,
+            'avatar': reporter_presenta.profile_picture.url if reporter_presenta.profile_picture else default_avatar,
+        },
+        'target_user': {
+            'id': report.target_user.id,
+            'username': report.target_user.username,
+            'name': f"{target_presenta.first_name} {target_presenta.last_name}",
+            'email': report.target_user.email,
+            'avatar': target_presenta.profile_picture.url if target_presenta.profile_picture else default_avatar,
+            'is_banned': target_presenta.is_banned,
+        },
+        'category': report.category,
+        'reason': report.reason,
+        'content': None,  # No content field in model
+        'status': report.status,
+        'status_display': report.get_status_display(),
+        'created_at': report.created_at.strftime('%B %d, %Y at %I:%M %p'),
+        'updated_at': None,  # No updated_at field
+    }
+    return JsonResponse({'success': True, 'report': report_data})
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def manage_report(request, report_id):
+    """Admin endpoint to fetch report details or update report status and take limited actions."""
+    from django.http import JsonResponse
+    from django.contrib.staticfiles.storage import staticfiles_storage
+
+    if not is_admin_user(request):
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+    report = get_object_or_404(Report, id=report_id)
+
+    if request.method == 'GET':
+        # Return report details
+        try:
+            reporter_presenta = PresentaUser.objects.get(auth_user=report.reporter)
+            target_presenta = PresentaUser.objects.get(auth_user=report.target_user)
+        except PresentaUser.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User data not found'}, status=404)
+
+        default_avatar = staticfiles_storage.url('img/default-avatar.png')
+
+        report_data = {
+            'id': report.id,
+            'reporter': {
+                'id': report.reporter.id,
+                'username': report.reporter.username,
+                'name': f"{reporter_presenta.first_name} {reporter_presenta.last_name}",
+                'email': report.reporter.email,
+                'avatar': reporter_presenta.profile_picture.url if reporter_presenta.profile_picture else default_avatar,
+            },
+            'target_user': {
+                'id': report.target_user.id,
+                'username': report.target_user.username,
+                'name': f"{target_presenta.first_name} {target_presenta.last_name}",
+                'email': report.target_user.email,
+                'avatar': target_presenta.profile_picture.url if target_presenta.profile_picture else default_avatar,
+                'is_banned': target_presenta.is_banned,
+            },
+            'category': report.category,
+            'reason': report.reason,
+            'content': None,  # No content field in model
+            'status': report.status,
+            'status_display': report.get_status_display(),
+            'created_at': report.created_at.strftime('%B %d, %Y at %I:%M %p'),
+            'updated_at': None,  # No updated_at field
+        }
+        return JsonResponse({'success': True, 'report': report_data})
+
+    # POST for actions
     action = request.POST.get('action')
 
     if action == 'under_review':
@@ -2875,12 +2966,24 @@ def manage_report(request, report_id):
         try:
             target_presenta = PresentaUser.objects.get(auth_user=report.target_user)
             target_presenta.is_banned = True
-            target_presenta.user_role = 'banned'
             target_presenta.save()
             report.target_user.is_active = False
             report.target_user.save()
         except PresentaUser.DoesNotExist:
             pass
+    elif action == 'unban_user':
+        report.status = 'resolved'
+        try:
+            target_presenta = PresentaUser.objects.get(auth_user=report.target_user)
+            target_presenta.is_banned = False
+            target_presenta.save()
+            report.target_user.is_active = True
+            report.target_user.save()
+        except PresentaUser.DoesNotExist:
+            pass
+    elif action == 'delete_report':
+        report.delete()
+        return JsonResponse({'success': True, 'message': 'Report deleted'})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
 

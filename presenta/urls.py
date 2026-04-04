@@ -85,6 +85,8 @@ urlpatterns = [
          views.reject_admin, name='reject_admin'),
 
     # Report management
+    path('manage/report/<int:report_id>/',
+         views.manage_report_detail, name='manage_report_detail'),
     path('manage/report/<int:report_id>/action/',
          views.manage_report, name='manage_report'),
 

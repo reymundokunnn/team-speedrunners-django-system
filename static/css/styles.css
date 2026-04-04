@@ -15970,5 +15970,71 @@ body.dark-mode .social-link:hover {
 #reportModal .modal-content {
     margin: auto;
     max-height: calc(100vh - 60px);
-    width: min(90%, 500px);
+    width: min(90%, 700px);
 }
+
+/* Report Details Modal Content Styles */
+.report-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.report-section {
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+body.dark-mode .report-section {
+    border-color: #444;
+    background: #2a2a2a;
+}
+
+.report-section h3 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+body.dark-mode .report-section h3 {
+    color: #e0e0e0;
+}
+
+.report-info p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+    color: #555;
+}
+
+body.dark-mode .report-info p {
+    color: #ccc;
+}
+
+.report-info strong {
+    color: #333;
+    font-weight: 600;
+}
+
+body.dark-mode .report-info strong {
+    color: #e0e0e0;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-pending { background: #fff3cd; color: #856404; }
+.status-under_review { background: #cce5ff; color: #004085; }
+.status-resolved { background: #d4edda; color: #155724; }
+.status-dismissed { background: #f8d7da; color: #721c24; }
+
+body.dark-mode .status-pending { background: #4d3c0a; color: #ffeb3b; }
+body.dark-mode .status-under_review { background: #0a2a4d; color: #90caf9; }
+body.dark-mode .status-resolved { background: #1b4d1b; color: #81c784; }
+body.dark-mode .status-dismissed { background: #4d1b1b; color: #ef5350; }
