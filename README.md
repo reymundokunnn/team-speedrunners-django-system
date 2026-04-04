@@ -1,4 +1,4 @@
-## 🚨 Critical Git Workflow Policy (READ THIS BEFORE PUSHING)
+## Critical Git Workflow Policy (READ THIS BEFORE PUSHING)
 
 This project is shared by multiple developers. Because of that, **keeping your local copy in sync with the repository is not optional — it is required**.
 
@@ -6,7 +6,7 @@ Failure to follow the correct workflow has already caused **real problems in thi
 
 ---
 
-## 🔁 Required Workflow (Do This Every Time)
+## Required Workflow (Do This Every Time)
 
 Before you push any code, you MUST follow these steps in order:
 
@@ -44,7 +44,7 @@ git push origin main
 
 ---
 
-## ⚠️ What Happens If You Skip These Steps
+## What Happens If You Skip These Steps?
 
 This is not theoretical — **THE FOLLOWING ALREADY HAPPENED IN THIS PROJECT**:
 
@@ -55,7 +55,7 @@ This is not theoretical — **THE FOLLOWING ALREADY HAPPENED IN THIS PROJECT**:
 
 ---
 
-## ❗ When a Merge Conflict Happens
+## When a Merge Conflict Happens...
 
 A conflict happens when:
 
@@ -75,13 +75,13 @@ incoming code
 
 ---
 
-## 🛠 How to Resolve Conflicts
+## How to Resolve Conflicts
 
 You have **three main options**, depending on what you want:
 
 ---
 
-### ✅ Option 1: Keep the NEW incoming code (discard your changes)
+### Option A: Keep the NEW incoming code (discard your changes)
 
 Use this if:
 
@@ -98,7 +98,7 @@ git commit -m "Resolved conflicts by keeping incoming changes"
 
 ---
 
-### ✅ Option 2: Keep YOUR current code (ignore incoming changes)
+### Option B: Keep YOUR current code (ignore incoming changes)
 
 Use this if:
 
@@ -115,7 +115,7 @@ git commit -m "Resolved conflicts by keeping local changes"
 
 ---
 
-### ✅ Option 3: Manually merge both (MOST COMMON and SAFEST)
+### Option C: Manually merge both (MOST COMMON and SAFEST)
 
 Use this if:
 
@@ -129,7 +129,7 @@ Steps:
 2. Look for:
 
    ```
-   <<<<<<< HEAD
+    <<<<<<< HEAD
    your code
    =======
    incoming code
@@ -154,8 +154,8 @@ git commit -m "Manually resolved merge conflicts"
 
 * NEVER leave conflict markers in the code
 * ALWAYS test the app after resolving conflicts
-* If unsure, ask before pushing
-* Do not randomly delete code just to fix the conflict quickly
+* If unsure, ASK before pushing
+* DO NOT randomly delete code just to fix the conflict quickly
 
 ---
 
