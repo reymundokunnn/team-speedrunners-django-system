@@ -1,7 +1,6 @@
 # Presenta 
-
 A student-friendly design commission service web app.
----
+
 
 ## 🚨 Required Git Workflow (Must Be Followed)
 
@@ -55,7 +54,7 @@ Even small changes can cause big problems if the repository is not up to date.
 
 ---
 
-## ❗ This Has Already Caused Problems
+## ❗ This Has Already Caused Problems!
 
 We have already experienced parts of the project breaking because this workflow was not followed.
 
@@ -111,3 +110,5 @@ No exceptions.
 ---
 
 Thank you for following this — it helps keep the project running smoothly for everyone.
+
+- Reymundo
