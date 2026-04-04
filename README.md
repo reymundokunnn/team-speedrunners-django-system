@@ -4,7 +4,7 @@ PULL → CODE → PULL → RESOLVE (if needed) → PUSH
 
 Commands:
 
-```id="l9v3hz"
+```bash
 git pull origin main
 # make changes
 git pull origin main
@@ -26,37 +26,25 @@ Failure to follow the correct workflow has already caused real problems in this 
 
 ## Required Workflow (Do This Every Time)
 
-Before you push any code, you MUST follow these steps in order:
+### 1. Pull before starting
 
-### 1. Pull the latest changes before starting any work
-
-```id="0p5hvw"
+```bash
 git pull origin main
 ```
 
----
+### 2. Make your changes
 
-### 2. Make your changes locally
+### 3. Pull again before pushing
 
-Work on your feature, fix, or update as needed.
-
----
-
-### 3. Pull AGAIN before pushing (most important step)
-
-```id="l71t0c"
+```bash
 git pull origin main
 ```
 
----
+### 4. Resolve conflicts (if any)
 
-### 4. Resolve any conflicts if they appear (see guide below)
+### 5. Push
 
----
-
-### 5. Push your changes
-
-```id="f4ot4e"
+```bash
 git push origin main
 ```
 
@@ -69,153 +57,195 @@ This has already happened in this project:
 * Parts of the web app broke
 * Newly added features were lost
 * Other developers’ work was overwritten
-* The application became unstable and inconsistent
+* The application became unstable
 
 ---
 
 ## When a Merge Conflict Happens
 
-A merge conflict happens when:
+You will see something like this in your file:
 
-* You modified a file
-* Another developer modified the same part of that file
-* Git cannot automatically decide which version to keep
-
-You will see markers like this inside the file:
-
-```id="1l2n6o"
+```js
+function greet() {
     <<<<<<< HEAD
-    your code
+    return "Hello from my version";
     =======
-    incoming code
-    >>>>>>> branch-name
+    return "Hello from teammate version";
+    >>>>>>> main
+}
 ```
 
 ---
 
-## How to Properly Read Conflict Markers
+## How to Visualize the Conflict
 
-* `<<<<<<< HEAD` → your current local code
-* `=======` → separator
-* `>>>>>>> branch-name` → incoming code from repository
+Think of it like this:
 
-Simple view:
-
-TOP = your version
-BOTTOM = incoming version
+```text
+<<<<<<< HEAD        ← YOUR CODE (local)
+your code here
+=======             ← separator
+incoming code here
+>>>>>>> main        ← THEIR CODE (from repo)
+```
 
 ---
 
-## Option A: Keep the Incoming Code Only
+## More Real Examples
 
-```id="84lf9p"
+### Example 1: Variable change
+
+```js
+    let apiUrl = "http://localhost:3000";   // your version
+    =======
+    let apiUrl = "https://api.production.com"; // incoming version
+    >>>>>>> main
+```
+
+---
+
+### Example 2: Function update
+
+```js
+function calculateTotal(price, tax) {
+    <<<<<<< HEAD
+    return price + tax;
+    =======
+    return price + tax + 10; // added service fee
+    >>>>>>> main
+}
+```
+
+---
+
+### Example 3: UI text change
+
+```html
+<h1>
+    <<<<<<< HEAD
+    Welcome User
+    =======
+    Welcome Back, User
+    >>>>>>> main
+</h1>
+```
+
+---
+
+## Option A: Keep Incoming Code Only
+
+```bash
 git checkout --theirs .
 git add .
-git commit -m "Resolved conflicts by keeping incoming changes"
+git commit -m "Keep incoming changes"
 ```
 
 ---
 
-## Option B: Keep Your Current Code Only
+## Option B: Keep Your Code Only
 
-```id="xg61l7"
+```bash
 git checkout --ours .
 git add .
-git commit -m "Resolved conflicts by keeping local changes"
+git commit -m "Keep local changes"
 ```
 
 ---
 
-## Option C: Manually Merge Both Versions (Recommended)
+## Option C: Manually Merge (Recommended)
 
-### Step-by-step guide
+### Step-by-step
 
-1. Open the file with conflict markers
+#### 1. Find the conflict
 
-Example:
-
-```id="06ztkj"
+```js
+function greet() {
     <<<<<<< HEAD
-    const title = "Old Title";
+    return "Hello from my version";
     =======
-    const title = "New Title";
+    return "Hello from teammate version";
     >>>>>>> main
+}
 ```
 
 ---
 
-2. Decide the final result
+#### 2. Choose the final result
 
-Keep one or combine:
+**Option: keep yours**
 
-```id="q9p7c0"
-const title = "New Title";
+```js
+function greet() {
+  return "Hello from my version";
+}
+```
+
+**Option: keep theirs**
+
+```js
+function greet() {
+  return "Hello from teammate version";
+}
+```
+
+**Option: combine both**
+
+```js
+function greet() {
+  return "Hello from my version and teammate version";
+}
 ```
 
 ---
 
-3. Remove ALL conflict markers
+#### 3. Remove ALL markers
 
-Delete:
+Make sure these are completely deleted:
 
+```text
     <<<<<<< HEAD
-    * =======
+    =======
     >>>>>>> main
+```
 
 ---
 
-4. Save the file
+#### 4. Mark resolved
 
----
-
-5. Mark as resolved
-
-```id="o9rqhn"
+```bash
 git add .
 ```
 
 ---
 
-6. Commit
+#### 5. Commit
 
-```id="wcb0qq"
-git commit -m "Manually resolved merge conflicts"
+```bash
+git commit -m "Manually resolved conflicts"
 ```
 
 ---
 
-## Important Rules When Resolving Conflicts
+## Important Rules
 
-* Never leave conflict markers in the code
-* Always review both versions carefully
+* Never leave `<<<<<<<`, `=======`, or `>>>>>>>` in the code
+* Always read both versions before deciding
 * Do not delete code blindly
-* Test the app after resolving conflicts
+* Test the app after resolving
 * Ask if unsure
-
----
-
-## Why Pulling Twice Is Required
-
-Even if you pulled at the start, other developers may have pushed changes while you were working.
-
-The second pull:
-
-* Updates your branch again
-* Prevents overwriting others’ work
-* Reduces the risk of breaking the application
 
 ---
 
 ## Final Reminder
 
-This is a required workflow for this repository.
+This is a required workflow.
 
-We have already experienced:
+We already experienced:
 
-* Broken functionality
-* Lost features
-* Wasted time fixing avoidable issues
+* Broken features
+* Lost work
+* Time wasted fixing avoidable issues
 
-All of these were caused by skipping basic Git steps.
+All caused by skipping basic Git steps.
 
-Following this process protects the project and everyone’s work.
+Follow this process every time.
