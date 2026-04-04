@@ -65,13 +65,13 @@ A conflict happens when:
 
 You will see something like this in your files:
 
-```
-\<<<<<<< HEAD
-your code
-=======
-incoming code
-\>>>>>>> branch-name
-```
+    ```
+    <<<<<<< HEAD
+    your code
+    =======
+    incoming code
+    >>>>>>> branch-name
+    ```
 
 ---
 
@@ -150,7 +150,7 @@ git commit -m "Manually resolved merge conflicts"
 
 ---
 
-## ⚠️ Important Notes When Resolving Conflicts
+## Important Notes When Resolving Conflicts
 
 * NEVER leave conflict markers in the code
 * ALWAYS test the app after resolving conflicts
@@ -159,7 +159,7 @@ git commit -m "Manually resolved merge conflicts"
 
 ---
 
-## 🧠 Why Pulling Twice Is Necessary
+## Why Pulling Twice Is Necessary
 
 Even if you pulled at the start:
 
@@ -173,7 +173,7 @@ The second pull:
 
 ---
 
-## ✅ Golden Rule
+## Golden Rule
 
 **PULL → CODE → PULL → RESOLVE (if needed) → PUSH**
 
@@ -181,7 +181,7 @@ Never skip the second pull.
 
 ---
 
-## 📌 Final Reminder
+## Final Reminder
 
 This is a **required workflow**, not a suggestion.
 
