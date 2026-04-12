@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt - {{ receipt_number }}</title>
+    {% load file_filters %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Liberation Sans', Arial, sans-serif;
+            background: #f8f9fa;
+            padding: 40px;
+            color: #212529;
+        }
+        
+        .receipt-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .receipt-header {
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .receipt-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .receipt-header .receipt-number {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .receipt-body {
+            padding: 40px;
+        }
+        
+        .receipt-section {
+            margin-bottom: 30px;
+        }
+        
+        .receipt-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6c757d;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .info-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .project-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .project-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 10px;
+        }
+        
+        .project-description {
+            font-size: 0.95rem;
+            color: #495057;
+            line-height: 1.6;
+        }
+        
+        .amount-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .amount-label {
+            font-size: 0.9rem;
+            color: #388e3c;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .amount-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        
+        .receipt-footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .footer-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        .footer-logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #e87f14;
+            margin-top: 15px;
+        }
+        
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            
+            .receipt-container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+        
+        @page {
+            size: A4;
+            margin: 0.5cm;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <img src="{{ logo_path }}" alt="logo" style="height: 80px; margin-bottom: 20px;">
+            <h1>Payment Receipt</h1>
+        </div>
+        
+        <div class="receipt-body">
+            <div class="receipt-section">
+                <div class="section-title">Receipt Information</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Generated On</span>
+                        <span class="info-value">{{ generated_at|date:"F d, Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Receipt Number</span>
+                        <span class="info-value">{{ receipt_number }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="receipt-section">
+                <div class="section-title">Customer Information</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Name</span>
+                        <span class="info-value">{{ user.first_name }} {{ user.last_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ user.email }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="receipt-section">
+                <div class="section-title">Project Details</div>
+                <div class="project-details">
+                    <div class="project-title">{{ request.title }}</div>
+                    <div class="project-description">{{ request.description }}</div>
+                </div>
+                <div class="info-grid" style="margin-top: 20px;">
+                    <div class="info-item">
+                        <span class="info-label">Design Type</span>
+                        <span class="info-value">{{ request.get_design_type_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Completed On</span>
+                        <span class="info-value">{{ request.completed_at|date:"F d, Y" }}</span>
+                    </div>
+                    {% if request.designer %}
+                    <div class="info-item">
+                        <span class="info-label">Designer</span>
+                        <span class="info-value">{{ request.designer.first_name }} {{ request.designer.last_name }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="amount-section">
+                <div class="amount-label">Total Amount Paid</div>
+                <div class="amount-value">{{ request.budget|currency_format:currency_code }}</div>
+            </div>
+        </div>
+        
+        <div class="receipt-footer">
+            <div class="footer-text">
+                Thank you for your business! This receipt confirms payment for the design services rendered.
+                <br>
+                For any inquiries, please contact our support team.
+            </div>
+            <div class="footer-logo">Presenta</div>
+        </div>
+    </div>
+</body>
+</html>

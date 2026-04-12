@@ -224,6 +224,14 @@
                 <div class="designs">
                     <div class="design-requests">
                         {% if design_requests %}
+                        <!-- Filter Tabs -->
+                        <div class="design-request-filter-tabs">
+                            <button class="filter-tab active" data-filter="all">All</button>
+                            <button class="filter-tab" data-filter="pending">Pending</button>
+                            <button class="filter-tab" data-filter="in_progress">In Progress</button>
+                            <button class="filter-tab" data-filter="for_payment">For Payment</button>
+                            <button class="filter-tab" data-filter="completed">Completed</button>
+                        </div>
                         <div class="bulk-actions-bar" id="designRequestsBulkActions">
                             <span id="selectedDesignCount">0 design requests selected</span>
                             <button class="btn btn-danger" onclick="bulkDeleteDesignRequests()">
@@ -250,7 +258,7 @@
                         </thead>
                         <tbody>
                             {% for request in design_requests %}
-                            <tr data-request-id="{{ request.id }}">
+                            <tr data-request-id="{{ request.id }}" data-status="{{ request.status }}">
                                 <td style="text-align: center;">
                                     <input type="checkbox" class="design-request-checkbox" value="{{ request.id }}" onchange="updateDesignRequestBulkActions()">
                                 </td>
@@ -479,9 +487,9 @@
                             <span class="payment-card-label">Total Budget</span>
                             <span class="payment-card-value">
                                 {% if total_budget %}
-                                    {{ total_budget|currency_format:request.currency }}
+                                    {{ total_budget|currency_format:user_currency }}
                                 {% else %}
-                                    $0.00
+                                    {{ user_currency|currency_symbol }}0.00
                                 {% endif %}
                             </span>
                         </div>
@@ -494,9 +502,9 @@
                             <span class="payment-card-label">Pending Payment</span>
                             <span class="payment-card-value">
                                 {% if pending_payment_amount %}
-                                    {{ pending_payment_amount|currency_format:request.currency }}
+                                    {{ pending_payment_amount|currency_format:user_currency }}
                                 {% else %}
-                                    $0.00
+                                    {{ user_currency|currency_symbol }}0.00
                                 {% endif %}
                             </span>
                         </div>
@@ -509,9 +517,9 @@
                             <span class="payment-card-label">Completed</span>
                             <span class="payment-card-value">
                                 {% if completed_payment_amount %}
-                                    {{ completed_payment_amount|currency_format:request.currency }}
+                                    {{ completed_payment_amount|currency_format:user_currency }}
                                 {% else %}
-                                    $0.00
+                                    {{ user_currency|currency_symbol }}0.00
                                 {% endif %}
                             </span>
                         </div>
@@ -568,7 +576,7 @@
                                         </td>
                                         <td class="budget-cell">
                                             {% if request.budget %}
-                                                <span class="budget-amount">{{ request.currency|default:'USD' }} {{ request.budget }}</span>
+                                                <span class="budget-amount">{{ user_currency|currency_symbol }}{{ request.budget }}</span>
                                             {% else %}
                                                 <span class="no-budget">Not set</span>
                                             {% endif %}
@@ -595,7 +603,7 @@
                                             {% if request.status == 'for_payment' %}
                                                 <button class="btn-pay-now">Pay Now</button>
                                             {% elif request.status == 'completed' %}
-                                                <button class="btn-view-receipt">Receipt</button>
+                                                <a href="{% url 'download_receipt' request.id %}" class="btn-view-receipt" target="_blank">Receipt</a>
                                             {% else %}
                                                 <span class="no-action">-</span>
                                             {% endif %}
@@ -637,6 +645,18 @@
                 <option value="infographic">Infographic</option>
                 <option value="poster">Poster</option>
             </select>
+
+            <label for="preferred_designer">Designer Assignment</label>
+            <select id="preferred_designer" name="preferred_designer" class="preferred-designer-select">
+                <option value="" selected>Open to all designers</option>
+                {% if favorite_designers %}
+                <option value="manual" disabled>──────────</option>
+                {% for designer in favorite_designers %}
+                <option value="{{ designer.designer__id }}">{{ designer.designer__first_name|default:designer.designer__username }} {{ designer.designer__last_name|default:"" }} ★</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+            <small class="form-hint">Leave as "Open to all designers" to post to their Available Requests, or choose a favorite to assign directly.</small>
 
             <label for="project_title">Project Title/Topic *</label>
             <input type="text" id="project_title" name="title" placeholder="Enter your project title or topic" required>
@@ -924,5 +944,173 @@
         </div>
     </div>
 </div>
+
+<script>
+// Pay Now button functionality
+document.querySelectorAll('.btn-pay-now').forEach(button => {
+    button.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const projectName = row.querySelector('.project-name').textContent;
+        const budget = row.querySelector('.budget-amount').textContent;
+        
+        // Show payment modal or redirect to payment gateway
+        alert(`Payment functionality for "${projectName}" - Amount: ${budget}\n\nThis would integrate with your payment gateway (e.g., Stripe, PayPal, etc.)`);
+    });
+});
+
+// Receipt download functionality
+document.querySelectorAll('.btn-view-receipt').forEach(link => {
+    link.addEventListener('click', function(e) {
+        // The link already has the correct URL, so we just let it open in a new tab
+        // The receipt will be generated and downloaded as a PDF
+        // User can save it from their browser
+    });
+});
+
+// Payment filter tabs functionality
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        const filter = this.getAttribute('data-filter');
+        const rows = document.querySelectorAll('.payment-row');
+        
+        rows.forEach(row => {
+            const status = row.getAttribute('data-status');
+            let show = false;
+            
+            switch(filter) {
+                case 'all':
+                    show = true;
+                    break;
+                case 'for_payment':
+                    show = status === 'for_payment';
+                    break;
+                case 'completed':
+                    show = status === 'completed';
+                    break;
+                case 'other':
+                    show = status !== 'for_payment' && status !== 'completed';
+                    break;
+            }
+            
+            if (show) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update "no results" message if needed
+        updateNoResultsMessage();
+    });
+});
+
+// Function to show/hide "no results" message
+function updateNoResultsMessage() {
+    const visibleRows = document.querySelectorAll('.payment-row[style=""], .payment-row:not([style])');
+    const visibleCount = Array.from(visibleRows).filter(row => row.style.display !== 'none').length;
+    
+    // Check if there's a no-results message element
+    let noResultsMsg = document.querySelector('.no-results-message');
+    
+    if (visibleCount === 0) {
+        if (!noResultsMsg) {
+            // Create and insert "no results" message
+            const tableContainer = document.querySelector('.payments-table').parentElement;
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'no-results-message empty-state';
+            noResultsMsg.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                <span>No payment records found</span>
+                <p>No payments match the selected filter.</p>
+            `;
+            tableContainer.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'flex';
+    } else {
+        if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+}
+
+// Design Request filter tabs functionality
+document.querySelectorAll('.design-request-filter-tabs .filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.design-request-filter-tabs .filter-tab').forEach(t => t.classList.remove('active'));
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        const filter = this.getAttribute('data-filter');
+        const rows = document.querySelectorAll('.design-requests-table tbody tr');
+        
+        rows.forEach(row => {
+            const status = row.getAttribute('data-status');
+            let show = false;
+            
+            switch(filter) {
+                case 'all':
+                    show = true;
+                    break;
+                case 'pending':
+                    show = status === 'pending';
+                    break;
+                case 'in_progress':
+                    show = status === 'in_progress';
+                    break;
+                case 'for_payment':
+                    show = status === 'for_payment';
+                    break;
+                case 'completed':
+                    show = status === 'completed';
+                    break;
+            }
+            
+            if (show) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update "no results" message if needed
+        updateDesignRequestNoResultsMessage();
+    });
+});
+
+// Function to show/hide "no results" message for design requests
+function updateDesignRequestNoResultsMessage() {
+    const visibleRows = document.querySelectorAll('.design-requests-table tbody tr');
+    const visibleCount = Array.from(visibleRows).filter(row => row.style.display !== 'none').length;
+    
+    // Check if there's a no-results message element
+    let noResultsMsg = document.querySelector('.design-requests-no-results-message');
+    
+    if (visibleCount === 0) {
+        if (!noResultsMsg) {
+            // Create and insert "no results" message
+            const tableContainer = document.querySelector('.design-requests-table').parentElement;
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'design-requests-no-results-message empty-state';
+            noResultsMsg.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                <span>No design requests found</span>
+                <p>No requests match the selected filter.</p>
+            `;
+            tableContainer.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'flex';
+    } else {
+        if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+}
+</script>
 
 {% endblock %}

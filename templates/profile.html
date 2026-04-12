@@ -7,21 +7,21 @@
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% if is_self %}
-            {% if target.user_role == 'admin' %}
-                {% include "partials/sidebar_admin.html" %}
-            {% elif target.user_role == 'designer' %}
-                {% include "partials/sidebar_designer.html" %}
-            {% else %}
-                {% include "partials/sidebar_user.html" %}
-            {% endif %}
+        {% if target.user_role == 'admin' %}
+        {% include "partials/sidebar_admin.html" %}
+        {% elif target.user_role == 'designer' %}
+        {% include "partials/sidebar_designer.html" %}
         {% else %}
-            {% if request.user.user_role == 'admin' %}
-                {% include "partials/sidebar_admin.html" %}
-            {% elif request.user.user_role == 'designer' %}
-                {% include "partials/sidebar_designer.html" %}
-            {% else %}
-                {% include "partials/sidebar_user.html" %}
-            {% endif %}
+        {% include "partials/sidebar_user.html" %}
+        {% endif %}
+        {% else %}
+        {% if request.user.user_role == 'admin' %}
+        {% include "partials/sidebar_admin.html" %}
+        {% elif request.user.user_role == 'designer' %}
+        {% include "partials/sidebar_designer.html" %}
+        {% else %}
+        {% include "partials/sidebar_user.html" %}
+        {% endif %}
         {% endif %}
         <div class="main">
             <!-- Profile Container -->
@@ -29,112 +29,152 @@
                 <!-- Cover Banner -->
                 <div class="profile-cover" id="profileCover">
                     {% if target.cover_photo %}
-                        <img src="{{ target.cover_photo.url }}" alt="Cover Photo" class="cover-photo-image">
+                    <img src="{{ target.cover_photo.url }}" alt="Cover Photo" class="cover-photo-image">
                     {% endif %}
                     <div class="cover-gradient"></div>
                     {% if is_self %}
-                        <button type="button" class="cover-edit-btn" id="coverEditBtn" title="Change Cover Photo">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
-                            </svg>
-                            <span>Change</span>
-                        </button>
-                        {% if target.cover_photo %}
-                        <button type="button" class="cover-clear-btn" id="coverClearBtn" title="Clear Cover Photo">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                            <span>Clear</span>
-                        </button>
-                        {% endif %}
-                        <input type="file" id="cover_photo_input" name="cover_photo" accept="image/*" style="display: none;">
+                    <button type="button" class="cover-edit-btn" id="coverEditBtn" title="Change Cover Photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                            </path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>Change</span>
+                    </button>
+                    {% if target.cover_photo %}
+                    <button type="button" class="cover-clear-btn" id="coverClearBtn" title="Clear Cover Photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Clear</span>
+                    </button>
+                    {% endif %}
+                    <input type="file" id="cover_photo_input" name="cover_photo" accept="image/*"
+                        style="display: none;">
                     {% endif %}
                 </div>
                 <!-- Profile Hero -->
                 <section class="profile-hero">
                     <div class="profile-main-info">
-                            <!-- Avatar -->
-                            <div class="profile-avatar-wrapper">
-                                <div class="profile-avatar-large">
-                                    {% if target.profile_picture %}
-                                        <img src="{{ target.profile_picture.url }}" alt="{{ target.first_name }} {{ target.last_name }}" class="current-profile-picture">
-                                    {% else %}
-                                        <div class="avatar-placeholder">
-                                            {{ target.first_name.0|default:""|add:target.last_name.0|default:""}}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                {% if is_self %}
-                                    <a href="{% url 'edit_profile' %}" class="avatar-edit-btn" title="Edit Profile">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </a>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Name and Role -->
-                            <div class="profile-header-section">
-                                <h1 class="profile-name">
-                                    {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
-                                </h1>
-                                <span class="profile-username">
-                                    @{{ target.username }}
-                                </span>
-                                
-                                <div class="profile-meta">
-                                    {% if target.is_superuser %}
-                                        <span class="role-badge role-owner">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                                            </svg>
-                                            Owner
-                                        </span>
-                                    {% else %}
-                                        <span class="role-badge role-{{ target.user_role }}">
-                                            {{ target.get_user_role_display }}
-                                        </span>
-                                    {% endif %}
-                                    {% if target.user_role == 'designer' and stats.average_rating > 0 %}
-                                    <span class="designer-rating-badge">
-                                        <span class="rating-stars">
-                                            {% for i in "12345" %}
-                                                {% if forloop.counter <= stats.average_rating %}
-                                                    <span class="star filled">★</span>
-                                                {% else %}
-                                                    <span class="star">★</span>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </span>
-                                        <span class="rating-value">{{ stats.average_rating }}</span>
-                                        <span class="rating-count">({{ stats.rating_count }})</span>
-                                    </span>
-                                    {% else %}
-                                    <span class="join-date">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                                        </svg>
-                                        Joined {{ target.created_at|date:"M Y" }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-                                {% if target.bio %}
-                                <span class="profile-bio">{{target.bio}}</span>
+                        <!-- Avatar -->
+                        <div class="profile-avatar-wrapper">
+                            <div class="profile-avatar-large">
+                                {% if target.profile_picture %}
+                                <img src="{{ target.profile_picture.url }}"
+                                    alt="{{ target.first_name }} {{ target.last_name }}"
+                                    class="current-profile-picture">
                                 {% else %}
-                                <span class="profile-bio"></span>
+                                <div class="avatar-placeholder">
+                                    {{ target.first_name|first|default:""|add:target.last_name|first|default:""}}
+                                </div>
                                 {% endif %}
                             </div>
-                            <div class="profile-stats">
+                            {% if is_self %}
+                            <a href="{% url 'edit_profile' %}" class="avatar-edit-btn" title="Edit Profile">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <!-- Name and Role -->
+                        <div class="profile-header-section">
+                            <h1 class="profile-name">
+                                {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
+                                {% if target.user_role == 'designer' and not is_self %}
+                                <span id="profileFavoriteIcon" class="profile-favorite-icon {% if viewer_favorited %}favorited{% endif %}" role="button"
+                                    aria-label="{% if viewer_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}"
+                                    title="{% if viewer_favorited %}Favorited{% else %}Not favorited{% endif %}" data-designer-id="{{ target_django.id }}">
+                                    {% if viewer_favorited %}♥{% else %}♡{% endif %}
+                                </span>
+                                {% endif %}
+                            </h1>
+                            <span class="profile-username">
+                                @{{ target.username }}
+                            </span>
+
+                             {% if not is_self %}
+                             <div class="profile-options-menu">
+                                 <button type="button" id="moreOptionsBtn" class="more-options-btn" aria-haspopup="true" aria-expanded="false" aria-label="More profile options">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         <circle cx="12" cy="5" r="1"></circle>
+                                         <circle cx="12" cy="12" r="1"></circle>
+                                         <circle cx="12" cy="19" r="1"></circle>
+                                     </svg>
+                                 </button>
+                                 <div id="moreOptionsMenu" class="more-options-dropdown" hidden>
+                                     <button type="button" id="reportUserBtn" class="more-options-item">Report user</button>
+                                 </div>
+                             </div>
+                             {% endif %}
+
+                            <div class="profile-meta">
+                                {% if target.is_superuser %}z
+                                <span class="role-badge role-owner">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                    </svg>
+                                    Owner
+                                </span>
+                                {% else %}
+                                <span class="role-badge role-{{ target.user_role }}">
+                                    {{ target.get_user_role_display }}
+                                </span>
+                                {% endif %}
+                                {% if target.user_role == 'designer' and stats.average_rating > 0 %}
+                                <span class="designer-rating-badge">
+                                    <span class="rating-stars">
+                                        {% for i in "12345" %}
+                                        {% if forloop.counter <= stats.average_rating %} <span class="star filled">
+                                            ★</span>
+                                    {% else %}
+                                    <span class="star">★</span>
+                                    {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="rating-value">{{ stats.average_rating }}</span>
+                                <span class="rating-count">({{ stats.rating_count }})</span>
+                                </span>
+                                {% else %}
+                                <span class="join-date">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    Joined {{ target.created_at|date:"M Y" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if target.bio %}
+                            <span class="profile-bio">{{target.bio}}</span>
+                            {% else %}
+                            <span class="profile-bio"></span>
+                            {% endif %}
+
+
+                        </div>
+                        <div class="profile-stats">
                             <div class="stat-card">
                                 <div class="stat-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                        </path>
                                     </svg>
                                 </div>
                                 <div class="stat-content">
@@ -144,7 +184,9 @@
                             </div>
                             <div class="stat-card">
                                 <div class="stat-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                     </svg>
@@ -154,215 +196,336 @@
                                     <span>Completed</span>
                                 </div>
                             </div>
+                            {% if is_self %}
+                            <div class="stat-card stat-card-profile-favorite" data-designer-id="{{ target_django.id }}">
+                                <div class="stat-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon
+                                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                        </polygon>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="number">{{ favorite_count|default:0 }}</div>
+                                    <span>Favorites</span>
+                                </div>
+                            </div>
+                            {% endif %}
                             <!-- Social Media Links -->
                             {% if target_django.user_settings.social_media_links %}
                             <div class="profile-social-links">
                                 {% for platform, url in target_django.user_settings.social_media_links.items %}
-                                    {% if url %}
-                                    <a href="{{ url }}" target="_blank" class="social-link" title="{{ platform|title }}">
-                                        {% if platform == 'facebook' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                                        </svg>
-                                        {% elif platform == 'twitter' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                                        </svg>
-                                        {% elif platform == 'linkedin' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                                        </svg>
-                                        {% elif platform == 'instagram' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                                        </svg>
-                                        {% elif platform == 'youtube' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                        </svg>
-                                        {% elif platform == 'tiktok' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                                        </svg>
-                                        {% elif platform == 'portfolio' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                        </svg>
-                                        {% elif platform == 'website' %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                        </svg>
-                                        {% endif %}
-                                    </a>
+                                {% if url %}
+                                <a href="{{ url }}" target="_blank" class="social-link" title="{{ platform|title }}">
+                                    {% if platform == 'facebook' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                    </svg>
+                                    {% elif platform == 'twitter' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                    </svg>
+                                    {% elif platform == 'linkedin' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                                    </svg>
+                                    {% elif platform == 'instagram' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                    </svg>
+                                    {% elif platform == 'youtube' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                    </svg>
+                                    {% elif platform == 'tiktok' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                                    </svg>
+                                    {% elif platform == 'portfolio' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    {% elif platform == 'website' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path
+                                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                                        </path>
+                                    </svg>
                                     {% endif %}
+                                </a>
+                                {% endif %}
                                 {% endfor %}
                             </div>
                             {% endif %}
                         </div>
                     </div>
                 </section>
-                
-                {% if not is_blocked %}
-                <!-- Profile Content and Recent Works -->
-                <section class="profile-content">
-                    
-                    <!-- About Tab -->
-                    <div id="about" class="infos-content active">
-                        <div class="profile-details-grid">
-                            <div class="detail-card">
-                                <div class="detail-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="20"></circle>
-                                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                    </svg>
-                                </div>
-                                <div class="detail-content">
-                                    <label>Pronouns</label>
-                                    <span>{{ target.pronouns|default:"Not specified" }}</span>
-                                </div>
-                            </div>
-                            <div class="detail-card">
-                                <div class="detail-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                </div>
-                                <div class="detail-content">
-                                    <label>Location</label>
-                                    <span>{{ target.location|default:"Not specified" }}</span>
-                                </div>
-                            </div>
-                            <div class="detail-card">
-                                <div class="detail-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="detail-content">
-                                    <label>Company</label>
-                                    <span>{{ target.company|default:"Not specified" }}</span>
-                                </div>
-                            </div>
-                            <div class="detail-card">
-                                <div class="detail-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                </div>
-                                <div class="detail-content">
-                                    <label>Joined</label>
-                                    <span>{{ target.created_at|date:"M Y" }}</span>
-                                </div>
-                            </div>
-                            {% if target_django.user_settings.social_media_links.portfolio %}
-                                <div class="detail-card">
-                                    <div class="detail-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div class="detail-content">
-                                        <label>Portfolio</label>
-                                        <a href="{{ target_django.user_settings.social_media_links.portfolio }}" target="_blank" class="portfolio-link">
-                                            {{ target_django.user_settings.social_media_links.portfolio|slice:":30" }}...
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                                <polyline points="15 3 21 3 21 9"></polyline>
-                                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Recent Works Section -->
-                    <div class="recent-works-section">
+
+                 {% if not is_blocked %}
+                 <!-- Profile Content and Recent Works -->
+                 <section class="profile-content">
+
+                     <div class="profile-top-row">
+                         <!-- Info Panel -->
+                         <div class="profile-info-panel">
+                             <div id="about" class="infos-content active">
+                             <div class="profile-details-grid">
+                                 <div class="detail-card">
+                                     <div class="detail-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                             <circle cx="12" cy="12" r="20"></circle>
+                                             <line x1="2" y1="12" x2="22" y2="12"></line>
+                                             <path
+                                                 d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                                             </path>
+                                         </svg>
+                                     </div>
+                                     <div class="detail-content">
+                                         <label>Pronouns</label>
+                                         <span>{{ target.pronouns|default:"Not specified" }}</span>
+                                     </div>
+                                 </div>
+                                 <div class="detail-card">
+                                     <div class="detail-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                             <circle cx="12" cy="10" r="3"></circle>
+                                         </svg>
+                                     </div>
+                                     <div class="detail-content">
+                                         <label>Location</label>
+                                         <span>{{ target.location|default:"Not specified" }}</span>
+                                     </div>
+                                 </div>
+                                 <div class="detail-card">
+                                     <div class="detail-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                         </svg>
+                                     </div>
+                                     <div class="detail-content">
+                                         <label>Company</label>
+                                         <span>{{ target.company|default:"Not specified" }}</span>
+                                     </div>
+                                 </div>
+                                 <div class="detail-card">
+                                     <div class="detail-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                             <line x1="16" y1="2" x2="16" y2="6"></line>
+                                             <line x1="8" y1="2" x2="8" y2="6"></line>
+                                             <line x1="3" y1="10" x2="21" y2="10"></line>
+                                         </svg>
+                                     </div>
+                                     <div class="detail-content">
+                                         <label>Joined</label>
+                                         <span>{{ target.created_at|date:"M Y" }}</span>
+                                     </div>
+                                 </div>
+                                 {% if target_django.user_settings.social_media_links.portfolio %}
+                                 <div class="detail-card">
+                                     <div class="detail-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                         </svg>
+                                     </div>
+                                     <div class="detail-content">
+                                         <label>Portfolio</label>
+                                         <a href="{{ target_django.user_settings.social_media_links.portfolio }}"
+                                             target="_blank" class="portfolio-link">
+                                             {{ target_django.user_settings.social_media_links.portfolio|slice:":30" }}...
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                 <polyline points="15 3 21 3 21 9"></polyline>
+                                                 <line x1="10" y1="14" x2="21" y2="3"></line>
+                                             </svg>
+                                         </a>
+                                     </div>
+                                 </div>
+                                 {% endif %}
+                              </div>
+                          </div>
+                         </div> <!-- end profile-info-panel -->
+
+                         <!-- My Requests/Recent Works Section -->
+                         <div class="profile-recent-works">
                         <div class="recent-works-header">
                             <h2 class="recent-works-title">
                                 {% if target.user_role == 'user' %}
-                                    My Requests
+                                My Requests
                                 {% else %}
-                                    Recent Works
+                                Recent Works
                                 {% endif %}
                             </h2>
                         </div>
                         {% if recent_works %}
-                            <div class="recent-works-grid">
-                                {% for work in recent_works %}
-                                    <div class="work-card">
-                                        <div class="work-header">
-                                            <span class="work-type-badge work-type-{{ work.design_type }}">
-                                                {{ work.get_design_type_display }}
-                                            </span>
-                                            <span class="work-status work-status-{{ work.status }}">
-                                                {{ work.get_status_display }}
-                                            </span>
-                                        </div>
-                                        <h3 class="work-title">{{ work.title }}</h3>
-                                        <p class="work-description">{{ work.description|truncatewords:20 }}</p>
-                                        <div class="work-meta">
-                                            {% if target.user_role == 'client' %}
-                                                {% if work.designer %}
-                                                    <span class="work-designer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                                            <circle cx="12" cy="7" r="4"></circle>
-                                                        </svg>
-                                                        {{ work.designer.first_name|default:work.designer.username }}
-                                                    </span>
-                                                {% else %}
-                                                    <span class="work-designer pending">Awaiting designer</span>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="work-client">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                                        <circle cx="12" cy="7" r="4"></circle>
-                                                    </svg>
-                                                    {{ work.requester.first_name|default:work.requester.username }}
-                                                </span>
-                                            {% endif %}
-                                            <span class="work-date">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                                </svg>
-                                                {{ work.created_at|date:"M d, Y" }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="empty-state">
-                                <div class="empty-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                    </svg>
+                        <div class="recent-works-grid">
+                            {% for work in recent_works %}
+                            <div class="work-card">
+                                <div class="work-header">
+                                    <span class="work-type-badge work-type-{{ work.design_type }}">
+                                        {{ work.get_design_type_display }}
+                                    </span>
+                                    <span class="work-status work-status-{{ work.status }}">
+                                        {{ work.get_status_display }}
+                                    </span>
                                 </div>
-                                <span>No recent works</span>
-                                {% if target.user_role == 'client' %}
-                                    <p>When you request designs, they will appear here.</p>
-                                {% else %}
-                                    <p>When you complete designs, they will appear here.</p>
-                                {% endif %}
+                                <h3 class="work-title">{{ work.title }}</h3>
+                                <div class="work-meta">
+                            {% if target.user_role == 'user' %}
+                                    {% if work.designer %}
+                                    <span class="work-designer">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        {{ work.designer.first_name|default:work.designer.username }}
+                                    </span>
+                                    {% else %}
+                                    <span class="work-designer pending">Awaiting designer</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="work-client">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        {{ work.requester.first_name|default:work.requester.username }}
+                                    </span>
+                                    {% endif %}
+                                    <span class="work-date">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        {{ work.created_at|date:"M d, Y" }}
+                                    </span>
+                                </div>
                             </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span>No recent works</span>
+                            {% if target.user_role == 'user' %}
+                            <p>When you request designs, they will appear here.</p>
+                            {% else %}
+                            <p>When you complete designs, they will appear here.</p>
+                            {% endif %}
+                        </div>
+                         {% endif %}
+                     </div>
+                     </div> <!-- end profile-top-row -->
+
+                     <!-- My Favorites Section -->
+                     {% if is_self and target.user_role == 'user' %}
+                     <div class="profile-favorites-section">
+                        <div class="profile-fav-section-header">
+                            <h2>        
+                                My Favorites
+                            </h2>
+                        </div>
+                        {% if my_favorite_designers %}
+                        <div class="favorite-designers-grid">
+                            {% for fav in my_favorite_designers %}
+                            <div class="favorite-designer-card">
+                                <div class="favorite-designer-header">
+                                     {% if fav.designer.profile.presenta_user.profile_picture %}
+                                     <img src="{{ fav.designer.profile.presenta_user.profile_picture.url }}"
+                                         alt="{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }}"
+                                         class="favorite-designer-avatar">
+                                     {% else %}
+                                     <div class="favorite-designer-avatar default-avatar">
+                                         {{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username|slice:":1"|upper }}
+                                     </div>
+                                     {% endif %}
+                                     <div class="favorite-designer-info">
+                                        <a href="{% url 'profile_detail' fav.designer.profile.presenta_user.username %}" class="favorite-designer-name">{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }} {{ fav.designer.profile.presenta_user.last_name|default:"" }}</a>
+                                        <span class="favorite-date">Added {{ fav.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                    <button type="button" class="btn-remove-favorite"
+                                        data-designer-id="{{ fav.designer.id }}" title="Remove from favorites">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                            viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polygon
+                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                            </polygon>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polygon
+                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                    </polygon>
+                                </svg>
+                            </div>
+                            <span>No favorite designers yet</span>
+                            <p>Browse designers and add them to your favorites for quick access.</p>
+                        </div>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </section>
                 {% endif %}
             </div>
@@ -373,7 +536,9 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
                             </svg>
@@ -397,7 +562,9 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
                                 <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                                 <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
@@ -405,13 +572,116 @@
                         </h2>
                         <button class="modal-close">&times;</button>
                     </div>
-                    <div class="modal-body">
-                        <textarea id="reportReason" placeholder="Describe the issue..." rows="4" maxlength="500"></textarea>
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary modal-cancel">Cancel</button>
-                            <button class="btn btn-primary confirm-report">Submit Report</button>
-                        </div>
-                    </div>
+                     <div class="modal-body">
+                         <!-- Step 1: Select Reason -->
+                         <div class="report-step report-step-1 active">
+                             <form id="reportForm">
+                                 <div class="radio-group">
+                                     <label>
+                                         <input type="radio" name="reason" value="spam">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="10"></circle>
+                                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Spam or unwanted content</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="harassment">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                                 <line x1="12" y1="9" x2="12" y2="13"></line>
+                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Harassment or bullying</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="inappropriate">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="10"></circle>
+                                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Inappropriate content</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="fraud">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                 <line x1="1" y1="10" x2="23" y2="10"></line>
+                                             </svg>
+                                         </div>
+                                         <span>Fraud or scam</span>
+                                     </label>
+                                     <label>
+                                         <input type="radio" name="reason" value="other">
+                                         <div class="radio-option-icon">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <circle cx="12" cy="12" r="3"></circle>
+                                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                             </svg>
+                                         </div>
+                                         <span>Other</span>
+                                     </label>
+                                 </div>
+                                 <div id="otherReasonContainer" style="display:none;">
+                                     <textarea id="otherReason" placeholder="Please describe the issue..." rows="3" maxlength="500"></textarea>
+                                 </div>
+                             </form>
+                             <div class="modal-actions">
+                                 <button class="btn btn-secondary modal-cancel">Cancel</button>
+                                 <button class="btn btn-primary report-next-btn" disabled>Next</button>
+                             </div>
+                         </div>
+                         <!-- Step 2: What Happens Next -->
+                         <div class="report-step report-step-2">
+                             <div class="report-explanation">
+                                 <h4>What happens next?</h4>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <circle cx="11" cy="11" r="8"></circle>
+                                             <path d="M21 21l-4.35-4.35"></path>
+                                             <circle cx="11" cy="11" r="3"></circle>
+                                         </svg>
+                                     </div>
+                                     <p>Your report will be reviewed by our moderation team. We take all reports seriously and investigate them promptly.</p>
+                                 </div>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                             <polyline points="14,2 14,8 20,8"></polyline>
+                                             <line x1="16" y1="13" x2="8" y2="13"></line>
+                                             <line x1="16" y1="17" x2="8" y2="17"></line>
+                                             <polyline points="10,9 9,9 8,9"></polyline>
+                                         </svg>
+                                     </div>
+                                     <p>If the report is found to be valid, appropriate action may be taken against the user, such as warning, suspension, or permanent ban.</p>
+                                 </div>
+                                 <div class="explanation-item">
+                                     <div class="explanation-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                             <circle cx="12" cy="16" r="1"></circle>
+                                             <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                         </svg>
+                                     </div>
+                                     <p>You will not receive updates on the status of your report to protect user privacy.</p>
+                                 </div>
+                             </div>
+                             <div class="modal-actions">
+                                 <button class="btn btn-secondary report-back-btn">Back</button>
+                                 <button class="btn btn-primary confirm-report" disabled>Submit Report</button>
+                             </div>
+                         </div>
+                     </div>
                 </div>
             </div>
 
@@ -421,7 +691,9 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
                             </svg>
@@ -444,9 +716,13 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
                             </svg>
                             Delete User
                         </h2>
@@ -470,89 +746,1211 @@
             <div class="cropper-modal-header">
                 <h3>Crop Cover Photo</h3>
                 <button type="button" id="closeCoverCropperBtn" class="close-btn" aria-label="Close">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
-            
+
             <div class="cropper-modal-body">
                 <div class="cropper-container">
                     <img id="coverCropperImage" src="" alt="Image to crop">
                 </div>
-                
+
                 <!-- Transform Controls Row -->
                 <div class="cropper-controls">
                     <button type="button" id="coverZoomInBtn" class="btn btn-secondary btn-icon" title="Zoom in">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="M21 21l-4.35-4.35"></path>
                             <line x1="11" y1="8" x2="11" y2="14"></line>
                             <line x1="8" y1="11" x2="14" y2="11"></line>
                         </svg>
                     </button>
-                    
+
                     <button type="button" id="coverZoomOutBtn" class="btn btn-secondary btn-icon" title="Zoom out">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="M21 21l-4.35-4.35"></path>
                             <line x1="8" y1="11" x2="14" y2="11"></line>
                         </svg>
                     </button>
-                    
+
                     <div class="controls-divider"></div>
-                    
-                    <button type="button" id="coverRotateLeftBtn" class="btn btn-secondary btn-icon" title="Rotate left 45°">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <button type="button" id="coverRotateLeftBtn" class="btn btn-secondary btn-icon"
+                        title="Rotate left 45°">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 5"></path>
                             <polyline points="3 3 3 9 9 9"></polyline>
                         </svg>
                     </button>
-                    
-                    <button type="button" id="coverRotateRightBtn" class="btn btn-secondary btn-icon" title="Rotate right 45°">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <button type="button" id="coverRotateRightBtn" class="btn btn-secondary btn-icon"
+                        title="Rotate right 45°">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 5"></path>
                             <polyline points="21 3 21 9 15 9"></polyline>
                         </svg>
                     </button>
-                    
+
                     <div class="controls-divider"></div>
-                    
-                    <button type="button" id="coverFlipHorizontalBtn" class="btn btn-secondary btn-icon" title="Flip horizontally">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <button type="button" id="coverFlipHorizontalBtn" class="btn btn-secondary btn-icon"
+                        title="Flip horizontally">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 4v16h8V4H1z"></path>
                             <path d="M15 4v16h8V4h-8z"></path>
                             <line x1="11" y1="9" x2="13" y2="9"></line>
                             <line x1="11" y1="13" x2="13" y2="13"></line>
                         </svg>
                     </button>
-                    
-                    <button type="button" id="coverFlipVerticalBtn" class="btn btn-secondary btn-icon" title="Flip vertically">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <button type="button" id="coverFlipVerticalBtn" class="btn btn-secondary btn-icon"
+                        title="Flip vertically">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 1h16v7H4V1z"></path>
                             <path d="M4 16h16v7H4v-7z"></path>
                             <line x1="9" y1="10" x2="15" y2="10"></line>
                             <line x1="9" y1="14" x2="15" y2="14"></line>
                         </svg>
                     </button>
-                    
+
                     <div class="controls-divider"></div>
-                    
-                    <button type="button" id="coverResetCropBtn" class="btn btn-secondary btn-icon" title="Reset to default">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <button type="button" id="coverResetCropBtn" class="btn btn-secondary btn-icon"
+                        title="Reset to default">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="9"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </button>
                 </div>
             </div>
-            
+
             <div class="cropper-modal-footer">
                 <button type="button" id="cancelCoverCropBtn" class="btn btn-secondary">Cancel</button>
                 <button type="button" id="applyCoverCropBtn" class="btn btn-primary">Apply</button>
             </div>
         </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    console.log('Profile page script loaded!');
+    // Helper function to get CSRF token - defined outside DOMContentLoaded for reliability
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOMContentLoaded event fired!');
+        // Favorite toggle functionality
+        const favoriteIcon = document.getElementById('profileFavoriteIcon');
+        const favoriteBtn = document.querySelector('.favorite-toggle-btn');
+        const favoriteStatCard = document.querySelector('.stat-card-profile-favorite');
+        console.log('favoriteIcon:', favoriteIcon);
+        console.log('favoriteBtn:', favoriteBtn);
+        console.log('favoriteStatCard:', favoriteStatCard);
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            const iconSvg = type === 'success'
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+
+            toast.innerHTML = `
+                <div class="toast-icon">${iconSvg}</div>
+                <div class="toast-content">
+                    <p class="toast-message">${message}</p>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function toggleFavorite(designerId, btn) {
+            console.log('toggleFavorite called with designerId:', designerId);
+            // Add loading state
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+
+            const url = '{% url "toggle_favorite_designer" %}';
+            console.log('Fetching URL:', url);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ designer_id: designerId })
+            })
+                .then(response => {
+                    console.log('Response received:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        const isFavorited = data.is_favorited;
+
+                        // Update the favorite toggle button
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.classList.toggle('favorited', isFavorited);
+
+                            // Update data attribute for tracking state
+                            btn.dataset.favorited = isFavorited.toString();
+
+                            // Update aria-label for accessibility
+                            btn.setAttribute('aria-label', isFavorited ? 'Remove from favorites' : 'Add to favorites');
+
+                            // Update button text
+                            const textSpan = btn.querySelector('.favorite-btn-text');
+                            if (textSpan) {
+                                textSpan.textContent = isFavorited ? 'Favorited' : 'Add to Favorites';
+                            }
+
+                            // Toggle heart text (♡ hollow, ♥ filled)
+                            const starIcon = btn.parentElement.querySelector('.favorite-star-icon');
+                            if (starIcon) {
+                                starIcon.textContent = isFavorited ? '♥' : '♡';
+                                // Trigger animation when favoriting
+                                if (isFavorited) {
+                                    starIcon.style.animation = 'none';
+                                    starIcon.offsetHeight; // Trigger reflow
+                                    starIcon.style.animation = 'starPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                                }
+                            }
+                        }
+
+                        // Update the inline profile favorite icon
+                        const profileFavoriteIcon = document.getElementById('profileFavoriteIcon');
+                        if (profileFavoriteIcon) {
+                            profileFavoriteIcon.classList.toggle('favorited', isFavorited);
+                            profileFavoriteIcon.textContent = isFavorited ? '♥' : '♡';
+                            profileFavoriteIcon.setAttribute('aria-label', isFavorited ? 'Remove from favorites' : 'Add to favorites');
+                            profileFavoriteIcon.setAttribute('title', isFavorited ? 'Favorited' : 'Not favorited');
+                        }
+
+                        // Update the stat card favorite icon
+                        const statFavoriteIcon = favoriteStatCard?.querySelector('.favorite-star-icon');
+                        if (statFavoriteIcon) {
+                            statFavoriteIcon.classList.toggle('favorited', isFavorited);
+                        }
+
+                        // Update favorite count on profile stat card (only the Favorites stat)
+                        document.querySelectorAll('.stat-card-profile-favorite .number').forEach(function(el) {
+                            el.textContent = data.favorite_count;
+                        });
+
+                        // Show toast notification
+                        showToast(isFavorited ? 'Added to Favorites' : 'Removed from Favorites', 'success');
+                    } else {
+                        console.error('Error toggling favorite:', data.error);
+                        // Reset button state on error
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                        }
+                        showToast('Error updating favorites', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error in toggleFavorite:', error);
+                    console.error('Error stack:', error.stack);
+                    // Reset button state on error
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    }
+                    showToast('Error updating favorites', 'error');
+                });
+        }
+
+        // Attach click handler to inline profile favorite icon
+        if (favoriteIcon) {
+            console.log('Profile favorite icon found:', favoriteIcon);
+            const designerId = favoriteIcon.dataset.designerId;
+            if (designerId) {
+                favoriteIcon.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    console.log('Profile favorite icon clicked!');
+                    toggleFavorite(designerId, favoriteIcon);
+                });
+            }
+        } else {
+            console.log('No profile favorite icon found');
+        }
+
+        // Attach click handler to stat card (for quick toggle)
+        if (favoriteStatCard) {
+            favoriteStatCard.style.cursor = 'pointer';
+            favoriteStatCard.addEventListener('click', function () {
+                const designerId = this.dataset.designerId;
+                if (designerId) {
+                    toggleFavorite(designerId, null);
+                }
+            });
+        }
+
+        // More options menu handling
+        const moreOptionsBtn = document.getElementById('moreOptionsBtn');
+        const moreOptionsMenu = document.getElementById('moreOptionsMenu');
+        const reportUserBtn = document.getElementById('reportUserBtn');
+        const reportModal = document.getElementById('reportModal');
+
+        console.log('moreOptionsBtn:', moreOptionsBtn);
+        console.log('moreOptionsMenu:', moreOptionsMenu);
+        console.log('reportUserBtn:', reportUserBtn);
+        console.log('reportModal:', reportModal);
+
+        if (moreOptionsBtn && moreOptionsMenu) {
+            moreOptionsBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                const expanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', String(!expanded));
+                moreOptionsMenu.hidden = expanded;
+            });
+
+            document.addEventListener('click', function () {
+                if (!moreOptionsMenu.hidden) {
+                    moreOptionsMenu.hidden = true;
+                    moreOptionsBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        if (reportUserBtn && reportModal) {
+            console.log('Adding click handler to reportUserBtn');
+            reportUserBtn.addEventListener('click', function (event) {
+                console.log('reportUserBtn clicked!');
+                event.stopPropagation();
+                moreOptionsMenu.hidden = true;
+                moreOptionsBtn.setAttribute('aria-expanded', 'false');
+                console.log('Adding active class to reportModal');
+                reportModal.classList.add('active');
+                console.log('reportModal classList:', reportModal.classList);
+            });
+        }
+
+        // Report modal functionality
+        const reportForm = document.getElementById('reportForm');
+        const reportNextBtn = document.querySelector('.report-next-btn');
+        const reportBackBtn = document.querySelector('.report-back-btn');
+        const confirmReportBtn = document.querySelector('.confirm-report');
+        const otherReasonContainer = document.getElementById('otherReasonContainer');
+        const radioButtons = document.querySelectorAll('input[name="reason"]');
+        const reportStep1 = document.querySelector('.report-step-1');
+        const reportStep2 = document.querySelector('.report-step-2');
+
+        function updateNextButton() {
+            const selectedReason = document.querySelector('input[name="reason"]:checked');
+            reportNextBtn.disabled = !selectedReason;
+        }
+
+        function handleReasonChange() {
+            // Remove selected class from all labels
+            document.querySelectorAll('.radio-group label').forEach(label => label.classList.remove('selected'));
+
+            const selectedRadio = document.querySelector('input[name="reason"]:checked');
+            if (selectedRadio) {
+                selectedRadio.closest('label').classList.add('selected');
+                const selectedValue = selectedRadio.value;
+                if (selectedValue === 'other') {
+                    otherReasonContainer.style.display = 'block';
+                } else {
+                    otherReasonContainer.style.display = 'none';
+                }
+            } else {
+                otherReasonContainer.style.display = 'none';
+            }
+            updateNextButton();
+        }
+
+        radioButtons.forEach(function(radio) {
+            radio.addEventListener('change', handleReasonChange);
+        });
+
+        // Handle Next button
+        reportNextBtn.addEventListener('click', function() {
+            reportStep1.classList.remove('active');
+            reportStep2.classList.add('active');
+            confirmReportBtn.disabled = false; // Enable submit since reason is selected
+        });
+
+        // Handle Back button
+        reportBackBtn.addEventListener('click', function() {
+            reportStep2.classList.remove('active');
+            reportStep1.classList.add('active');
+            confirmReportBtn.disabled = true;
+        });
+
+        // Reset form when modal is closed
+        document.querySelectorAll('.modal-close, .modal-overlay, .modal-cancel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (this.closest('#reportModal')) {
+                    // Reset form
+                    reportForm.reset();
+                    otherReasonContainer.style.display = 'none';
+                    reportNextBtn.disabled = true;
+                    confirmReportBtn.disabled = true;
+                    // Reset to step 1
+                    reportStep1.classList.add('active');
+                    reportStep2.classList.remove('active');
+                }
+            });
+        });
+
+        // Handle report submission
+        confirmReportBtn.addEventListener('click', function() {
+            const selectedReason = document.querySelector('input[name="reason"]:checked');
+            if (!selectedReason) return;
+
+            let reason = selectedReason.value;
+            if (reason === 'other') {
+                const otherText = document.getElementById('otherReason').value.trim();
+                if (!otherText) {
+                    showToast('Please describe the issue for "Other"', 'error');
+                    return;
+                }
+                reason = otherText;
+            }
+
+            // Disable button and show loading
+            confirmReportBtn.disabled = true;
+            confirmReportBtn.textContent = 'Submitting...';
+
+            // Send report to server
+            const formData = new FormData();
+            formData.append('user_id', '{{ target_django.id }}');
+            formData.append('reason', reason);
+
+            fetch('{% url "report_user" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(`Report submitted successfully. Report ID: ${data.report_id}`, 'success');
+                    closeModal(reportModal);
+                } else {
+                    showToast('Error submitting report: ' + (data.error || 'Unknown error'), 'error');
+                    confirmReportBtn.disabled = false;
+                    confirmReportBtn.textContent = 'Submit Report';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error submitting report', 'error');
+                confirmReportBtn.disabled = false;
+                confirmReportBtn.textContent = 'Submit Report';
+            });
+        });
+
+        function closeModal(modal) {
+            console.log('closeModal called with:', modal);
+            if (modal) {
+                console.log('Removing active class');
+                modal.classList.remove('active');
+                console.log('modal classList after:', modal.classList);
+            }
+        }
+
+        document.querySelectorAll('.modal-close').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const modal = this.closest('.modal');
+                closeModal(modal);
+            });
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+            overlay.addEventListener('click', function () {
+                const modal = this.closest('.modal');
+                closeModal(modal);
+            });
+        });
+
+        // Attach click handler to remove favorite buttons in My Favorites section
+        const removeFavoriteBtns = document.querySelectorAll('.btn-remove-favorite');
+        removeFavoriteBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const designerId = this.dataset.designerId;
+                const card = this.closest('.favorite-designer-card');
+
+                // Add loading state
+                this.disabled = true;
+                this.style.opacity = '0.5';
+
+                fetch('{% url "toggle_favorite_designer" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ designer_id: designerId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the card from the list with animation
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateX(20px)';
+                            card.style.transition = 'all 0.3s ease';
+                            setTimeout(function () {
+                                card.remove();
+                                // Check if there are any favorites left
+                                const grid = document.querySelector('.favorite-designers-grid');
+                                if (grid && grid.children.length === 0) {
+                                    const section = document.querySelector('.my-favorites-section');
+                                    if (section) {
+                                        // Show empty state
+                                        const emptyState = document.createElement('div');
+                                        emptyState.className = 'empty-state';
+                                        emptyState.innerHTML = `
+                                        <div class="empty-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                                                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <polygon
+                                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                                </polygon>
+                                            </svg>
+                                        </div>
+                                        <span>No favorite designers yet</span>
+                                        <p>Browse designers and add them to your favorites for quick access.</p>
+                                    `;
+                                        const grid = document.querySelector('.favorite-designers-grid');
+                                        if (grid) {
+                                            grid.replaceWith(emptyState);
+                                        }
+                                    }
+                                }
+                            }, 300);
+
+                            // Update favorite count on profile stat card (only the Favorites stat)
+                            document.querySelectorAll('.stat-card-profile-favorite .number').forEach(function(el) {
+                                el.textContent = data.favorite_count;
+                            });
+
+                            // Show toast notification
+                            showToast('Removed from Favorites', 'success');
+                        } else {
+                            console.error('Error removing favorite:', data.error);
+                            // Reset button state on error
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            showToast('Error removing favorite', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Reset button state on error
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        showToast('Error removing favorite', 'error');
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Favorite Toggle Button - Modern Filled Style */
+    .profile-header-section {
+        position: relative;
+    }
+
+    .profile-favorite-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 18px;
+        margin-left: 10px;
+        color: #f59e0b;
+        background: rgba(248, 113, 37, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .profile-favorite-icon:hover {
+        transform: scale(1.08);
+        background: rgba(248, 113, 37, 0.18);
+    }
+
+    .profile-favorite-icon.favorited {
+        color: #d97706;
+        background: rgba(245, 158, 11, 0.18);
+    }
+
+    .profile-options-menu {
+        position: absolute;
+        top: 12px;
+        right: 0;
+    }
+
+    .more-options-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        color: #64748b;
+    }
+
+    .more-options-btn:hover {
+        background: rgba(148, 163, 184, 0.2);
+    }
+
+    .more-options-dropdown {
+        position: absolute;
+        top: 36px;
+        right: 0;
+        min-width: 160px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        border-radius: 10px;
+        z-index: 20;
+        border: 1px solid #e2e8f0;
+    }
+
+    .more-options-item {
+        display: block;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 14px;
+        color: #1f2937;
+        cursor: pointer;
+    }
+
+    .more-options-item:hover {
+        background: #f8fafc;
+    }
+
+    .profile-favorite-btn-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .favorite-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 12px;
+        background: #F97316;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+    }
+
+    .favorite-toggle-btn:hover {
+        background: #EA580C;
+        box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .favorite-toggle-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+    }
+
+    .favorite-toggle-btn.favorited {
+        background: #F97316;
+        color: #ffffff;
+    }
+
+    .favorite-toggle-btn.favorited:hover {
+        background: #EA580C;
+        box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4);
+    }
+
+    .favorite-star-icon {
+        font-size: 24px;
+        transition: all 0.2s ease;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .favorite-toggle-btn.favorited~.favorite-star-icon {
+        animation: starPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        color: #ffffff;
+    }
+
+    .favorite-toggle-btn:not(.favorited)~.favorite-star-icon {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    @keyframes starPop {
+        0% {
+            transform: scale(1);
+        }
+
+        30% {
+            transform: scale(1.4) rotate(-10deg);
+        }
+
+        60% {
+            transform: scale(0.9);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Stat Card Favorite Styles */
+    .stat-card-favorite {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+
+    .stat-card-favorite:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card-favorite .favorite-star-icon {
+        fill: none;
+        stroke: #f59e0b;
+        stroke-width: 2;
+        transition: all 0.25s ease;
+    }
+
+    .stat-card-favorite .favorite-star-icon.favorited {
+        fill: #f59e0b;
+        filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+    }
+
+    .stat-card-favorite .favorite-star-icon:not(.favorited) {
+        stroke: #64748b;
+    }
+
+    /* Toast Notification Styles */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        animation: toastSlideIn 0.3s ease-out;
+        max-width: 350px;
+        border-left: 4px solid #f59e0b;
+    }
+
+    .toast.toast-success {
+        border-left-color: #10b981;
+    }
+
+    .toast.toast-info {
+        border-left-color: #3b82f6;
+    }
+
+    .toast-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+    }
+
+    .toast.toast-success .toast-icon {
+        color: #10b981;
+    }
+
+    .toast.toast-info .toast-icon {
+        color: #3b82f6;
+    }
+
+    .toast-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .toast-message {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .toast-subtitle {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .toast-close {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease;
+    }
+
+    .toast-close:hover {
+        color: #4b5563;
+    }
+
+    .toast.toast-exit {
+        animation: toastSlideOut 0.3s ease-in forwards;
+    }
+
+    @keyframes toastSlideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes toastSlideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    /* My Favorites Section Styles */
+    .my-favorites-section {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid var(--border-color, #e5e7eb);
+    }
+
+    .my-favorites-section .section-header {
+        margin-bottom: 20px;
+    }
+
+    .my-favorites-section .section-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color, #1f2937);
+        margin: 0;
+    }
+
+    .my-favorites-section .section-icon {
+        color: #f59e0b;
+    }
+
+    .favorite-designers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .favorite-designer-card {
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .favorite-designer-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .favorite-designer-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .favorite-designer-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .favorite-designer-avatar.default-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-color, #007bff);
+        color: white;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .favorite-designer-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .favorite-designer-name {
+        display: block;
+        font-weight: 600;
+        color: var(--text-color, #1f2937);
+        text-decoration: none;
+        font-size: 1rem;
+    }
+
+    .favorite-designer-name:hover {
+        color: var(--primary-color, #007bff);
+    }
+
+    .favorite-date {
+        font-size: 0.75rem;
+        color: var(--text-muted, #6b7280);
+    }
+
+    .btn-remove-favorite {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        color: #f59e0b;
+    }
+
+    .btn-remove-favorite:hover {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+
+    .my-favorites-section .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .my-favorites-section .empty-state .empty-icon {
+        color: #f59e0b;
+        margin-bottom: 16px;
+    }
+
+    .my-favorites-section .empty-state span {
+        display: block;
+        font-weight: 600;
+        color: var(--text-color, #1f2937);
+        margin-bottom: 8px;
+    }
+
+    .my-favorites-section .empty-state p {
+        color: var(--text-muted, #6b7280);
+        margin: 0;
+    }
+
+    /* Report Modal Styles */
+    .radio-group {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-color, #1f2937);
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+
+    .radio-group label:hover {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .radio-group label.selected {
+        border-color: #f97316;
+        background: rgba(249, 115, 22, 0.1);
+        color: #1f2937;
+    }
+
+    .radio-group input[type="radio"] {
+        display: none;
+    }
+
+    .radio-group label::before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .radio-group label.selected::before {
+        border-color: #f97316;
+        background: #f97316;
+        box-shadow: inset 0 0 0 3px #ffffff;
+    }
+
+    .radio-option-icon {
+        width: 24px;
+        height: 24px;
+        color: #6b7280;
+        flex-shrink: 0;
+        transition: color 0.2s ease;
+    }
+
+    .radio-group label.selected .radio-option-icon {
+        color: #f97316;
+    }
+
+    #otherReasonContainer textarea {
+        width: 95%;
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+        margin-top: 8px;
+    }
+
+    #otherReasonContainer textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px #e87f14;
+    }
+
+    .report-explanation {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .report-explanation h4 {
+        margin: 0 0 20px 2px;
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-color, #1f2937);
+    }
+
+    .report-explanation p {
+        margin: 8px 0;
+        font-size: 14px;
+        color: var(--text-muted, #6b7280);
+        line-height: 1.5;
+    }
+
+    body.dark-mode .radio-group label {
+        color: #f9fafb;
+        background: #374151;
+        border-color: #4b5563;
+    }
+
+    body.dark-mode .radio-group label:hover {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+    }
+
+    body.dark-mode .radio-group label.selected {
+        border-color: #f97316;
+        background: rgba(249, 115, 22, 0.15);
+        color: #f9fafb;
+    }
+
+    body.dark-mode .radio-group label::before {
+        border-color: #4b5563;
+    }
+
+    body.dark-mode .radio-group label.selected::before {
+        border-color: #f97316;
+        background: #f97316;
+        box-shadow: inset 0 0 0 3px #ffffff;
+    }
+
+    body.dark-mode .radio-option-icon {
+        color: #9ca3af;
+    }
+
+    body.dark-mode .radio-group label.selected .radio-option-icon {
+        color: #f97316;
+    }
+
+    body.dark-mode #otherReasonContainer textarea {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    body.dark-mode #otherReasonContainer textarea:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+
+    body.dark-mode .report-explanation {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    body.dark-mode .report-explanation h4,
+    body.dark-mode .report-explanation p {
+        color: #e5e7eb;
+    }
+
+    body.dark-mode .explanation-item {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    body.dark-mode .explanation-icon {
+        color: #f97316;
+        background: rgba(249, 115, 22, 0.15);
+    }
+
+    body.dark-mode .modal-body p {
+        color: #f9fafb;
+    }
+
+    /* Report Modal Steps */
+    .report-step {
+        display: none;
+    }
+
+    .report-step.active {
+        display: block;
+    }
+
+    .explanation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: rgba(245, 158, 11, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(245, 158, 11, 0.1);
+    }
+
+    .explanation-icon {
+        flex-shrink: 0;
+        color: #f97316;
+        margin-top: 2px;
+        background: rgba(249, 115, 22, 0.1);
+        padding: 6px;
+        border-radius: 6px;
+    }
+
+    .explanation-item p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-body p {
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .modal-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+</style>
 {% endblock %}

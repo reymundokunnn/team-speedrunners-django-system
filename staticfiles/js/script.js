@@ -116,7 +116,7 @@ function toggleSidebar() {
     const sidebar = document.querySelector('.side-panel');
     if (sidebar) {
         sidebar.classList.toggle('collapsed');
-        
+
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed);
     } else {
@@ -124,10 +124,10 @@ function toggleSidebar() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.querySelector('.side-panel');
     const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-    
+
     if (sidebar && sidebarCollapsed === 'true') {
         sidebar.classList.add('collapsed');
     }
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 const originalToggleForms = toggleForms;
-toggleForms = function(event) {
+toggleForms = function (event) {
     originalToggleForms(event);
     // Small delay to ensure DOM is updated
     setTimeout(initPasswordStrengthMeter, 100);
@@ -302,10 +302,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /* Modal Functions */
 function openModal(modalType) {
+    console.log('openModal called with:', modalType);
     const modal = document.getElementById(modalType);
+    console.log('Found modal:', modal);
     if (modal) {
+        console.log('Modal display before:', modal.style.display);
         modal.classList.add('show');
         modal.style.display = 'flex';
+        console.log('Modal display after:', modal.style.display);
+    } else {
+        console.error('Modal not found:', modalType);
     }
 }
 
@@ -344,17 +350,17 @@ function submitForgotPassword(event) {
     const identifier = document.getElementById('forgotPasswordIdentifier').value.trim();
     const messageEl = document.getElementById('forgotPasswordMessage');
     const submitBtn = document.getElementById('forgotPasswordSubmit');
-    
+
     if (!identifier) {
         messageEl.textContent = 'Please enter your email or username';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     // Show loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
-    
+
     // Call the lookup endpoint
     fetch('/password-reset/lookup/', {
         method: 'POST',
@@ -363,30 +369,30 @@ function submitForgotPassword(event) {
         },
         body: new URLSearchParams({ identifier: identifier })
     })
-    .then(response => response.json())
-    .then(data => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        
-        if (data.found) {
-            // Store user ID and show reset form
-            document.getElementById('resetUserId').value = data.user_id;
-            document.getElementById('resetPasswordUserInfo').textContent = 
-                'Create a new password for ' + (data.email || data.username);
-            closeForgotPasswordModal();
-            openResetPasswordFormModal();
-        } else {
-            messageEl.textContent = data.error || 'No account found with that email or username.';
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+
+            if (data.found) {
+                // Store user ID and show reset form
+                document.getElementById('resetUserId').value = data.user_id;
+                document.getElementById('resetPasswordUserInfo').textContent =
+                    'Create a new password for ' + (data.email || data.username);
+                closeForgotPasswordModal();
+                openResetPasswordFormModal();
+            } else {
+                messageEl.textContent = data.error || 'No account found with that email or username.';
+                messageEl.className = 'form-error-text';
+            }
+        })
+        .catch(error => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            messageEl.textContent = 'An error occurred. Please try again.';
             messageEl.className = 'form-error-text';
-        }
-    })
-    .catch(error => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        messageEl.textContent = 'An error occurred. Please try again.';
-        messageEl.className = 'form-error-text';
-        console.error('Forgot password error:', error);
-    });
+            console.error('Forgot password error:', error);
+        });
 }
 
 /* Reset Password Form Modal */
@@ -499,30 +505,30 @@ function submitResetPassword(event) {
     const confirmPassword = document.getElementById('confirmNewPassword').value;
     const messageEl = document.getElementById('resetPasswordFormMessage');
     const submitBtn = document.getElementById('resetPasswordSubmit');
-    
+
     // Validation
     if (!newPassword || !confirmPassword) {
         messageEl.textContent = 'Please fill in both password fields';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         messageEl.textContent = 'Passwords do not match';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     if (newPassword.length < 8) {
         messageEl.textContent = 'Password must be at least 8 characters long';
         messageEl.className = 'form-error-text';
         return;
     }
-    
+
     // Show loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
-    
+
     // Submit the new password
     fetch('/password-reset/confirm/' + userId + '/', {
         method: 'POST',
@@ -534,41 +540,41 @@ function submitResetPassword(event) {
             confirm_password: confirmPassword
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        
-        if (data.success) {
-            messageEl.textContent = 'Password reset successfully! Redirecting to login...';
-            messageEl.className = 'form-success-text';
-            setTimeout(() => {
-                closeResetPasswordFormModal();
-                // Show success message on login form
-                const loginForm = document.getElementById('login-form');
-                if (loginForm) {
-                    // Create or update success message
-                    let successDiv = loginForm.querySelector('.form-success');
-                    if (!successDiv) {
-                        successDiv = document.createElement('div');
-                        successDiv.className = 'form-success';
-                        loginForm.insertBefore(successDiv, loginForm.firstChild);
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+
+            if (data.success) {
+                messageEl.textContent = 'Password reset successfully! Redirecting to login...';
+                messageEl.className = 'form-success-text';
+                setTimeout(() => {
+                    closeResetPasswordFormModal();
+                    // Show success message on login form
+                    const loginForm = document.getElementById('login-form');
+                    if (loginForm) {
+                        // Create or update success message
+                        let successDiv = loginForm.querySelector('.form-success');
+                        if (!successDiv) {
+                            successDiv = document.createElement('div');
+                            successDiv.className = 'form-success';
+                            loginForm.insertBefore(successDiv, loginForm.firstChild);
+                        }
+                        successDiv.textContent = 'Password reset successfully! Please sign in with your new password.';
                     }
-                    successDiv.textContent = 'Password reset successfully! Please sign in with your new password.';
-                }
-            }, 2000);
-        } else {
-            messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                }, 2000);
+            } else {
+                messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                messageEl.className = 'form-error-text';
+            }
+        })
+        .catch(error => {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            messageEl.textContent = 'An error occurred. Please try again.';
             messageEl.className = 'form-error-text';
-        }
-    })
-    .catch(error => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        messageEl.textContent = 'An error occurred. Please try again.';
-        messageEl.className = 'form-error-text';
-        console.error('Reset password error:', error);
-    });
+            console.error('Reset password error:', error);
+        });
 }
 
 // Close modal when clicking outside of modal content
@@ -595,8 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // update greeting based on time of day.
 document.addEventListener('DOMContentLoaded', function () {
-    const greetingWrapper = document.getElementById("wrapper-greeting");
-    const greetingElement = greetingWrapper.querySelector('#greeting');
+    const greetingElement = document.getElementById('greeting');
     if (greetingElement) {
         const hour = new Date().getHours();
         let greeting = 'Good day';
@@ -625,7 +630,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileUploadArea = document.getElementById('fileUploadArea');
     const fileInput = document.getElementById('reference_files');
     const fileList = document.getElementById('fileList');
-    const fileUploadLink = document.querySelector('.file-upload-link');
 
     if (!fileUploadArea || !fileInput) return;
 
@@ -661,12 +665,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Click to browse - trigger file input click
-    if (fileUploadLink) {
-        fileUploadLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            fileInput.click();
-        });
-    }
+    fileUploadArea.addEventListener('click', function (e) {
+        // Don't trigger if clicking on file list items or remove buttons
+        if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+            return;
+        }
+        e.stopPropagation();
+        fileInput.click();
+    });
 
     // File input change - accumulate files (only new files, not duplicates)
     fileInput.addEventListener('change', function () {
@@ -707,10 +713,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fileList.innerHTML = '';
         const fileArray = Array.from(files);
 
-        // Toggle upload text visibility
-        const uploadText = fileUploadArea.querySelector('p');
-        if (uploadText) {
-            uploadText.style.display = fileArray.length > 0 ? 'none' : 'block';
+        // Toggle upload content visibility
+        const uploadContent = fileUploadArea.querySelector('.file-upload-area-content');
+        if (uploadContent) {
+            uploadContent.style.display = fileArray.length > 0 ? 'none' : 'flex';
         }
 
         if (fileArray.length === 0) {
@@ -853,7 +859,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
                 return;
             }
-            e.preventDefault();
             e.stopPropagation();
             finishedFileInput.click();
         });
@@ -907,10 +912,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             modalFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = modalFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = modalFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -1160,9 +1165,46 @@ function confirmCancelProject() {
     form.submit();
 }
 
-/* User Dashboard - Edit Modal Functions */
+// Global click handler for debugging
+document.addEventListener('click', function(e) {
+    var target = e.target;
+    var closestButton = target.closest('.btn-icon');
+    if (closestButton) {
+        console.log('Button clicked:', closestButton);
+        console.log('Has onclick:', closestButton.onclick);
+        console.log('dataset:', closestButton.dataset);
+    }
+}, true); // Use capture to catch all clicks
+
+// User Dashboard - Edit and Delete button global handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation for edit buttons
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.btn-edit');
+        if (editBtn) {
+            console.log('Edit button clicked via delegation');
+            openEditModal(editBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        var deleteBtn = e.target.closest('.btn-delete');
+        if (deleteBtn) {
+            console.log('Delete button clicked via delegation');
+            openDeleteModal(deleteBtn);
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+});
+
+// User Dashboard - Edit Modal Functions */
 function openEditModal(button) {
+    console.log('openEditModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
     var designType = button.dataset.designType;
     var description = button.dataset.description;
@@ -1172,19 +1214,32 @@ function openEditModal(button) {
 
     // Set form action URL
     var editForm = document.getElementById('editForm');
+    console.log('editForm:', editForm);
     if (editForm) {
         editForm.action = '/design-request/' + requestId + '/edit/';
 
         // Populate form fields
-        document.getElementById('edit_title').value = title;
-        document.getElementById('edit_design_type').value = designType;
-        document.getElementById('edit_description').value = description;
-        document.getElementById('edit_budget').value = budget;
-        document.getElementById('edit_currency').value = currency;
-        document.getElementById('edit_deadline').value = deadline;
+        var editTitle = document.getElementById('edit_title');
+        var editDesignType = document.getElementById('edit_design_type');
+        var editDescription = document.getElementById('edit_description');
+        var editBudget = document.getElementById('edit_budget');
+        var editCurrency = document.getElementById('edit_currency');
+        var editDeadline = document.getElementById('edit_deadline');
+        
+        console.log('Form fields:', { editTitle, editDesignType, editDescription, editBudget, editCurrency, editDeadline });
+        
+        if (editTitle) editTitle.value = title;
+        if (editDesignType) editDesignType.value = designType;
+        if (editDescription) editDescription.value = description;
+        if (editBudget) editBudget.value = budget;
+        if (editCurrency) editCurrency.value = currency;
+        if (editDeadline) editDeadline.value = deadline;
 
         // Show modal using openModal
+        console.log('Calling openModal for editModal');
         openModal('editModal');
+    } else {
+        console.error('editForm not found in the DOM');
     }
 }
 
@@ -1192,22 +1247,272 @@ function closeEditModal() {
     closeModal('editModal');
 }
 
-/* User Dashboard - Delete Modal Functions */
+/* User Dashboard - Delete Design Request Modal */
 function openDeleteModal(button) {
+    console.log('openDeleteModal called', button);
     var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
     var title = button.dataset.title;
-
-    // Set form action URL
-    var deleteForm = document.getElementById('deleteForm');
-    if (deleteForm) {
-        deleteForm.action = '/design-request/' + requestId + '/delete/';
-
-        // Set title
-        document.getElementById('deleteRequestTitle').textContent = title;
-
-        // Show modal
+    
+    // Get the modal
+    var modal = document.getElementById('deleteModal');
+    console.log('Delete modal:', modal);
+    var form = document.getElementById('deleteForm');
+    var titleEl = document.getElementById('deleteRequestTitle');
+    
+    if (modal && form && titleEl) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/delete/';
+        
+        // Set the title
+        titleEl.textContent = title;
+        
+        // Show the modal using openModal for consistency
         openModal('deleteModal');
+    } else {
+        console.error('Delete modal elements not found:', { modal: modal, form: form, titleEl: titleEl });
     }
+}
+
+function closeDeleteModal() {
+    var modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+function confirmDelete(btn) {
+    var form = document.getElementById('deleteForm');
+    if (form) {
+        // Extract request ID from form action
+        var action = form.action;
+        var match = action.match(/\/design-request\/(\d+)\/delete\//);
+        var requestId = match ? match[1] : null;
+        
+        if (!requestId) {
+            alert('Error: Could not get request ID');
+            return false;
+        }
+        
+        // Get CSRF token
+        var csrftoken = getCookie('csrftoken');
+        
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(function(response) {
+            if (response.ok) {
+                // Close modal
+                closeDeleteModal();
+                // Find and remove the row in the table
+                var tableRow = document.querySelector('tr[data-request-id="' + requestId + '"]');
+                if (tableRow) {
+                    tableRow.remove();
+                }
+                
+                // Check if there are any remaining rows
+                var tbody = document.querySelector('.design-requests-table tbody');
+                if (tbody) {
+                    var remainingRows = tbody.querySelectorAll('tr');
+                    if (remainingRows.length === 0) {
+                        // Hide the table and show empty state
+                        var table = document.querySelector('.design-requests-table');
+                        var emptyState = document.getElementById('emptyState');
+                        if (table) table.style.display = 'none';
+                        if (emptyState) emptyState.style.display = 'flex';
+                    }
+                }
+            } else {
+                alert('Error deleting design request. Please try again.');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design request. Please try again.');
+        });
+    }
+    return false;
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/* Toggle Favorite Designer from User Dashboard Request Table */
+function toggleFavoriteFromRequest(button) {
+    var designerId = button.dataset.designerId;
+    var csrftoken = getCookie('csrftoken');
+    
+    fetch('/api/favorite-designer/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ designer_id: designerId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            var isFavorited = data.is_favorited;
+            var starIcon = button.querySelector('.favorite-star');
+            
+            // Toggle the button's favorited class
+            button.classList.toggle('favorited', isFavorited);
+            button.title = isFavorited ? 'Remove from favorites' : 'Add to favorites';
+            
+            // Update the star icon
+            if (starIcon) {
+                starIcon.setAttribute('fill', isFavorited ? 'currentColor' : 'none');
+                starIcon.classList.toggle('favorited', isFavorited);
+            }
+            
+            // Update the preferred designer dropdown if it exists
+            var optionToUpdate = document.querySelector(
+                '.preferred-designer-select option[value="' + designerId + '"]'
+            );
+            if (optionToUpdate && isFavorited) {
+                // Designer was favorited, ensure star is in the dropdown
+                if (!optionToUpdate.textContent.includes('★')) {
+                    var name = optionToUpdate.textContent.trim();
+                    optionToUpdate.textContent = name + ' ★';
+                }
+            } else if (optionToUpdate && !isFavorited) {
+                // Designer was unfavorited, remove star from dropdown
+                optionToUpdate.textContent = optionToUpdate.textContent.replace(' ★', '').trim();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling favorite:', error);
+    });
+}
+
+/* User Dashboard - Bulk Delete Design Requests */
+function toggleSelectAllDesignRequests() {
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    var checkboxes = document.querySelectorAll('.design-request-checkbox');
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateDesignRequestBulkActions();
+}
+
+function updateDesignRequestBulkActions() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+    var selectedCount = document.getElementById('selectedDesignCount');
+
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.classList.add('show');
+        selectedCount.textContent = checkedBoxes.length + ' design request' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
+    } else {
+        bulkActionsBar.classList.remove('show');
+    }
+
+    // Update select all checkbox state
+    var allCheckboxes = document.querySelectorAll('.design-request-checkbox');
+    var selectAllCheckbox = document.getElementById('selectAllDesignRequests');
+    if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function bulkDeleteDesignRequests() {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        alert('No design requests selected.');
+        return;
+    }
+
+    // Show bulk delete confirmation modal
+    var bulkDeleteCount = document.getElementById('bulkDeleteCount');
+    if (bulkDeleteCount) {
+        bulkDeleteCount.textContent = requestIds.length;
+    }
+    openModal('bulkDeleteModal');
+}
+
+// Bulk Delete Modal Functions
+function closeBulkDeleteModal() {
+    closeModal('bulkDeleteModal');
+}
+
+function confirmBulkDelete(btn) {
+    var checkedBoxes = document.querySelectorAll('.design-request-checkbox:checked');
+    var requestIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+    if (requestIds.length === 0) {
+        closeBulkDeleteModal();
+        return false;
+    }
+
+    var csrftoken = getCookie('csrftoken');
+    var deletePromises = requestIds.map(function(requestId) {
+        return fetch('/design-request/' + requestId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        });
+    });
+
+    Promise.all(deletePromises)
+        .then(function() {
+            // Remove deleted rows
+            checkedBoxes.forEach(function(checkbox) {
+                var row = checkbox.closest('tr');
+                if (row) {
+                    row.remove();
+                }
+            });
+
+            // Hide bulk actions bar
+            var bulkActionsBar = document.getElementById('designRequestsBulkActions');
+            bulkActionsBar.classList.remove('show');
+
+            // Close the bulk delete modal
+            closeBulkDeleteModal();
+
+            // Check if table is now empty
+            var tbody = document.querySelector('.design-requests-table tbody');
+            if (tbody) {
+                var remainingRows = tbody.querySelectorAll('tr');
+                if (remainingRows.length === 0) {
+                    var table = document.querySelector('.design-requests-table');
+                    var emptyState = document.getElementById('emptyState');
+                    if (table) table.style.display = 'none';
+                    if (emptyState) emptyState.style.display = 'flex';
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error deleting design requests. Please try again.');
+            closeBulkDeleteModal();
+        });
 }
 
 function closeDeleteModal() {
@@ -1352,6 +1657,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return dt.files;
         }
 
+        // Click to browse - trigger file input click
+        editFileUploadArea.addEventListener('click', function (e) {
+            // Don't trigger if clicking on file list items or remove buttons
+            if (e.target.closest('.file-list') || e.target.closest('.file-item-remove')) {
+                return;
+            }
+            e.stopPropagation();
+            editFileInput.click();
+        });
+
         // Drag and drop events
         editFileUploadArea.addEventListener('dragover', function (e) {
             e.preventDefault();
@@ -1391,10 +1706,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             editFileList.innerHTML = '';
 
-            // Toggle upload text visibility
-            var uploadText = editFileUploadArea.querySelector('p');
-            if (uploadText) {
-                uploadText.style.display = files.length > 0 ? 'none' : 'block';
+            // Toggle upload content visibility
+            var uploadContent = editFileUploadArea.querySelector('.file-upload-area-content');
+            if (uploadContent) {
+                uploadContent.style.display = files.length > 0 ? 'none' : 'flex';
             }
 
             if (files.length === 0) {
@@ -1745,6 +2060,333 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Cover Photo Cropping Functionality
+    var coverCropper = null;
+    var coverEditBtn = document.getElementById('coverEditBtn');
+    var coverPhotoInput = document.getElementById('cover_photo_input');
+    var coverCropperModal = document.getElementById('coverCropperModal');
+    var coverCropperImage = document.getElementById('coverCropperImage');
+    var closeCoverCropperBtn = document.getElementById('closeCoverCropperBtn');
+    var cancelCoverCropBtn = document.getElementById('cancelCoverCropBtn');
+    var applyCoverCropBtn = document.getElementById('applyCoverCropBtn');
+    var profileCover = document.getElementById('profileCover');
+
+    if (coverEditBtn && coverPhotoInput) {
+        // Click on cover edit button
+        coverEditBtn.addEventListener('click', function () {
+            coverPhotoInput.click();
+        });
+
+        // Click on cover clear button
+        var coverClearBtn = document.getElementById('coverClearBtn');
+        if (coverClearBtn) {
+            coverClearBtn.addEventListener('click', function () {
+                if (confirm('Are you sure you want to clear your cover photo?')) {
+                    // Submit AJAX request to clear cover photo
+                    function getCookie(name) {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+                    var csrfToken = getCookie('csrftoken');
+                    
+                    fetch('/api/clear-cover-photo/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show the cleared cover photo
+                            window.location.reload();
+                        } else {
+                            alert('Error clearing cover photo: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error clearing cover photo. Please try again.');
+                    });
+                }
+            });
+        }
+
+        // File input change
+        coverPhotoInput.addEventListener('change', function (e) {
+            if (this.files && this.files[0]) {
+                var file = this.files[0];
+
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file (JPEG, PNG, etc.)');
+                    return;
+                }
+
+                // Validate file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File size must be less than 10MB');
+                    return;
+                }
+
+                // Show cropper modal first, then load image
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    if (coverCropperImage && coverCropperModal) {
+                        // Show modal immediately
+                        coverCropperModal.classList.add('show');
+                        document.documentElement.classList.add('cropper-modal-open');
+                        document.body.classList.add('cropper-modal-open');
+
+                        // Destroy existing cropper
+                        if (coverCropper) {
+                            coverCropper.destroy();
+                            coverCropper = null;
+                        }
+
+                        // Clear src first to ensure fresh load
+                        coverCropperImage.src = '';
+
+                        // Set new src and init cropper after image loads
+                        coverCropperImage.onload = function () {
+                            // Small delay to ensure modal is rendered
+                            setTimeout(function () {
+                                initCoverCropper();
+                            }, 50);
+                        };
+
+                        coverCropperImage.src = event.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Initialize cover cropper function
+    function initCoverCropper() {
+        if (!coverCropperImage) return;
+
+        coverCropper = new Cropper(coverCropperImage, {
+            aspectRatio: 1200 / 400, // Match profile-cover dimensions (height 280px, approximate width)
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            minContainerWidth: 200,
+            minContainerHeight: 100,
+            ready: function () {
+                // Cropper is ready
+                console.log('Cover Cropper ready');
+            }
+        });
+    }
+
+    // Close cover cropper modal
+    if (closeCoverCropperBtn) {
+        closeCoverCropperBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Cancel cover crop
+    if (cancelCoverCropBtn) {
+        cancelCoverCropBtn.addEventListener('click', function () {
+            closeCoverCropperModal();
+        });
+    }
+
+    // Zoom in cover
+    var coverZoomInBtn = document.getElementById('coverZoomInBtn');
+    if (coverZoomInBtn) {
+        coverZoomInBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(0.1);
+            }
+        });
+    }
+
+    // Zoom out cover
+    var coverZoomOutBtn = document.getElementById('coverZoomOutBtn');
+    if (coverZoomOutBtn) {
+        coverZoomOutBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.zoom(-0.1);
+            }
+        });
+    }
+
+    // Rotate left cover
+    var coverRotateLeftBtn = document.getElementById('coverRotateLeftBtn');
+    if (coverRotateLeftBtn) {
+        coverRotateLeftBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(-45);
+            }
+        });
+    }
+
+    // Rotate right cover
+    var coverRotateRightBtn = document.getElementById('coverRotateRightBtn');
+    if (coverRotateRightBtn) {
+        coverRotateRightBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.rotate(45);
+            }
+        });
+    }
+
+    // Flip horizontal cover
+    var coverFlipHorizontalBtn = document.getElementById('coverFlipHorizontalBtn');
+    if (coverFlipHorizontalBtn) {
+        coverFlipHorizontalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleX = coverCropper.getData().scaleX || 1;
+                coverCropper.scaleX(-scaleX);
+            }
+        });
+    }
+
+    // Flip vertical cover
+    var coverFlipVerticalBtn = document.getElementById('coverFlipVerticalBtn');
+    if (coverFlipVerticalBtn) {
+        coverFlipVerticalBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                var scaleY = coverCropper.getData().scaleY || 1;
+                coverCropper.scaleY(-scaleY);
+            }
+        });
+    }
+
+    // Reset cover crop
+    var coverResetCropBtn = document.getElementById('coverResetCropBtn');
+    if (coverResetCropBtn) {
+        coverResetCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                coverCropper.reset();
+            }
+        });
+    }
+
+    // Apply cover crop
+    if (applyCoverCropBtn) {
+        applyCoverCropBtn.addEventListener('click', function () {
+            if (coverCropper) {
+                // Get cropped canvas (use original dimensions to preserve quality)
+                var canvas = coverCropper.getCroppedCanvas({
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                // Convert to base64 (use JPEG with high quality to balance quality and size)
+                var croppedImageData = canvas.toDataURL('image/jpeg', 0.98);
+
+                // Update cover photo display
+                if (profileCover) {
+                    var existingImg = profileCover.querySelector('.cover-photo-image');
+                    if (existingImg) {
+                        existingImg.src = croppedImageData;
+                    } else {
+                        var img = document.createElement('img');
+                        img.src = croppedImageData;
+                        img.alt = 'Cover Photo';
+                        img.className = 'cover-photo-image';
+                        profileCover.insertBefore(img, profileCover.firstChild);
+                    }
+                }
+
+                closeCoverCropperModal();
+
+                // Submit the cover photo via AJAX
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                var csrfToken = getCookie('csrftoken');
+                
+                fetch('/api/upload-cover-photo/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        cover_cropped_image_data: croppedImageData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show the new cover photo
+                        window.location.reload();
+                    } else {
+                        alert('Error uploading cover photo: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error uploading cover photo. Please try again.');
+                });
+            }
+        });
+    }
+
+    // Close modal when clicking outside
+    if (coverCropperModal) {
+        coverCropperModal.addEventListener('click', function (e) {
+            if (e.target === coverCropperModal) {
+                closeCoverCropperModal();
+            }
+        });
+    }
+
+    // Close cover cropper modal function
+    function closeCoverCropperModal() {
+        if (coverCropperModal) {
+            coverCropperModal.classList.remove('show');
+        }
+
+        document.documentElement.classList.remove('cropper-modal-open');
+        document.body.classList.remove('cropper-modal-open');
+
+        if (coverCropper) {
+            coverCropper.destroy();
+            coverCropper = null;
+        }
+
+        // Reset file input
+        if (coverPhotoInput) {
+            coverPhotoInput.value = '';
+        }
+    }
+
     // Form submission loading state
     var editProfileForm = document.getElementById('editProfileForm');
     if (editProfileForm) {
@@ -1774,13 +2416,13 @@ function openCompletionModal(requestId) {
         })
         .then(data => {
             console.log('Received data:', data);
-            
+
             // Set project title
             var titleEl = document.getElementById('completionTitle');
             if (titleEl) {
                 titleEl.textContent = data.title || 'Unknown Project';
             }
-            
+
             // Set completion date
             var dateEl = document.getElementById('completionDate');
             if (dateEl) {
@@ -1791,20 +2433,29 @@ function openCompletionModal(requestId) {
             var designerSection = document.getElementById('designerSection');
             var designerAvatar = document.getElementById('designerAvatar');
             var designerName = document.getElementById('designerName');
-            
+            var designerProfileLink = document.getElementById('designerProfileLink');
+
             console.log('Designer data:', data.designer);
-            console.log('Elements:', { designerSection, designerAvatar, designerName });
-            
+            console.log('Elements:', { designerSection, designerAvatar, designerName, designerProfileLink });
+
             if (data.designer && designerSection && designerAvatar && designerName) {
                 designerSection.style.display = 'block';
                 designerName.textContent = data.designer.name;
-                
+
                 // Set avatar - either profile picture or initials
                 if (data.designer.profile_picture) {
                     designerAvatar.innerHTML = '<img src="' + data.designer.profile_picture + '" alt="' + data.designer.name + '">';
                 } else {
                     designerAvatar.innerHTML = '<span class="avatar-initials">' + (data.designer.initials || '?') + '</span>';
                 }
+
+                // Set profile link
+                if (designerProfileLink && data.designer.username) {
+                    designerProfileLink.href = '/profile/' + data.designer.username + '/';
+                }
+
+                // Load and setup rating functionality
+                setupRatingSystem(requestId);
             } else if (designerSection) {
                 designerSection.style.display = 'none';
             }
@@ -1839,21 +2490,227 @@ function closeCompletionModal() {
     closeModal('completionModal');
 }
 
+// Rating System Functions
+let currentRequestId = null;
+let selectedRating = 0;
+
+function setupRatingSystem(requestId) {
+    currentRequestId = requestId;
+    const rateBtnText = document.getElementById('rateBtnText');
+
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + requestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                rateBtnText.textContent = 'Rated ' + data.user_rating + '/5';
+            } else if (data.average_rating > 0) {
+                rateBtnText.textContent = 'Avg: ' + data.average_rating + '/5';
+            } else {
+                rateBtnText.textContent = 'Rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            rateBtnText.textContent = 'Rate';
+        });
+}
+
+function openRatingModal() {
+    if (!currentRequestId) return;
+    
+    const modal = document.getElementById('ratingModal');
+    const ratingDesignerAvatar = document.getElementById('ratingDesignerAvatar');
+    const ratingDesignerName = document.getElementById('ratingDesignerName');
+    const ratingTextLarge = document.getElementById('ratingTextLarge');
+    const starsLarge = document.querySelectorAll('#ratingStarsLarge .star-large');
+    
+    // Get designer info from completion modal
+    const designerAvatar = document.getElementById('designerAvatar');
+    const designerName = document.getElementById('designerName');
+    
+    // Copy designer info to rating modal
+    ratingDesignerAvatar.innerHTML = designerAvatar.innerHTML;
+    ratingDesignerName.textContent = designerName.textContent;
+    
+    // Fetch current rating
+    fetch('/api/get-designer-rating/' + currentRequestId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_rating) {
+                selectedRating = data.user_rating;
+                updateStarsLarge(starsLarge, selectedRating);
+                ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+            } else {
+                selectedRating = 0;
+                updateStarsLarge(starsLarge, 0);
+                ratingTextLarge.textContent = 'Click on a star to rate';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rating:', error);
+            selectedRating = 0;
+            updateStarsLarge(starsLarge, 0);
+            ratingTextLarge.textContent = 'Click on a star to rate';
+        });
+    
+    // Add hover effects
+    starsLarge.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, rating);
+            ratingTextLarge.textContent = getRatingText(rating);
+        });
+
+        star.addEventListener('mouseleave', function() {
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = selectedRating > 0 ? 'Your rating: ' + selectedRating + '/5' : 'Click on a star to rate';
+        });
+
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.getAttribute('data-rating'));
+            updateStarsLarge(starsLarge, selectedRating);
+            ratingTextLarge.textContent = 'Your rating: ' + selectedRating + '/5';
+        });
+    });
+    
+    openModal('ratingModal');
+}
+
+function closeRatingModal() {
+    closeModal('ratingModal');
+    selectedRating = 0;
+}
+
+function updateStarsLarge(stars, rating) {
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+function getRatingText(rating) {
+    const texts = {
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very Good',
+        5: 'Excellent'
+    };
+    return texts[rating] || '';
+}
+
+function submitRating() {
+    if (selectedRating === 0) {
+        showNotification('Please select a rating', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitRatingBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    fetch('/api/save-designer-rating/' + currentRequestId + '/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ rating: selectedRating })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Save rating value before closing modal
+            const savedRating = selectedRating;
+            
+            showNotification('Rating saved successfully!', 'success');
+            closeRatingModal();
+            
+            // Update button text with saved rating
+            const rateBtnText = document.getElementById('rateBtnText');
+            rateBtnText.textContent = 'Rated ' + savedRating + '/5';
+        } else {
+            showNotification('Error saving rating: ' + data.error, 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    })
+    .catch(error => {
+        console.error('Error saving rating:', error);
+        showNotification('Error saving rating. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Rating';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification notification-' + type;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = '#10b981';
+    } else {
+        notification.style.background = '#ef4444';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
 /* Designer Dashboard - Dynamic Section Switching */
 function showDashboardSection(sectionId) {
     console.log('=== showDashboardSection called ===');
     console.log('Target section ID:', sectionId);
-    
+
     // Hide all sections - use both class and direct style
     var allSections = document.querySelectorAll('.dashboard-section-content');
     console.log('Found sections:', allSections.length);
-    allSections.forEach(function(section, index) {
+    allSections.forEach(function (section, index) {
         console.log('Hiding section', index, ':', section.id);
         section.classList.remove('active');
         // Direct style manipulation as fallback
         section.style.display = 'none';
     });
-    
+
     // Show the selected section - use both class and direct style
     var targetSection = document.getElementById(sectionId + '-section');
     console.log('Target element found:', targetSection);
@@ -1870,21 +2727,21 @@ function showDashboardSection(sectionId) {
     } else {
         console.error('Section not found:', sectionId + '-section');
     }
-    
+
     // Update sidebar active state
     var sidebarItems = document.querySelectorAll('.side-item[data-section]');
-    sidebarItems.forEach(function(item) {
+    sidebarItems.forEach(function (item) {
         item.classList.remove('active');
         if (item.getAttribute('data-section') === sectionId) {
             item.classList.add('active');
         }
     });
-    
+
     // Save current section to localStorage based on which dashboard we're on
     var isDesignerDashboard = document.getElementById('available-requests-section') !== null;
     var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
     var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
-    
+
     if (isDesignerDashboard) {
         localStorage.setItem('designerDashboardSection', sectionId);
     } else if (isUserDashboard) {
@@ -1895,7 +2752,7 @@ function showDashboardSection(sectionId) {
 }
 
 // Initialize dashboard section on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Check if we're on a dashboard with section content
     var dashboardSections = document.querySelectorAll('.dashboard-section-content');
     if (dashboardSections.length > 0) {
@@ -1903,11 +2760,11 @@ document.addEventListener('DOMContentLoaded', function() {
         var isDesignerDashboard = document.getElementById('available-requests-section') !== null;
         var isUserDashboard = document.getElementById('requests-section') !== null && !isDesignerDashboard;
         var isAdminDashboard = document.getElementById('users-section') !== null && document.getElementById('requests-section') !== null;
-        
+
         // Check if there's a hash in the URL (from sidebar navigation)
         var hash = window.location.hash.replace('#', '');
         var initialSection = 'dashboard'; // Default section
-        
+
         // If there's a hash, check if the section exists before using it
         if (hash) {
             var targetSection = document.getElementById(hash + '-section');
@@ -1915,15 +2772,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 initialSection = hash;
             }
         }
-        
+
         // Show the initial section
         showDashboardSection(initialSection);
-        
+
         // Add click handlers for sidebar navigation
         var sidebarItems = document.querySelectorAll('.side-item[data-section]');
-        sidebarItems.forEach(function(item) {
+        sidebarItems.forEach(function (item) {
             item.style.cursor = 'pointer';
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
                 var sectionId = this.getAttribute('data-section');
                 if (sectionId) {
@@ -1971,7 +2828,7 @@ function openAddUserModal() {
 function saveNewUser() {
     var firstName = document.getElementById('addFirstName').value.trim();
     var lastName = document.getElementById('addLastName').value.trim();
-    
+
     // Client-side validation
     if (!firstName || !lastName) {
         showMessageModal('Error', 'First name and last name are required.', 'error');
@@ -1999,7 +2856,7 @@ function saveNewUser() {
         body: formData
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2007,9 +2864,10 @@ function saveNewUser() {
             if (result.ok && result.data.success) {
                 closeModal('addUserModal');
                 showMessageModal('Success', 'User created successfully!', 'success');
-                setTimeout(function() {
-                    location.reload();
-                }, 1500);
+                // Dynamically add new user row to table
+                if (result.data.user) {
+                    addUserRowToTable(result.data.user);
+                }
             } else {
                 showMessageModal('Error', result.data.error || 'Unknown error occurred.', 'error');
             }
@@ -2018,6 +2876,88 @@ function saveNewUser() {
             console.error('Error creating user:', error);
             showMessageModal('Error', 'Error creating user. Please try again.', 'error');
         });
+}
+
+function addUserRowToTable(user) {
+    var tbody = document.querySelector('.users-table tbody');
+    if (!tbody) return;
+    
+    // Create new row
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-user-id', user.id);
+    
+    // Build role badge
+    var roleBadge = '';
+    if (user.is_superuser) {
+        roleBadge = '<span class="role-badge role-owner">Owner</span>';
+    } else if (user.user_role === 'admin' && user.admin_approval_status === 'pending') {
+        roleBadge = '<span class="status-badge status-pending">Pending Approval</span>';
+    } else {
+        roleBadge = '<span class="role-badge role-' + user.user_role + '">' + user.user_role_display + '</span>';
+    }
+    
+    // Build profile picture
+    var avatarHtml = '';
+    if (user.profile_picture) {
+        avatarHtml = '<img src="' + user.profile_picture + '" alt="' + user.first_name + '">';
+    } else {
+        avatarHtml = '<img src="/static/img/default-avatar.png" alt="' + user.first_name + '">';
+    }
+    
+    // Build contact info
+    var contactHtml = '<span class="email">' + user.email + '</span>';
+    if (user.phone_number) {
+        contactHtml += '<span class="phone">' + user.phone_number + '</span>';
+    }
+    
+    // Build action buttons
+    var actionButtons = '<div class="action-buttons">';
+    actionButtons += '<button class="btn-icon btn-view" title="View User" data-user-id="' + user.id + '" data-action="view">';
+    actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    actionButtons += '</button>';
+    actionButtons += '<button class="btn-icon btn-edit" title="Edit User" data-user-id="' + user.id + '" data-action="edit">';
+    actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    actionButtons += '</button>';
+    // Only show delete button if not a superuser (unless current user is superuser)
+    if (!user.is_superuser) {
+        actionButtons += '<button class="btn-icon btn-delete" title="Delete User" data-user-id="' + user.id + '" data-action="delete">';
+        actionButtons += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+        actionButtons += '</button>';
+    }
+    actionButtons += '</div>';
+    
+    // Set row HTML
+    tr.innerHTML = '<td style="text-align: center;"><input type="checkbox" class="user-checkbox" value="' + user.id + '" onchange="updateBulkActions()"></td>' +
+        '<td class="user-cell"><div class="user-info"><div class="user-avatar">' + avatarHtml + '</div><div class="user-details"><span class="user-name">' + user.first_name + ' ' + user.last_name + '</span><span class="user-username">@' + user.username + '</span></div></div></td>' +
+        '<td class="contact-cell"><div class="contact-info">' + contactHtml + '</div></td>' +
+        '<td>' + roleBadge + '</td>' +
+        '<td class="date-cell">' + user.joined_date + '</td>' +
+        '<td class="actions-cell">' + actionButtons + '</td>';
+    
+    // Add row to table
+    tbody.insertBefore(tr, tbody.firstChild);
+    
+    // Update user count
+    var countBadge = document.querySelector('.count-badge');
+    if (countBadge) {
+        var currentCount = parseInt(countBadge.textContent) || 0;
+        countBadge.textContent = (currentCount + 1) + ' total users in this site';
+    }
+}
+
+function removeUserRowFromTable(userId) {
+    var row = document.querySelector('tr[data-user-id="' + userId + '"]');
+    if (row) {
+        row.remove();
+        // Update user count
+        var countBadge = document.querySelector('.count-badge');
+        if (countBadge) {
+            var currentCount = parseInt(countBadge.textContent) || 0;
+            if (currentCount > 0) {
+                countBadge.textContent = (currentCount - 1) + ' total users in this site';
+            }
+        }
+    }
 }
 
 function viewUser(userId) {
@@ -2144,7 +3084,7 @@ function saveUser() {
         body: formData
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2152,7 +3092,7 @@ function saveUser() {
             if (result.ok && result.data.success) {
                 closeModal('editUserModal');
                 showMessageModal('Success', 'User updated successfully!', 'success');
-                setTimeout(function() {
+                setTimeout(function () {
                     location.reload();
                 }, 1500);
             } else {
@@ -2210,7 +3150,7 @@ function confirmDeleteUser() {
         }
     })
         .then(function (response) {
-            return response.json().then(function(data) {
+            return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
             });
         })
@@ -2218,9 +3158,8 @@ function confirmDeleteUser() {
             if (result.ok && result.data.success) {
                 closeModal('deleteUserModal');
                 showMessageModal('Success', 'User deleted successfully!', 'success');
-                setTimeout(function() {
-                    location.reload();
-                }, 1500);
+                // Dynamically remove user row from table
+                removeUserRowFromTable(userId);
             } else {
                 showMessageModal('Error', result.data.message || result.data.error || 'Unknown error occurred.', 'error');
             }
@@ -2234,7 +3173,7 @@ function confirmDeleteUser() {
 function showMessageModal(title, message, type, callback) {
     var modalId = 'messageModal';
     var modal = document.getElementById(modalId);
-    
+
     if (!modal) {
         modal = document.createElement('div');
         modal.id = modalId;
@@ -2242,11 +3181,11 @@ function showMessageModal(title, message, type, callback) {
         modal.innerHTML = '<div class="modal-content message-modal-content"><button class="close-btn" onclick="closeMessageModal()" aria-label="Close modal"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><div class="message-modal-icon" id="messageModalIcon"></div><h2 id="messageModalTitle"></h2><p id="messageModalText" class="message-modal-text"></p><div class="modal-actions"><button type="button" class="btn btn-primary" onclick="closeMessageModal(true)">OK</button></div></div>';
         document.body.appendChild(modal);
     }
-    
+
     // Set content
     document.getElementById('messageModalTitle').textContent = title;
     document.getElementById('messageModalText').textContent = message;
-    
+
     // Set icon based on type
     var iconContainer = document.getElementById('messageModalIcon');
     if (type === 'success') {
@@ -2259,10 +3198,10 @@ function showMessageModal(title, message, type, callback) {
         iconContainer.innerHTML = 'ℹ';
         iconContainer.className = 'message-modal-icon info';
     }
-    
+
     // Store callback
     modal.callback = callback;
-    
+
     // Show modal
     modal.classList.add('show');
 }
@@ -2280,7 +3219,7 @@ function closeMessageModal(triggerCallback) {
 function toggleSelectAllUsers() {
     var selectAllCheckbox = document.getElementById('selectAllUsers');
     var userCheckboxes = document.querySelectorAll('.user-checkbox');
-    userCheckboxes.forEach(function(checkbox) {
+    userCheckboxes.forEach(function (checkbox) {
         checkbox.checked = selectAllCheckbox.checked;
     });
     updateBulkActions();
@@ -2290,14 +3229,14 @@ function updateBulkActions() {
     var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
     var bulkActionsBar = document.querySelector('.bulk-actions-bar');
     var selectedCount = document.getElementById('selectedCount');
-    
+
     if (checkedBoxes.length > 0) {
         bulkActionsBar.classList.add('show');
         selectedCount.textContent = checkedBoxes.length + ' user' + (checkedBoxes.length > 1 ? 's' : '') + ' selected';
     } else {
         bulkActionsBar.classList.remove('show');
     }
-    
+
     // Update select all checkbox state
     var allCheckboxes = document.querySelectorAll('.user-checkbox');
     var selectAllCheckbox = document.getElementById('selectAllUsers');
@@ -2310,13 +3249,13 @@ function updateBulkActions() {
 
 function bulkDeleteUsers() {
     var checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-    var userIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
-    
+    var userIds = Array.from(checkedBoxes).map(function (cb) { return cb.value; });
+
     if (userIds.length === 0) {
         showMessageModal('Error', 'No users selected.', 'error');
         return;
     }
-    
+
     // Show confirmation modal
     document.getElementById('bulkDeleteUserIds').value = userIds.join(',');
     document.getElementById('bulkDeleteCount').textContent = userIds.length;
@@ -2326,7 +3265,7 @@ function bulkDeleteUsers() {
 function confirmBulkDeleteUsers() {
     var userIds = document.getElementById('bulkDeleteUserIds').value.split(',');
     var csrfToken = getCSRFToken();
-    var deletePromises = userIds.map(function(userId) {
+    var deletePromises = userIds.map(function (userId) {
         return fetch('/manage/user/' + userId + '/delete/', {
             method: 'POST',
             headers: {
@@ -2335,16 +3274,16 @@ function confirmBulkDeleteUsers() {
             }
         });
     });
-    
+
     Promise.all(deletePromises)
-        .then(function() {
+        .then(function () {
             closeModal('bulkDeleteUserModal');
             showMessageModal('Success', userIds.length + ' users deleted successfully!', 'success');
-            setTimeout(function() {
+            setTimeout(function () {
                 location.reload();
             }, 1500);
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.error('Error deleting users:', error);
             showMessageModal('Error', 'Error deleting some users. Please try again.', 'error');
         });
@@ -2360,46 +3299,46 @@ function toggleFilterDropdown() {
 function applyFilters() {
     // Get selected roles
     var roleCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:first-child input:checked');
-    var selectedRoles = Array.from(roleCheckboxes).map(function(cb) { return cb.value; });
-    
+    var selectedRoles = Array.from(roleCheckboxes).map(function (cb) { return cb.value; });
+
     // Get selected statuses
     var statusCheckboxes = document.querySelectorAll('#filterDropdown .filter-section:nth-child(2) input:checked');
-    var selectedStatuses = Array.from(statusCheckboxes).map(function(cb) { return cb.value; });
-    
+    var selectedStatuses = Array.from(statusCheckboxes).map(function (cb) { return cb.value; });
+
     console.log('Selected roles:', selectedRoles);
     console.log('Selected statuses:', selectedStatuses);
-    
+
     // Filter table rows
     var tableBody = document.querySelector('.users-table tbody');
     if (!tableBody) {
         console.error('Table body not found');
         return;
     }
-    
+
     var rows = tableBody.querySelectorAll('tr');
     console.log('Total rows found:', rows.length);
-    
+
     var visibleRowCount = 0;
     var emptyStateRow = document.getElementById('emptyStateRow');
-    
-    rows.forEach(function(row, index) {
+
+    rows.forEach(function (row, index) {
         // Skip empty state row
         if (row.id === 'emptyStateRow') {
             row.style.display = 'none';
             return;
         }
-        
+
         var roleBadge = row.querySelector('.role-badge');
         var roleClass = roleBadge ? roleBadge.className : '';
         var roleMatch = roleClass.match(/role-(user|designer|admin)\b/);
         var roleValue = roleMatch ? roleMatch[1] : '';
-        
+
         console.log('Row', index, 'role class:', roleClass, 'extracted role:', roleValue);
-        
+
         // Show row if no filters selected OR if role matches
         var showByRole = selectedRoles.length === 0 || selectedRoles.indexOf(roleValue) !== -1;
         var showByStatus = true;
-        
+
         if (showByRole && showByStatus) {
             row.style.display = '';
             visibleRowCount++;
@@ -2409,9 +3348,9 @@ function applyFilters() {
             console.log('Row', index, 'HIDDEN');
         }
     });
-    
+
     console.log('Visible rows:', visibleRowCount);
-    
+
     // Show empty state if needed
     if (emptyStateRow) {
         if (visibleRowCount === 0 && selectedRoles.length > 0) {
@@ -2432,13 +3371,137 @@ function applyFilters() {
 
 function clearFilters() {
     var checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
-    checkboxes.forEach(function(cb) { cb.checked = false; });
+    checkboxes.forEach(function (cb) { cb.checked = false; });
     applyFilters();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function sortUsersTable() {
+    var sortBy = document.getElementById('sortBy').value;
+    var invertSort = document.getElementById('invertSort').checked;
+    
+    if (!sortBy) {
+        return; // No sort option selected
+    }
+    
+    var tableBody = document.querySelector('.users-table tbody');
+    if (!tableBody) {
+        console.error('Table body not found');
+        return;
+    }
+    
+    var rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    // Filter out the empty state row
+    var dataRows = rows.filter(function(row) {
+        return row.id !== 'emptyStateRow';
+    });
+    
+    var emptyStateRow = rows.find(function(row) {
+        return row.id === 'emptyStateRow';
+    });
+    
+    // Sort the rows
+    dataRows.sort(function(a, b) {
+        var valueA, valueB;
+        
+        switch(sortBy) {
+            case 'first_name':
+                valueA = getFirstName(a);
+                valueB = getFirstName(b);
+                break;
+            case 'last_name':
+                valueA = getLastName(a);
+                valueB = getLastName(b);
+                break;
+            case 'contact_info':
+                valueA = getContactInfo(a);
+                valueB = getContactInfo(b);
+                break;
+            case 'join_date':
+                valueA = getJoinDate(a);
+                valueB = getJoinDate(b);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var comparison = 0;
+        if (sortBy === 'join_date') {
+            // For dates, compare as Date objects
+            var dateA = parseDate(valueA);
+            var dateB = parseDate(valueB);
+            comparison = dateA - dateB;
+        } else {
+            // For strings, compare case-insensitive
+            comparison = valueA.toLowerCase().localeCompare(valueB.toLowerCase());
+        }
+        
+        // Apply invert if checked
+        return invertSort ? -comparison : comparison;
+    });
+    
+    // Re-append rows in sorted order
+    dataRows.forEach(function(row) {
+        tableBody.appendChild(row);
+    });
+    
+    // Re-append empty state row at the end if it exists
+    if (emptyStateRow) {
+        tableBody.appendChild(emptyStateRow);
+    }
+}
+
+function getFirstName(row) {
+    var nameElement = row.querySelector('.user-name');
+    if (nameElement) {
+        var fullName = nameElement.textContent.trim();
+        var parts = fullName.split(' ');
+        return parts[0] || '';
+    }
+    return '';
+}
+
+function getLastName(row) {
+    var nameElement = row.querySelector('.user-name');
+    if (nameElement) {
+        var fullName = nameElement.textContent.trim();
+        var parts = fullName.split(' ');
+        return parts.length > 1 ? parts[parts.length - 1] : '';
+    }
+    return '';
+}
+
+function getContactInfo(row) {
+    var emailElement = row.querySelector('.email');
+    return emailElement ? emailElement.textContent.trim().toLowerCase() : '';
+}
+
+function getJoinDate(row) {
+    var dateCell = row.querySelector('.date-cell');
+    return dateCell ? dateCell.textContent.trim() : '';
+}
+
+function parseDate(dateString) {
+    // Parse date in format "M d, Y" (e.g., "Mar 24, 2026")
+    var months = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    
+    var parts = dateString.split(' ');
+    if (parts.length === 3) {
+        var month = months[parts[0]];
+        var day = parseInt(parts[1].replace(',', ''));
+        var year = parseInt(parts[2]);
+        return new Date(year, month, day);
+    }
+    return new Date(0); // Return epoch if parsing fails
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     // Close filter dropdown when clicking outside
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         var container = document.querySelector('.filter-dropdown-container');
         var dropdown = document.getElementById('filterDropdown');
         if (container && !container.contains(event.target)) {
@@ -2448,8 +3511,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle user action buttons (view/edit/delete)
-    document.querySelectorAll('.action-buttons button').forEach(function (button) {
+    // Handle user action buttons in admin dashboard (view/edit/delete)
+    // Only target buttons that have data-user-id attribute (admin dashboard)
+    document.querySelectorAll('.action-buttons button[data-user-id]').forEach(function (button) {
         button.addEventListener('click', function () {
             var userId = this.getAttribute('data-user-id');
             var action = this.getAttribute('data-action');
@@ -2492,10 +3556,10 @@ function closeCancelConfirmModal() {
     currentCancelDesignId = null;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Add click handlers for view and edit buttons in project modal
-    document.querySelectorAll('.btn-view, .btn-edit').forEach(function(button) {
-        button.addEventListener('click', function() {
+    document.querySelectorAll('.btn-view, .btn-edit').forEach(function (button) {
+        button.addEventListener('click', function () {
             var designId = this.getAttribute('data-design-id');
             if (designId && typeof openProjectModal === 'function') {
                 openProjectModal(parseInt(designId));
@@ -2511,13 +3575,13 @@ function closeCropperModal() {
     }
     document.body.classList.remove('cropper-modal-open');
     document.documentElement.classList.remove('cropper-modal-open');
-    
+
     // Destroy cropper if it exists (global variable from script.js)
     if (typeof cropper !== 'undefined' && cropper) {
         cropper.destroy();
         cropper = null;
     }
-    
+
     // Reset file input
     const profilePictureInput = document.getElementById('profile_picture');
     if (profilePictureInput) {
@@ -2526,30 +3590,30 @@ function closeCropperModal() {
 }
 
 // Settings page initialization - runs on unified_settings.html page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Only run this on the settings page
     if (!document.querySelector('.settings-unified-nav-item')) {
         return;
     }
-    
+
     // ========== Section Navigation ==========
     const navItems = document.querySelectorAll('.settings-unified-nav-item');
     const sections = document.querySelectorAll('.settings-unified-section');
-    
+
     if (navItems.length === 0 || sections.length === 0) {
         return;
     }
-    
+
     // Get initial section from URL hash or default to account
     const hash = window.location.hash.replace('#', '');
     let activeSection = hash || 'account';
-    
+
     // Validate activeSection exists
     const validSections = Array.from(navItems).map(item => item.dataset.section);
     if (!validSections.includes(activeSection)) {
         activeSection = 'account';
     }
-    
+
     // Set initial active state
     navItems.forEach(item => {
         if (item.dataset.section === activeSection) {
@@ -2558,7 +3622,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.classList.remove('active');
         }
     });
-    
+
     sections.forEach(section => {
         if (section.id === 'section-' + activeSection) {
             section.classList.add('active');
@@ -2566,33 +3630,33 @@ document.addEventListener('DOMContentLoaded', function() {
             section.classList.remove('active');
         }
     });
-    
+
     // Handle navigation clicks
     navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+        item.addEventListener('click', function (e) {
             e.preventDefault();
-            
+
             const section = this.dataset.section;
-            
+
             // Update nav active state
             navItems.forEach(nav => nav.classList.remove('active'));
             this.classList.add('active');
-            
+
             // Show corresponding section
             sections.forEach(sec => {
                 sec.classList.remove('active');
             });
             document.getElementById('section-' + section).classList.add('active');
-            
+
             // Update URL hash
             window.location.hash = section;
         });
     });
-    
+
     // ========== Account Settings - Notification Toggle ==========
     const emailNotificationsCheckbox = document.getElementById('id_email_notifications_enabled');
     const notificationOptions = document.getElementById('notification-options');
-    
+
     function toggleNotificationOptions() {
         if (emailNotificationsCheckbox && notificationOptions) {
             if (emailNotificationsCheckbox.checked) {
@@ -2602,43 +3666,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     if (emailNotificationsCheckbox) {
         emailNotificationsCheckbox.addEventListener('change', toggleNotificationOptions);
         toggleNotificationOptions();
     }
-    
+
     // ========== Close Alert Messages ==========
     const closeButtons = document.querySelectorAll('.settings-unified-alert-close');
     closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             this.parentElement.style.display = 'none';
         });
     });
-    
+
     // ========== Change Password Modal ==========
     const changePasswordForm = document.getElementById('changePasswordForm');
     if (changePasswordForm) {
-        changePasswordForm.addEventListener('submit', function(e) {
+        changePasswordForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const currentPassword = document.getElementById('modal_current_password').value;
             const newPassword = document.getElementById('modal_new_password').value;
             const confirmPassword = document.getElementById('modal_confirm_password').value;
             const messageEl = document.getElementById('password_change_message');
             const submitBtn = document.getElementById('changePasswordSubmit');
-            
+
             // Clear previous errors
             document.getElementById('current_password_error').textContent = '';
             document.getElementById('new_password_error').textContent = '';
             document.getElementById('confirm_password_error').textContent = '';
             messageEl.textContent = '';
             messageEl.className = 'change-password-form-message';
-            
+
             // Show loading state
             submitBtn.classList.add('loading');
             submitBtn.disabled = true;
-            
+
             // Submit via AJAX
             fetch('/settings/change-password/', {
                 method: 'POST',
@@ -2652,49 +3716,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirm_password: confirmPassword
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                
-                if (data.success) {
-                    messageEl.textContent = data.message || 'Password changed successfully!';
-                    messageEl.className = 'change-password-form-message change-password-form-success-text';
-                    
-                    // Close modal and reset form after success
-                    setTimeout(() => {
-                        closeModal('changePasswordModal');
-                        changePasswordForm.reset();
-                    }, 1500);
-                } else {
-                    if (data.errors) {
-                        if (data.errors.current_password) {
-                            document.getElementById('current_password_error').textContent = data.errors.current_password;
+                .then(response => response.json())
+                .then(data => {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+
+                    if (data.success) {
+                        messageEl.textContent = data.message || 'Password changed successfully!';
+                        messageEl.className = 'change-password-form-message change-password-form-success-text';
+
+                        // Close modal and reset form after success
+                        setTimeout(() => {
+                            closeModal('changePasswordModal');
+                            changePasswordForm.reset();
+                        }, 1500);
+                    } else {
+                        if (data.errors) {
+                            if (data.errors.current_password) {
+                                document.getElementById('current_password_error').textContent = data.errors.current_password;
+                            }
+                            if (data.errors.new_password) {
+                                document.getElementById('new_password_error').textContent = data.errors.new_password;
+                            }
+                            if (data.errors.confirm_password) {
+                                document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
+                            }
                         }
-                        if (data.errors.new_password) {
-                            document.getElementById('new_password_error').textContent = data.errors.new_password;
-                        }
-                        if (data.errors.confirm_password) {
-                            document.getElementById('confirm_password_error').textContent = data.errors.confirm_password;
-                        }
+                        messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                        messageEl.className = 'change-password-form-message change-password-form-error-text';
                     }
-                    messageEl.textContent = data.error || 'An error occurred. Please try again.';
+                })
+                .catch(error => {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    messageEl.textContent = 'An error occurred. Please try again.';
                     messageEl.className = 'change-password-form-message change-password-form-error-text';
-                }
-            })
-            .catch(error => {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                messageEl.textContent = 'An error occurred. Please try again.';
-                messageEl.className = 'change-password-form-message change-password-form-error-text';
-                console.error('Password change error:', error);
-            });
+                    console.error('Password change error:', error);
+                });
         });
     }
 });
 
 // Close modals when clicking outside (window-level handler)
-window.onclick = function(event) {
+window.onclick = function (event) {
     if (event.target.classList.contains('change-password-modal')) {
         closeModal('changePasswordModal');
     }
@@ -2712,7 +3776,7 @@ window.onclick = function(event) {
 function initializeStatusBadge() {
     const statusBadge = document.getElementById('user-status-badge');
     if (!statusBadge) return;
-    
+
     const status = statusBadge.getAttribute('data-status') || 'online';
     updateStatusBadgeAppearance(status, statusBadge);
 }
@@ -2723,10 +3787,10 @@ function updateStatusBadgeAppearance(status, badge = null) {
         badge = document.getElementById('user-status-badge');
     }
     if (!badge) return;
-    
+
     // Remove all status classes
     badge.classList.remove('online', 'idle', 'do_not_disturb');
-    
+
     // Add the appropriate class
     badge.classList.add(status);
 }
@@ -2737,13 +3801,13 @@ function openStatusModal() {
     const overlay = document.getElementById('status-modal-overlay');
     const statusBadge = document.getElementById('user-status-badge');
     const currentStatus = statusBadge ? statusBadge.getAttribute('data-status') : 'online';
-    
+
     if (!modal || !overlay) return;
-    
+
     // Show modal and overlay
     modal.classList.add('active');
     overlay.classList.add('active');
-    
+
     // Mark the current status as selected
     const statusOptions = modal.querySelectorAll('.status-option');
     statusOptions.forEach(option => {
@@ -2758,7 +3822,7 @@ function openStatusModal() {
 function closeStatusModal() {
     const modal = document.getElementById('status-modal');
     const overlay = document.getElementById('status-modal-overlay');
-    
+
     if (modal) {
         modal.classList.remove('active');
     }
@@ -2777,74 +3841,560 @@ function updateUserStatus(status) {
         },
         body: JSON.stringify({ status: status })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the badge
-            const badge = document.getElementById('user-status-badge');
-            if (badge) {
-                badge.setAttribute('data-status', status);
-                updateStatusBadgeAppearance(status, badge);
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the badge
+                const badge = document.getElementById('user-status-badge');
+                if (badge) {
+                    badge.setAttribute('data-status', status);
+                    updateStatusBadgeAppearance(status, badge);
+                }
+
+                // Close the modal
+                closeStatusModal();
+
+                // Close the dropdown menu
+                const dropdown = document.getElementById('user-dropdown-menu');
+                if (dropdown) {
+                    dropdown.classList.remove('active');
+                }
+
+                // Show success message (optional)
+                console.log('Status updated successfully');
+            } else {
+                console.error('Failed to update status:', data.error);
+                alert('Failed to update status. Please try again.');
             }
-            
-            // Close the modal
-            closeStatusModal();
-            
-            // Close the dropdown menu
-            const dropdown = document.getElementById('user-dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-            }
-            
-            // Show success message (optional)
-            console.log('Status updated successfully');
-        } else {
-            console.error('Failed to update status:', data.error);
-            alert('Failed to update status. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating status:', error);
-        alert('An error occurred while updating status.');
-    });
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+            alert('An error occurred while updating status.');
+        });
 }
 
 // Get CSRF token from cookie
-function getCookie(name) {\n    let cookieValue = null;\n    if (document.cookie && document.cookie !== '') {\n        const cookies = document.cookie.split(';');\n        for (let i = 0; i < cookies.length; i++) {\n            const cookie = cookies[i].trim();\n            if (cookie.substring(0, name.length + 1) === (name + '=')) {\n                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));\n                break;\n            }\n        }\n    }\n    return cookieValue;\n}\n\n// Admin-specific functions from admin_actions.js\n\nfunction confirmAdminAction(userId, action) {\n    if (!confirm(`Are you sure you want to ${action} this admin account? This action cannot be undone.`)) {\n        return;\n    }\n    \n    const url = `/manage/admin/${userId}/${action}/`;\n    \n    fetch(url, {\n        method: 'POST',\n        credentials: 'same-origin',\n        headers: {\n            'X-Requested-With': 'XMLHttpRequest',\n            'X-CSRFToken': getCookie('csrftoken'),\n        },\n        body: new FormData(),\n    })\n    .then(response => {\n        if (!response.ok) {\n            if (response.status === 403) {\n                return response.json().then(data => Promise.reject({message: 'Superuser access required', error: data.error}));\n            }\n            return response.json().then(data => Promise.reject(data));\n        }\n        return response.json();\n    })\n    .then(data => {\n        showAdminActionModal(data.message, 'success');\n        setTimeout(() => location.reload(), 1000);\n    })\n    .catch(error => {\n        const msg = error.message || error.error || 'An error occurred';\n        showAdminActionModal(msg, 'error');\n        console.error('Admin action error:', error);\n    });\n}\n\nfunction showAdminActionModal(message, type = 'success') {\n    const modal = document.createElement('div');\n    modal.className = 'add-new-design-modal admin-action-modal';\n    modal.innerHTML = `\n        <div class="modal-content">\n            <button class="close-btn" onclick="this.closest('.add-new-design-modal').remove()" aria-label="Close">\n                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n                    <line x1="18" y1="6" x2="6" y2="18"></line>\n                    <line x1="6" y1="6" x2="18" y2="18"></line>\n                </svg>\n            </button>\n            <div class="modal-icon modal-${type}">\n                ${type === 'success' ? '✓' : '✗'}\n            </div>\n            <h2>${type === 'success' ? 'Success' : 'Error'}</h2>\n            <p>${message}</p>\n            <div class="modal-actions">\n                <button class="btn btn-primary" onclick="this.closest('.add-new-design-modal').remove(); location.reload();">\n                    OK\n                </button>\n            </div>\n        </div>\n    `;\n    document.body.appendChild(modal);\n    modal.querySelector('button').focus();\n}
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    } return cookieValue;
+}
+
+function confirmAdminAction(userId, action) {
+    if (!confirm(`Are you sure you want to ${action} this admin account? This action cannot be undone.`)) {
+        return;
+    }
+
+    const url = `/manage/admin/${userId}/${action}/`;
+    fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: new FormData(),
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 403) {
+                return response.json().then(data => Promise.reject({
+                    message: 'Superuser access required', error: data.error
+                }));
+            }
+            return response.json().then(data => Promise.reject(data));
+        } return response.json();
+    })
+    .then(data => {
+        showAdminActionModal(data.message, 'success');
+    })
+    .catch(error => {
+        const msg = error.message || error.error || 'An error occurred';
+        showAdminActionModal(msg, 'error');
+        console.error('Admin action error:', error);
+    });
+}
+
+function showAdminActionModal(message, type = 'success') { 
+    const modal = document.createElement('div'); 
+    modal.className = 'add-new-design-modal admin-action-modal'; 
+    modal.innerHTML = `        
+    <div class="modal-content">            
+        <button class="close-btn" onclick="this.closest('.add-new-design-modal').remove()" aria-label="Close">                
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    
+                <line x1="18" y1="6" x2="6" y2="18"></line>                    
+                <line x1="6" y1="6" x2="18" y2="18"></line>                
+            </svg>            
+        </button>            
+        <div class="modal-icon modal-${type}">                  
+            ${type === 'success' ? '✓' : '✗'}            
+        </div>            
+        <h2>${type === 'success' ? 'Success' : 'Error'}</h2>            
+        <p>${message}</p>            
+        <div class="modal-actions">                
+            <button class="btn btn-primary" onclick="this.closest('.add-new-design-modal').remove(); location.reload();">OK</button>            
+        </div>        
+    </div>`; 
+    document.body.appendChild(modal); modal.querySelector('button').focus(); 
+}
 
 // Status modal event listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize status badge on page load
     initializeStatusBadge();
-    
+
     // Set Status button in dropdown
     const setStatusBtn = document.getElementById('set-status-btn');
     if (setStatusBtn) {
-        setStatusBtn.addEventListener('click', function(e) {
+        setStatusBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             openStatusModal();
         });
     }
-    
+
     // Status modal close button
     const statusModalClose = document.getElementById('status-modal-close');
     if (statusModalClose) {
         statusModalClose.addEventListener('click', closeStatusModal);
     }
-    
+
     // Status options click handlers
     const statusOptions = document.querySelectorAll('.status-option');
     statusOptions.forEach(option => {
-        option.addEventListener('click', function() {
+        option.addEventListener('click', function () {
             const status = this.getAttribute('data-status');
-            
+
             // Update UI to show this is selected
             statusOptions.forEach(opt => opt.classList.remove('selected'));
             this.classList.add('selected');
-            
+
             // Update status via API
             updateUserStatus(status);
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Get user timezone from Django template or browser
+    let userTimezone = window.userTimezone;
+    if (!userTimezone || userTimezone === '') {
+        try {
+            userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch (e) {
+            userTimezone = 'UTC';
+        }
+    }
+    
+    // Get 12/24 format preference (default to 24-hour)
+    let is24HourFormat = localStorage.getItem('clock24HourFormat') !== 'false';
+
+    function clock() {
+        // Get current local time
+        const now = new Date();
+        
+        // Convert to user's selected timezone
+        let userDate;
+        try {
+            // Get time string in target timezone
+            const tzTimeStr = now.toLocaleString('en-US', { timeZone: userTimezone });
+            userDate = new Date(tzTimeStr);
+        } catch (e) {
+            userDate = now;
+        }
+        
+        const hours = userDate.getHours();
+        const minutes = userDate.getMinutes();
+        const seconds = userDate.getSeconds();
+        const ms = userDate.getMilliseconds();
+
+        const smoothSeconds = seconds + ms / 1000;
+        const smoothMinutes = minutes + smoothSeconds / 60;
+        const smoothHours = (hours % 12) + smoothMinutes / 60;
+
+        const secDeg = smoothSeconds * 6;
+        const minDeg = smoothMinutes * 6;
+        const hourDeg = smoothHours * 30;
+
+        const secondHand = document.getElementById('second-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const hourHand = document.getElementById('hour-hand');
+        
+        if (secondHand) secondHand.setAttribute("transform", "rotate(" + secDeg + " 12 12)");
+        if (minuteHand) minuteHand.setAttribute("transform", "rotate(" + minDeg + " 12 12)");
+        if (hourHand) hourHand.setAttribute("transform", "rotate(" + hourDeg + " 12 12)");
+
+        const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+        const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+
+        // Format time based on 12/24 preference
+        let timeStr;
+        if (!is24HourFormat) {
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            timeStr = displayHours + ":" + displayMinutes + ":" + displaySeconds + " " + period;
+        } else {
+            timeStr = hours + ":" + displayMinutes + ":" + displaySeconds;
+        }
+
+        // Format date
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const weekday = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        
+        // Get timezone offset for the target timezone
+        let tzOffsetStr = '';
+        try {
+            // Get a reference date formatted in the target timezone to extract offset
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: userTimezone,
+                timeZoneName: 'shortOffset'
+            });
+            const parts = formatter.formatToParts(userDate);
+            const tzPart = parts.find(p => p.type === 'timeZoneName');
+            if (tzPart) {
+                tzOffsetStr = ' ' + tzPart.value;
+            } else {
+                // Fallback: calculate offset from UTC time in target timezone
+                const utcDate = new Date(userDate.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const targetDate = new Date(userDate.toLocaleString('en-US', { timeZone: userTimezone }));
+                const tzOffset = Math.round((targetDate - utcDate) / 60000);
+                const tzHours = Math.floor(Math.abs(tzOffset) / 60);
+                const tzMins = Math.abs(tzOffset) % 60;
+                const tzSign = tzOffset >= 0 ? '+' : '-';
+                tzOffsetStr = ' UTC' + tzSign + tzHours + (tzMins ? ':' + tzMins.toString().padStart(2, '0') : '');
+            }
+        } catch (e) {
+            // Use userTimezone name as fallback
+            tzOffsetStr = ' (' + userTimezone + ')';
+        }
+
+        const clockElements = document.getElementsByClassName('clock');
+        const dateElements = document.getElementsByClassName('date');
+        
+        if (clockElements.length > 0) {
+            clockElements[0].innerHTML = timeStr;
+        }
+        if (dateElements.length > 0) {
+            dateElements[0].innerHTML = '<b>' + months[userDate.getMonth()] + '. ' + userDate.getDate() + ', ' + userDate.getFullYear() + '</b> (' + weekday[userDate.getDay()] + ')' + tzOffsetStr;
+        }
+        
+        // Update toggle button text
+        const toggleBtn = document.querySelector('.clock-format-toggle');
+        if (toggleBtn) {
+            toggleBtn.textContent = is24HourFormat ? '12h' : '24h';
+        }
+        
+        requestAnimationFrame(clock);
+    }
+
+    // Add toggle button handler
+    const toggleBtn = document.querySelector('.clock-format-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            is24HourFormat = !is24HourFormat;
+            localStorage.setItem('clock24HourFormat', is24HourFormat);
+        });
+    }
+
+    clock(); // start
+});
+
+// Dynamic notifications and activities polling
+(function() {
+    'use strict';
+    
+    let notificationsPollingInterval = null;
+    let activitiesPollingInterval = null;
+    let lastNotificationsHash = '';
+    let lastActivitiesHash = '';
+    let previousNotificationCount = 0;
+    
+    // Get CSRF token from cookie
+    function getCSRFToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 10) === 'csrftoken=') {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Fetch notifications from API
+    function fetchNotifications() {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken(),
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const notifications = data.notifications || [];
+            const notificationsHash = JSON.stringify(notifications);
+            
+            // Only update if notifications changed
+            if (notificationsHash !== lastNotificationsHash) {
+                lastNotificationsHash = notificationsHash;
+                updateNotificationsUI(notifications);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching notifications:', error);
+        });
+    }
+    
+    // Fetch activities from API
+    function fetchActivities() {
+        fetch('/api/activities/', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken(),
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const activities = data.activities || [];
+            const activitiesHash = JSON.stringify(activities);
+            
+            // Only update if activities changed
+            if (activitiesHash !== lastActivitiesHash) {
+                lastActivitiesHash = activitiesHash;
+                updateActivitiesUI(activities);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching activities:', error);
+        });
+    }
+    
+    // Update notifications UI
+    function updateNotificationsUI(notifications) {
+        const notificationList = document.querySelector('.notification-popup .notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        const notificationToggle = document.getElementById('notification-toggle');
+        
+        if (!notificationList) return;
+        
+        // Get notification IDs from the API response
+        const notificationIds = notifications.map(n => n.id);
+        
+        // Get previously read notification IDs from localStorage
+        const readNotificationIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        
+        // Check if there are NEW (unread) notifications
+        const hasNewNotifications = notificationIds.some(id => !readNotificationIds.includes(id));
+        
+        // Check if new notifications arrived (more than before)
+        const hasMoreNotifications = notifications.length > previousNotificationCount;
+        previousNotificationCount = notifications.length;
+        
+        // If new notifications arrived and user had read previous ones, re-enable animation
+        if (hasMoreNotifications && window.notificationsRead) {
+            window.notificationsRead = false;
+            if (notificationToggle && notificationBadge) {
+                notificationToggle.classList.add('has-notifications');
+                notificationBadge.style.display = 'block';
+                notificationBadge.classList.add('animate');
+            }
+        }
+        
+        // Update badge
+        if (notificationBadge) {
+            if (notifications.length > 0) {
+                notificationBadge.textContent = notifications.length;
+                // Only show badge if there are unread notifications
+                if (hasNewNotifications) {
+                    notificationBadge.style.display = 'block';
+                    notificationBadge.classList.add('animate');
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBadge.classList.remove('animate');
+                }
+            } else {
+                notificationBadge.style.display = 'none';
+                notificationBadge.classList.remove('animate');
+            }
+        }
+        
+        // Update notification list
+        if (notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="notification-empty">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <p>No notifications yet</p>
+                </div>
+            `;
+        } else {
+            let html = '';
+            notifications.forEach(notification => {
+                let icon = '';
+                if (notification.type === 'assigned' || notification.type === 'designer_assigned') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>`;
+                } else if (notification.type === 'status_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>`;
+                } else if (notification.type === 'completed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>`;
+                } else if (notification.type === 'request_submitted') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>`;
+                } else {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>`;
+                }
+                
+                html += `
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            ${icon}
+                        </div>
+                        <div class="notification-content">
+                            <p class="notification-message">${notification.message}</p>
+                            <span class="notification-time">${notification.time_ago}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            notificationList.innerHTML = html;
+        }
+    }
+    
+    // Update activities UI
+    function updateActivitiesUI(activities) {
+        const activityList = document.querySelector('.activity-list');
+        const activityContent = document.querySelector('.activity-content');
+        
+        if (!activityList || !activityContent) return;
+        
+        if (activities.length === 0) {
+            activityContent.innerHTML = `
+                <div class="empty-activity">
+                    <span>No recent activity</span>
+                </div>
+            `;
+        } else {
+            let html = '<ul class="activity-list compact">';
+            activities.slice(0, 5).forEach(activity => {
+                let icon = '';
+                if (activity.type === 'request_submitted') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+                } else if (activity.type === 'status_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon><line x1="3" y1="22" x2="21" y2="22"></line></svg>`;
+                } else if (activity.type === 'completed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                } else if (activity.type === 'payment_received' || activity.type === 'payment_confirmed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
+                } else if (activity.type === 'revision_requested') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+                } else if (activity.type === 'request_rejected' || activity.type === 'request_cancelled') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+                } else if (activity.type === 'login') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>`;
+                } else if (activity.type === 'logout') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`;
+                } else if (activity.type === 'profile_updated') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                } else if (activity.type === 'file_uploaded') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`;
+                } else if (activity.type === 'password_changed') {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+                } else {
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                }
+                
+                html += `
+                    <li class="activity-item">
+                        <div class="activity-icon status-${activity.type}">
+                            ${icon}
+                        </div>
+                        <div class="activity-details">
+                            <p class="activity-text">${activity.message}</p>
+                            <span class="activity-time">${activity.time_ago}</span>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            
+            if (activities.length > 5) {
+                html += `
+                    <div class="view-more">
+                        <button class="btn-view-more" onclick="showDashboardSection('activity')">View all activity →</button>
+                    </div>
+                `;
+            }
+            
+            activityContent.innerHTML = html;
+        }
+    }
+    
+    // Start polling when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial fetch
+        fetchNotifications();
+        fetchActivities();
+        
+        // Poll every 10 seconds
+        notificationsPollingInterval = setInterval(fetchNotifications, 10000);
+        activitiesPollingInterval = setInterval(fetchActivities, 10000);
+    });
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        if (notificationsPollingInterval) {
+            clearInterval(notificationsPollingInterval);
+        }
+        if (activitiesPollingInterval) {
+            clearInterval(activitiesPollingInterval);
+        }
+    });
+})();

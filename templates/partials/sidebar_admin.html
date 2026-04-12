@@ -13,13 +13,13 @@
                 <img src="{% static 'img/dashboard/side-6.png' %}" class="dashboard-sidebar-icon">
                 <a href="{% url 'admin_dashboard' %}#users">Users</a>
             </div>
-            <div class="side-item">
+            <div class="side-item" data-section="reports">
                 <img src="{% static 'img/dashboard/side-7.png' %}" class="dashboard-sidebar-icon">
-                <a href="{% url 'admin_dashboard' %}">Reports</a>
+                <a href="#reports" onclick="showDashboardSection('reports'); return false;">Reports</a>
             </div>
-            <div class="side-item">
+            <div class="side-item" data-section="system-status">
                 <img src="{% static 'img/dashboard/side-8.png' %}" class="dashboard-sidebar-icon">
-                <a href="{% url 'admin_settings' %}">Settings</a>
+                <a href="#" onclick="showDashboardSection('system-status'); return false;">System Status</a>
             </div>
         </div>
     </div>
