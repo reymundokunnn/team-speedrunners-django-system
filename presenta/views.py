@@ -11,6 +11,7 @@ from django.db import models
 from .forms import RegistrationForm, EditProfileForm
 from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner, Report
 from django.utils import timezone
+import datetime
 import uuid
 from PIL import Image
 from io import BytesIO
@@ -3888,3 +3889,251 @@ def api_clear_cover_photo(request):
     except Exception as e:
         print(f"Error clearing cover photo: {e}")
         return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)
+
+
+def api_system_status(request):
+    """API endpoint to fetch system status for admin dashboard."""
+    import platform
+    import os
+
+    try:
+        system_info = {
+            'system': {},
+            'users': {}
+        }
+
+        system_info['system']['cpu_count'] = os.cpu_count() or 1
+
+        try:
+            import multiprocessing
+            load_values = [0.0, 0.0, 0.0]
+            if platform.system() == 'Windows':
+                try:
+                    import ctypes
+                    import time
+                    kernel32 = ctypes.windll.kernel32
+                    perftimer = ctypes.windll.kernel32.QueryPerformanceCounter
+                    freq = ctypes.windll.kernel32.QueryPerformanceFrequency
+                    active_time = ctypes.c_ulonglong(0)
+                    idle_time = ctypes.c_ulonglong(0)
+                    try:
+                        kernel32.GetSystemTimes(ctypes.byref(idle_time), ctypes.byref(active_time), ctypes.byref(ctypes.c_ulonglong(0)))
+                        if freq():
+                            cpu_percent = 100.0 - ((active_time.value / freq()) / time.time()) * 100.0
+                            cpu_percent = max(0.0, min(100.0, cpu_percent))
+                        else:
+                            cpu_percent = 0.0
+                    except:
+                        try:
+                            import psutil
+                            cpu_percent = psutil.cpu_percent(interval=0.1)
+                        except:
+                            cpu_percent = 0.0
+                    system_info['system']['cpu_percent'] = cpu_percent
+                except:
+                    system_info['system']['cpu_percent'] = 0.0
+                try:
+                    import psutil
+                    load = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0.0, 0.0, 0.0)
+                    load_values = list(load)
+                except:
+                    load_values = [0.0, 0.0, 0.0]
+            elif platform.system() == 'Linux':
+                try:
+                    with open('/proc/loadavg', 'r') as f:
+                        load_values = f.read().split()[:3]
+                except:
+                    pass
+                try:
+                    import psutil
+                    system_info['system']['cpu_percent'] = psutil.cpu_percent(interval=0.1)
+                except:
+                    system_info['system']['cpu_percent'] = 0.0
+            else:
+                system_info['system']['cpu_percent'] = 0.0
+        except Exception as e:
+            system_info['system']['cpu_percent'] = 0.0
+            load_values = [0.0, 0.0, 0.0]
+
+        try:
+            system_info['system']['cpu_load_avg'] = ', '.join([f'{float(v):.2f}' for v in load_values])
+        except:
+            system_info['system']['cpu_load_avg'] = '0.00, 0.00, 0.00'
+
+        try:
+            if platform.system() == 'Windows':
+                import ctypes
+                kernel32 = ctypes.windll.kernel32
+                kernel32.GetSystemInfo.restype = ctypes.c_void_p
+                mem_info = {'total': 0, 'available': 0, 'used': 0}
+                try:
+                    from ctypes import wintypes
+                    class MEMORYSTATUSEX(ctypes.Structure):
+                        _fields_ = [
+                            ('dwLength', wintypes.DWORD),
+                            ('dwMemoryLoad', wintypes.DWORD),
+                            ('ullTotalPhys', ctypes.c_ulonglong),
+                            ('ullAvailPhys', ctypes.c_ulonglong),
+                            ('ullTotalPageFile', ctypes.c_ulonglong),
+                            ('ullAvailPageFile', ctypes.c_ulonglong),
+                            ('ullTotalVirtual', ctypes.c_ulonglong),
+                            ('ullAvailVirtual', ctypes.c_ulonglong),
+                            ('sAvailExtendedVirtual', ctypes.c_ulonglong),
+                        ]
+                    stat = MEMORYSTATUSEX()
+                    stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+                    kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+                    mem_info['total'] = stat.ullTotalPhys
+                    mem_info['available'] = stat.ullAvailPhys
+                    mem_info['used'] = stat.ullTotalPhys - stat.ullAvailPhys
+                    mem_info['percent'] = (mem_info['used'] / mem_info['total']) * 100 if mem_info['total'] > 0 else 0
+                except:
+                    pass
+                system_info['system']['memory_total'] = mem_info['total']
+                system_info['system']['memory_available'] = mem_info['available']
+                system_info['system']['memory_used'] = mem_info['used']
+                system_info['system']['memory_percent'] = mem_info.get('percent', 0)
+            else:
+                import sys
+                if not hasattr(sys, 'real_prefix'):
+                    try:
+                        import resource
+                        r = resource.getrusage(resource.RLIMIT_AS)
+                        system_info['system']['memory_total'] = 0
+                        system_info['system']['memory_available'] = 0
+                        system_info['system']['memory_used'] = 0
+                        system_info['system']['memory_percent'] = 0
+                    except:
+                        pass
+                else:
+                    system_info['system']['memory_total'] = 0
+                    system_info['system']['memory_available'] = 0
+                    system_info['system']['memory_used'] = 0
+                    system_info['system']['memory_percent'] = 0
+        except Exception as e:
+            system_info['system']['memory_total'] = 0
+            system_info['system']['memory_available'] = 0
+            system_info['system']['memory_used'] = 0
+            system_info['system']['memory_percent'] = 0
+
+        try:
+            disks = []
+            if platform.system() == 'Windows':
+                try:
+                    import ctypes
+                    drives = []
+                    bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+                    for i in range(26):
+                        if bitmask & (1 << i):
+                            drive = chr(65 + i) + ':'
+                            drives.append(drive)
+                    for drive in drives:
+                        try:
+                            free_bytes = ctypes.c_ulonglong(0)
+                            total_bytes = ctypes.c_ulonglong(0)
+                            ctypes.windll.kernel32.GetDiskFreeSpaceExW(
+                                ctypes.c_wchar_p(drive), None,
+                                ctypes.byref(total_bytes), ctypes.byref(free_bytes)
+                            )
+                            total = total_bytes.value
+                            free = free_bytes.value
+                            used = total - free
+                            percent = (used / total) * 100 if total > 0 else 0
+                            disks.append({
+                                'device': drive,
+                                'total': total,
+                                'used': used,
+                                'free': free,
+                                'percent': percent
+                            })
+                        except:
+                            pass
+                except:
+                    pass
+            elif platform.system() == 'Linux':
+                try:
+                    with open('/proc/mounts', 'r') as f:
+                        for line in f:
+                            parts = line.split()
+                            if len(parts) >= 3 and parts[1].startswith('/') and not parts[1].startswith('/proc'):
+                                device = parts[0]
+                                if device.startswith('/dev/'):
+                                    try:
+                                        stat = os.statvfs(device)
+                                        total = stat.f_blocks * stat.f_frsize
+                                        free = stat.f_bavail * stat.f_frsize
+                                        used = total - free
+                                        percent = (used / total) * 100 if total > 0 else 0
+                                        disks.append({
+                                            'device': device.replace('/dev/', ''),
+                                            'total': total,
+                                            'used': used,
+                                            'free': free,
+                                            'percent': percent
+                                        })
+                                    except:
+                                        pass
+                except:
+                    pass
+            system_info['system']['disks'] = disks
+        except:
+            system_info['system']['disks'] = []
+
+        try:
+            if platform.system() == 'Windows':
+                try:
+                    import psutil
+                    boot_time_timestamp = psutil.boot_time()
+                    import time
+                    uptime_seconds = time.time() - boot_time_timestamp
+                    days = int(uptime_seconds // 86400)
+                    hours = int((uptime_seconds % 86400) // 3600)
+                    minutes = int((uptime_seconds % 3600) // 60)
+                    system_info['system']['uptime_days'] = days
+                    system_info['system']['uptime_hours'] = hours
+                    system_info['system']['uptime_minutes'] = minutes
+                    system_info['system']['boot_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(boot_time_timestamp))
+                except:
+                    system_info['system']['uptime_days'] = 0
+                    system_info['system']['uptime_hours'] = 0
+                    system_info['system']['uptime_minutes'] = 0
+                    system_info['system']['boot_time'] = None
+            else:
+                try:
+                    with open('/proc/uptime', 'r') as f:
+                        uptime_seconds = float(f.readline().split()[0])
+                        days = int(uptime_seconds // 86400)
+                        hours = int((uptime_seconds % 86400) // 3600)
+                        minutes = int((uptime_seconds % 3600) // 60)
+                        system_info['system']['uptime_days'] = days
+                        system_info['system']['uptime_hours'] = hours
+                        system_info['system']['uptime_minutes'] = minutes
+                        boot_time = datetime.datetime.now() - datetime.timedelta(seconds=uptime_seconds)
+                        system_info['system']['boot_time'] = boot_time.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    system_info['system']['uptime_days'] = 0
+                    system_info['system']['uptime_hours'] = 0
+                    system_info['system']['uptime_minutes'] = 0
+                    system_info['system']['boot_time'] = None
+        except:
+            system_info['system']['uptime_days'] = 0
+            system_info['system']['uptime_hours'] = 0
+            system_info['system']['uptime_minutes'] = 0
+            system_info['system']['boot_time'] = None
+
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            system_info['users']['total'] = User.objects.count()
+            today = datetime.date.today()
+            system_info['users']['new_today'] = User.objects.filter(date_joined__date=today).count()
+            system_info['users']['logged_in'] = 0
+        except:
+            system_info['users']['total'] = 0
+            system_info['users']['new_today'] = 0
+            system_info['users']['logged_in'] = 0
+
+        return JsonResponse(system_info)
+    except Exception as e:
+        print(f"Error fetching system status: {e}")
+        return JsonResponse({'error': str(e)}, status=500)

@@ -70,6 +70,7 @@ urlpatterns = [
     path('api/clear-cover-photo/', views.api_clear_cover_photo,
          name='api_clear_cover_photo'),
     path('api/search-users/', views.api_search_users, name='api_search_users'),
+    path('api/system-status/', views.api_system_status, name='api_system_status'),
 
     # Admin user management
     path('manage/user/<int:user_id>/view/', views.view_user, name='view_user'),
