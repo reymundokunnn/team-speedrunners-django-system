@@ -1,0 +1,501 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat - Presenta{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+            <h2>Conversations</h2>
+            <button class="btn-new-chat" onclick="showNewChatModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-conversations-list" id="conversationsList">
+            <!-- Conversations will be loaded here -->
+            <div class="loading-spinner">Loading conversations...</div>
+        </div>
+    </div>
+    
+    <div class="chat-main">
+        <div class="chat-main-header" id="chatHeader">
+            <div class="chat-user-info">
+                <div class="chat-user-avatar">
+                    <img src="{% static 'img/default-avatar.png' %}" alt="User Avatar" id="chatUserAvatar">
+                </div>
+                <div class="chat-user-details">
+                    <h3 id="chatUserName">Select a conversation</h3>
+                    <span class="chat-user-status" id="chatUserStatus"></span>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <button class="btn-icon" onclick="toggleChatInfo()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-welcome">
+                <div class="chat-welcome-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <h3>Welcome to Chat</h3>
+                <p>Select a conversation from the sidebar or start a new one</p>
+            </div>
+        </div>
+        
+        <div class="chat-input-container" id="chatInputContainer" style="display: none;">
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <span id="typingUsername"></span> is typing...
+            </div>
+            <form class="chat-input-form" id="chatForm" onsubmit="sendMessage(event)">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type a message..." 
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button type="submit" class="btn-send" id="sendButton">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="chat-info-panel" id="chatInfoPanel" style="display: none;">
+        <div class="chat-info-header">
+            <h3>Conversation Info</h3>
+            <button class="btn-icon" onclick="toggleChatInfo()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-info-content">
+            <div class="chat-info-user">
+                <img src="{% static 'img/default-avatar.png' %}" alt="User Avatar" id="infoUserAvatar">
+                <h4 id="infoUserName">User Name</h4>
+                <p id="infoUserRole">Role</p>
+            </div>
+            <div class="chat-info-actions">
+                <a href="#" class="btn-view-profile" id="viewProfileLink">View Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Chat Modal -->
+<div class="modal" id="newChatModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>New Conversation</h3>
+            <button class="btn-icon" onclick="hideNewChatModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="userSearch">Search for a user</label>
+                <input type="text" id="userSearch" placeholder="Enter username or email..." oninput="searchUsers(this.value)">
+            </div>
+            <div class="user-search-results" id="userSearchResults">
+                <!-- Search results will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Chat state
+    let currentChatUserId = null;
+    let currentChatUserName = null;
+    let websocket = null;
+    let typingTimeout = null;
+    let isTyping = false;
+
+    // Initialize chat on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadConversations();
+        connectWebSocket();
+    });
+
+    // Load conversations from API
+    async function loadConversations() {
+        try {
+            const response = await fetch('/api/chat/conversations/');
+            const data = await response.json();
+            
+            if (data.conversations) {
+                renderConversations(data.conversations);
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+        }
+    }
+
+    // Render conversations list
+    function renderConversations(conversations) {
+        const container = document.getElementById('conversationsList');
+        
+        if (conversations.length === 0) {
+            container.innerHTML = `
+                <div class="no-conversations">
+                    <p>No conversations yet</p>
+                    <button class="btn-primary" onclick="showNewChatModal()">Start a conversation</button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = conversations.map(conv => `
+            <div class="conversation-item ${conv.user.id === currentChatUserId ? 'active' : ''}" 
+                 onclick="openConversation(${conv.user.id}, '${conv.user.username}', '${conv.user.first_name || ''}', '${conv.user.last_name || ''}')">
+                <div class="conversation-avatar">
+                    <img src="{% static 'img/default-avatar.png' %}" alt="${conv.user.username}">
+                    ${conv.unread_count > 0 ? `<span class="unread-badge">${conv.unread_count}</span>` : ''}
+                </div>
+                <div class="conversation-details">
+                    <div class="conversation-header">
+                        <h4>${conv.user.first_name || conv.user.username} ${conv.user.last_name || ''}</h4>
+                        <span class="conversation-time">${formatTime(conv.last_message_time)}</span>
+                    </div>
+                    <p class="conversation-preview">${conv.last_message || 'No messages yet'}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Open a conversation
+    async function openConversation(userId, username, firstName, lastName) {
+        currentChatUserId = userId;
+        currentChatUserName = firstName ? `${firstName} ${lastName}`.trim() : username;
+        
+        // Update UI
+        document.getElementById('chatUserName').textContent = currentChatUserName;
+        document.getElementById('chatInputContainer').style.display = 'flex';
+        
+        // Update active state in conversations list
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.currentTarget?.classList.add('active');
+        
+        // Load messages
+        await loadMessages(userId);
+        
+        // Connect to WebSocket for this conversation
+        connectWebSocket(userId);
+    }
+
+    // Load messages for a conversation
+    async function loadMessages(userId) {
+        try {
+            const response = await fetch(`/api/chat/messages/${userId}/`);
+            const data = await response.json();
+            
+            if (data.messages) {
+                renderMessages(data.messages);
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    // Render messages
+    function renderMessages(messages) {
+        const container = document.getElementById('chatMessages');
+        
+        if (messages.length === 0) {
+            container.innerHTML = `
+                <div class="chat-welcome">
+                    <div class="chat-welcome-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3>Start the conversation</h3>
+                    <p>Send a message to begin chatting</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = messages.map(msg => `
+            <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'}">
+                <div class="message-content">
+                    <p>${escapeHtml(msg.message)}</p>
+                    <span class="message-time">${formatTime(msg.created_at)}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Connect to WebSocket
+    function connectWebSocket(userId = null) {
+        if (websocket) {
+            websocket.close();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = userId 
+            ? `${protocol}//${window.location.host}/ws/chat/${userId}/`
+            : `${protocol}//${window.location.host}/ws/chat/`;
+
+        websocket = new WebSocket(wsUrl);
+
+        websocket.onopen = function() {
+            console.log('WebSocket connected');
+        };
+
+        websocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'message') {
+                appendMessage(data);
+            } else if (data.type === 'typing') {
+                showTypingIndicator(data.username, data.is_typing);
+            }
+        };
+
+        websocket.onclose = function(e) {
+            console.log('WebSocket disconnected');
+            // Try to reconnect after 3 seconds
+            setTimeout(() => connectWebSocket(currentChatUserId), 3000);
+        };
+
+        websocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+    }
+
+    // Send message
+    async function sendMessage(event) {
+        event.preventDefault();
+        
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        
+        if (!message || !currentChatUserId) return;
+
+        // Send via WebSocket
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            websocket.send(JSON.stringify({
+                type: 'message',
+                message: message
+            }));
+        }
+
+        // Also send via API as backup
+        try {
+            await fetch(`/api/chat/send/${currentChatUserId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+
+        // Clear input
+        input.value = '';
+        autoResize(input);
+        
+        // Stop typing indicator
+        sendTypingIndicator(false);
+    }
+
+    // Append message to chat
+    function appendMessage(data) {
+        const container = document.getElementById('chatMessages');
+        const isSent = data.sender_id === {{ request.user.id }};
+        
+        const messageHtml = `
+            <div class="message ${isSent ? 'sent' : 'received'}">
+                <div class="message-content">
+                    <p>${escapeHtml(data.message)}</p>
+                    <span class="message-time">${formatTime(data.timestamp)}</span>
+                </div>
+            </div>
+        `;
+        
+        // Remove welcome message if present
+        const welcome = container.querySelector('.chat-welcome');
+        if (welcome) {
+            welcome.remove();
+        }
+        
+        container.insertAdjacentHTML('beforeend', messageHtml);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Handle key down events
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        }
+    }
+
+    // Auto resize textarea
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        
+        // Send typing indicator
+        if (currentChatUserId) {
+            if (!isTyping) {
+                isTyping = true;
+                sendTypingIndicator(true);
+            }
+            
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                sendTypingIndicator(false);
+            }, 2000);
+        }
+    }
+
+    // Send typing indicator
+    function sendTypingIndicator(isTyping) {
+        if (websocket && websocket.readyState === WebSocket.OPEN && currentChatUserId) {
+            websocket.send(JSON.stringify({
+                type: 'typing',
+                is_typing: isTyping
+            }));
+        }
+    }
+
+    // Show typing indicator
+    function showTypingIndicator(username, isTyping) {
+        const indicator = document.getElementById('typingIndicator');
+        const usernameSpan = document.getElementById('typingUsername');
+        
+        if (isTyping) {
+            usernameSpan.textContent = username;
+            indicator.style.display = 'block';
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+
+    // Show new chat modal
+    function showNewChatModal() {
+        document.getElementById('newChatModal').style.display = 'flex';
+        document.getElementById('userSearch').focus();
+    }
+
+    // Hide new chat modal
+    function hideNewChatModal() {
+        document.getElementById('newChatModal').style.display = 'none';
+        document.getElementById('userSearch').value = '';
+        document.getElementById('userSearchResults').innerHTML = '';
+    }
+
+    // Search users
+    async function searchUsers(query) {
+        if (query.length < 2) {
+            document.getElementById('userSearchResults').innerHTML = '';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/users/search/?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            if (data.users) {
+                renderUserSearchResults(data.users);
+            }
+        } catch (error) {
+            console.error('Error searching users:', error);
+        }
+    }
+
+    // Render user search results
+    function renderUserSearchResults(users) {
+        const container = document.getElementById('userSearchResults');
+        
+        if (users.length === 0) {
+            container.innerHTML = '<p class="no-results">No users found</p>';
+            return;
+        }
+
+        container.innerHTML = users.map(user => `
+            <div class="user-search-item" onclick="startNewConversation(${user.id}, '${user.username}', '${user.first_name || ''}', '${user.last_name || ''}')">
+                <img src="{% static 'img/default-avatar.png' %}" alt="${user.username}">
+                <div class="user-search-details">
+                    <h4>${user.first_name || user.username} ${user.last_name || ''}</h4>
+                    <p>${user.email}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Start new conversation
+    function startNewConversation(userId, username, firstName, lastName) {
+        hideNewChatModal();
+        openConversation(userId, username, firstName, lastName);
+    }
+
+    // Toggle chat info panel
+    function toggleChatInfo() {
+        const panel = document.getElementById('chatInfoPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Format time
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+        
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        // If today, show time
+        if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // If this week, show day
+        if (diff < 7 * 24 * 60 * 60 * 1000) {
+            return date.toLocaleDateString([], { weekday: 'short' });
+        }
+        
+        // Otherwise show date
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

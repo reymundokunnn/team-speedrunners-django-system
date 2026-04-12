@@ -213,9 +213,43 @@ function closeAnnouncementBanner() {
                 </div>
                 <div class="message-popup" id="message-popup">
                     <h3 class="popup-header">Messages</h3>
-                    <div class="message-content" style="text-align: center; padding: 20px;">
-                        <img src="{% static 'img/cook.jpg' %}" alt="Work in progress" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 12px;">
-                        <p style="color: #666; font-size: 14px;"><h2>di pa po inaasikaso ng mga devs hahahah</h2><br>Feature coming soon; this nonsense will be eventually removed.</p>
+                    <div class="chat-container" id="chat-container">
+                        <div class="chat-sidebar" id="chat-sidebar">
+                            <div class="chat-search">
+                                <input type="text" id="chat-search-input" placeholder="Search conversations...">
+                            </div>
+                            <div class="chat-conversations" id="chat-conversations">
+                                <!-- Conversations will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="chat-main" id="chat-main" style="display: none;">
+                            <div class="chat-header" id="chat-header">
+                                <button class="chat-back-btn" id="chat-back-btn" title="Back to conversations">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="chat-user-info">
+                                    <span class="chat-user-name" id="chat-user-name">Select a conversation</span>
+                                    <span class="chat-user-status" id="chat-user-status"></span>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <!-- Messages will be loaded here -->
+                            </div>
+                            <div class="chat-typing-indicator" id="chat-typing-indicator" style="display: none;">
+                                <span id="typing-username"></span> is typing...
+                            </div>
+                            <div class="chat-input-container">
+                                <textarea id="chat-message-input" placeholder="Type a message..." rows="1"></textarea>
+                                <button id="chat-send-btn" title="Send message">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

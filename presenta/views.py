@@ -3319,3 +3319,190 @@ def api_clear_cover_photo(request):
     except Exception as e:
         print(f"Error clearing cover photo: {e}")
         return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def api_chat_conversations(request):
+    """API endpoint to get all chat conversations for the current user."""
+    try:
+        user = request.user
+        
+        # Get all conversations where the user is either sender or receiver
+        from .models import ChatMessage
+        from django.db.models import Q, Max, Subquery, OuterRef
+        
+        # Get unique conversations with the latest message
+        conversations = ChatMessage.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).values('sender', 'receiver').annotate(
+            last_message_time=Max('created_at')
+        ).order_by('-last_message_time')
+        
+        # Build conversation list with user details
+        conversation_list = []
+        seen_users = set()
+        
+        for conv in conversations:
+            other_user_id = conv['receiver'] if conv['sender'] == user.id else conv['sender']
+            
+            if other_user_id in seen_users:
+                continue
+            seen_users.add(other_user_id)
+            
+            try:
+                from django.contrib.auth.models import User
+                other_user = User.objects.get(id=other_user_id)
+                
+                # Get the latest message
+                latest_message = ChatMessage.objects.filter(
+                    (Q(sender=user) & Q(receiver=other_user)) |
+                    (Q(sender=other_user) & Q(receiver=user))
+                ).order_by('-created_at').first()
+                
+                # Get unread count
+                unread_count = ChatMessage.objects.filter(
+                    sender=other_user,
+                    receiver=user,
+                    is_read=False
+                ).count()
+                
+                conversation_list.append({
+                    'user': {
+                        'id': other_user.id,
+                        'username': other_user.username,
+                        'first_name': other_user.first_name,
+                        'last_name': other_user.last_name,
+                    },
+                    'last_message': latest_message.message if latest_message else '',
+                    'last_message_time': latest_message.created_at.isoformat() if latest_message else '',
+                    'unread_count': unread_count,
+                })
+            except User.DoesNotExist:
+                continue
+        
+        return JsonResponse({'conversations': conversation_list})
+    except Exception as e:
+        print(f"Error getting chat conversations: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def api_chat_messages(request, user_id):
+    """API endpoint to get chat messages with a specific user."""
+    try:
+        from django.contrib.auth.models import User
+        from .models import ChatMessage
+        
+        current_user = request.user
+        
+        try:
+            other_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        
+        # Get messages between the two users
+        messages = ChatMessage.objects.filter(
+            (Q(sender=current_user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=current_user))
+        ).order_by('created_at')
+        
+        # Mark messages as read
+        ChatMessage.objects.filter(
+            sender=other_user,
+            receiver=current_user,
+            is_read=False
+        ).update(is_read=True)
+        
+        # Serialize messages
+        message_list = []
+        for msg in messages:
+            message_list.append({
+                'id': msg.id,
+                'sender_id': msg.sender.id,
+                'sender_username': msg.sender.username,
+                'message': msg.message,
+                'is_read': msg.is_read,
+                'created_at': msg.created_at.isoformat(),
+            })
+        
+        return JsonResponse({
+            'messages': message_list,
+            'user': {
+                'id': other_user.id,
+                'username': other_user.username,
+                'first_name': other_user.first_name,
+                'last_name': other_user.last_name,
+            }
+        })
+    except Exception as e:
+        print(f"Error getting chat messages: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_chat_send(request, user_id):
+    """API endpoint to send a chat message to a specific user."""
+    try:
+        from django.contrib.auth.models import User
+        from .models import ChatMessage
+        import json
+        
+        current_user = request.user
+        
+        try:
+            other_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        
+        # Parse request body
+        try:
+            data = json.loads(request.body)
+            message_text = data.get('message', '').strip()
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        if not message_text:
+            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+        
+        # Create the message
+        message = ChatMessage.objects.create(
+            sender=current_user,
+            receiver=other_user,
+            message=message_text
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': {
+                'id': message.id,
+                'sender_id': message.sender.id,
+                'sender_username': message.sender.username,
+                'message': message.message,
+                'is_read': message.is_read,
+                'created_at': message.created_at.isoformat(),
+            }
+        })
+    except Exception as e:
+        print(f"Error sending chat message: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def api_chat_unread_count(request):
+    """API endpoint to get the total unread message count for the current user."""
+    try:
+        from .models import ChatMessage
+        
+        unread_count = ChatMessage.objects.filter(
+            receiver=request.user,
+            is_read=False
+        ).count()
+        
+        return JsonResponse({'unread_count': unread_count})
+    except Exception as e:
+        print(f"Error getting unread count: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)

@@ -4503,3 +4503,321 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 })();
+
+// Chat System - WebSocket based real-time messaging
+(function() {
+    let chatSocket = null;
+    let currentChatUserId = null;
+    let currentChatRequestId = null;
+    let typingTimeout = null;
+    let isTyping = false;
+    
+    // Initialize chat when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeChat();
+    });
+    
+    function initializeChat() {
+        // Message toggle button
+        const messageToggle = document.getElementById('message-toggle');
+        const messagePopup = document.getElementById('message-popup');
+        const chatBackBtn = document.getElementById('chat-back-btn');
+        const chatMessageInput = document.getElementById('chat-message-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        
+        if (messageToggle) {
+            messageToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (messagePopup.classList.contains('active')) {
+                    closePopup(messagePopup);
+                } else {
+                    messagePopup.classList.add('active');
+                    loadConversations();
+                }
+            });
+        }
+        
+        if (chatBackBtn) {
+            chatBackBtn.addEventListener('click', function() {
+                showConversationList();
+            });
+        }
+        
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', sendMessage);
+        }
+        
+        if (chatMessageInput) {
+            chatMessageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Typing indicator
+            chatMessageInput.addEventListener('input', function() {
+                if (!isTyping) {
+                    isTyping = true;
+                    sendTypingIndicator(true);
+                }
+                
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(function() {
+                    isTyping = false;
+                    sendTypingIndicator(false);
+                }, 1000);
+            });
+        }
+        
+        // Close popup when clicking outside
+        document.addEventListener('click', function(e) {
+            if (messageToggle && !messageToggle.contains(e.target) && messagePopup && !messagePopup.contains(e.target)) {
+                closePopup(messagePopup);
+            }
+        });
+    }
+    
+    function loadConversations() {
+        fetch('/api/chat/conversations/')
+            .then(response => response.json())
+            .then(data => {
+                const conversationsContainer = document.getElementById('chat-conversations');
+                if (!conversationsContainer) return;
+                
+                if (data.conversations && data.conversations.length > 0) {
+                    let html = '';
+                    data.conversations.forEach(function(conv) {
+                        const initials = conv.user.name ? conv.user.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
+                        const avatar = conv.user.profile_picture 
+                            ? `<img src="${conv.user.profile_picture}" alt="${conv.user.name}">`
+                            : `<span>${initials}</span>`;
+                        
+                        html += `
+                            <div class="chat-conversation-item" data-user-id="${conv.user.id}" data-request-id="${conv.design_request_id || ''}">
+                                <div class="chat-conversation-avatar">${avatar}</div>
+                                <div class="chat-conversation-info">
+                                    <div class="chat-conversation-name">${conv.user.name}</div>
+                                    <div class="chat-conversation-last-message">${conv.last_message || 'No messages yet'}</div>
+                                </div>
+                                ${conv.unread_count > 0 ? `<div class="chat-conversation-unread">${conv.unread_count}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    conversationsContainer.innerHTML = html;
+                    
+                    // Add click handlers
+                    conversationsContainer.querySelectorAll('.chat-conversation-item').forEach(function(item) {
+                        item.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            const requestId = this.getAttribute('data-request-id');
+                            openChat(userId, requestId);
+                        });
+                    });
+                } else {
+                    conversationsContainer.innerHTML = '<div class="chat-empty">No conversations yet</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading conversations:', error);
+            });
+    }
+    
+    function openChat(userId, requestId) {
+        currentChatUserId = userId;
+        currentChatRequestId = requestId;
+        
+        // Show chat main area
+        document.getElementById('chat-sidebar').style.display = 'none';
+        document.getElementById('chat-main').style.display = 'flex';
+        
+        // Load messages
+        loadMessages(userId, requestId);
+        
+        // Connect WebSocket
+        connectWebSocket(userId, requestId);
+    }
+    
+    function loadMessages(userId, requestId) {
+        let url = `/api/chat/messages/${userId}/`;
+        if (requestId) {
+            url += `?request_id=${requestId}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const messagesContainer = document.getElementById('chat-messages');
+                const userNameEl = document.getElementById('chat-user-name');
+                
+                if (userNameEl && data.user) {
+                    userNameEl.textContent = data.user.name;
+                }
+                
+                if (messagesContainer) {
+                    let html = '';
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(function(msg) {
+                            const isSent = msg.sender_id === getCurrentUserId();
+                            const time = formatTime(msg.timestamp);
+                            html += `
+                                <div class="chat-message ${isSent ? 'sent' : 'received'}">
+                                    <div class="chat-message-text">${escapeHtml(msg.message)}</div>
+                                    <div class="chat-message-time">${time}</div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html = '<div class="chat-empty">No messages yet. Start the conversation!</div>';
+                    }
+                    messagesContainer.innerHTML = html;
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading messages:', error);
+            });
+    }
+    
+    function connectWebSocket(userId, requestId) {
+        if (chatSocket) {
+            chatSocket.close();
+        }
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let wsUrl = `${protocol}//${window.location.host}/ws/chat/${userId}/`;
+        if (requestId) {
+            wsUrl += `${requestId}/`;
+        }
+        
+        chatSocket = new WebSocket(wsUrl);
+        
+        chatSocket.onopen = function() {
+            console.log('WebSocket connected');
+        };
+        
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'message') {
+                appendMessage(data);
+            } else if (data.type === 'typing') {
+                showTypingIndicator(data);
+            }
+        };
+        
+        chatSocket.onclose = function() {
+            console.log('WebSocket disconnected');
+        };
+        
+        chatSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+    }
+    
+    function sendMessage() {
+        const input = document.getElementById('chat-message-input');
+        const message = input.value.trim();
+        
+        if (!message || !chatSocket) return;
+        
+        chatSocket.send(JSON.stringify({
+            'type': 'message',
+            'message': message
+        }));
+        
+        input.value = '';
+        isTyping = false;
+        sendTypingIndicator(false);
+    }
+    
+    function sendTypingIndicator(isTyping) {
+        if (!chatSocket) return;
+        
+        chatSocket.send(JSON.stringify({
+            'type': 'typing',
+            'is_typing': isTyping
+        }));
+    }
+    
+    function appendMessage(data) {
+        const messagesContainer = document.getElementById('chat-messages');
+        if (!messagesContainer) return;
+        
+        const isSent = data.sender_id === getCurrentUserId();
+        const time = formatTime(data.timestamp);
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${isSent ? 'sent' : 'received'}`;
+        messageDiv.innerHTML = `
+            <div class="chat-message-text">${escapeHtml(data.message)}</div>
+            <div class="chat-message-time">${time}</div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    function showTypingIndicator(data) {
+        const typingIndicator = document.getElementById('chat-typing-indicator');
+        const typingUsername = document.getElementById('typing-username');
+        
+        if (typingIndicator && typingUsername) {
+            if (data.is_typing) {
+                typingUsername.textContent = data.username;
+                typingIndicator.style.display = 'block';
+            } else {
+                typingIndicator.style.display = 'none';
+            }
+        }
+    }
+    
+    function showConversationList() {
+        document.getElementById('chat-sidebar').style.display = 'flex';
+        document.getElementById('chat-main').style.display = 'none';
+        
+        if (chatSocket) {
+            chatSocket.close();
+            chatSocket = null;
+        }
+        
+        currentChatUserId = null;
+        currentChatRequestId = null;
+    }
+    
+    function getCurrentUserId() {
+        // Get user ID from meta tag or global variable
+        const userIdMeta = document.querySelector('meta[name="user-id"]');
+        return userIdMeta ? userIdMeta.content : null;
+    }
+    
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) { // Less than 1 minute
+            return 'Just now';
+        } else if (diff < 3600000) { // Less than 1 hour
+            const minutes = Math.floor(diff / 60000);
+            return `${minutes}m ago`;
+        } else if (diff < 86400000) { // Less than 1 day
+            const hours = Math.floor(diff / 3600000);
+            return `${hours}h ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function closePopup(popup) {
+        if (popup) {
+            popup.classList.remove('active');
+        }
+    }
+})();

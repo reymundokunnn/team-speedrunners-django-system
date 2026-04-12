@@ -520,3 +520,39 @@ class DesignerRating(models.Model):
     def get_rating_count(cls, designer):
         """Get the total number of ratings for a designer."""
         return cls.objects.filter(designer=designer).count()
+
+
+class ChatMessage(models.Model):
+    """Model for storing chat messages between users and designers."""
+    
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
+    design_request = models.ForeignKey(DesignRequest, on_delete=models.CASCADE, related_name='chat_messages', null=True, blank=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"Message from {self.sender.username} to {self.receiver.username} at {self.created_at}"
+    
+    @classmethod
+    def get_conversation(cls, user1, user2, design_request=None):
+        """Get conversation between two users, optionally filtered by design request."""
+        from django.db.models import Q
+        query = Q(sender=user1, receiver=user2) | Q(sender=user2, receiver=user1)
+        if design_request:
+            query &= Q(design_request=design_request)
+        return cls.objects.filter(query).order_by('created_at')
+    
+    @classmethod
+    def get_unread_count(cls, user):
+        """Get count of unread messages for a user."""
+        return cls.objects.filter(receiver=user, is_read=False).count()
+    
+    @classmethod
+    def mark_as_read(cls, user, sender):
+        """Mark all messages from sender to user as read."""
+        cls.objects.filter(receiver=user, sender=sender, is_read=False).update(is_read=True)

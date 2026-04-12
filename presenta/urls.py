@@ -46,6 +46,12 @@ urlpatterns = [
     path('api/upload-cover-photo/', views.api_upload_cover_photo, name='api_upload_cover_photo'),
     path('api/clear-cover-photo/', views.api_clear_cover_photo, name='api_clear_cover_photo'),
     
+    # Chat API endpoints
+    path('api/chat/conversations/', views.api_chat_conversations, name='api_chat_conversations'),
+    path('api/chat/messages/<int:user_id>/', views.api_chat_messages, name='api_chat_messages'),
+    path('api/chat/send/<int:user_id>/', views.api_chat_send, name='api_chat_send'),
+    path('api/chat/unread-count/', views.api_chat_unread_count, name='api_chat_unread_count'),
+    
     # Admin user management
     path('manage/user/<int:user_id>/view/', views.view_user, name='view_user'),
     path('manage/user/<int:user_id>/edit/', views.edit_user, name='edit_user'),
