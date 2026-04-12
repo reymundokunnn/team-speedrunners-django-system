@@ -12,21 +12,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         # Check if user is authenticated
         if not self.user.is_authenticated:
-            await self.close()
+            await self.close(code=403)
             return
         
         # Get the other user ID from URL
-        self.other_user_id = self.scope['url_route']['kwargs'].get('user_id')
-        self.design_request_id = self.scope['url_route']['kwargs'].get('request_id')
+        self.other_user_id = self.scope['url_route']['kwargs']['user_id']
         
         # Create a unique room name for this conversation
-        if self.other_user_id:
-            # Sort user IDs to ensure same room name regardless of who connects
-            user_ids = sorted([str(self.user.id), str(self.other_user_id)])
-            self.room_group_name = f'chat_{user_ids[0]}_{user_ids[1]}'
-        else:
-            # General chat room
-            self.room_group_name = f'chat_user_{self.user.id}'
+        # Sort user IDs to ensure same room name regardless of who connects
+        user_ids = sorted([str(self.user.id), str(self.other_user_id)])
+        self.room_group_name = f'chat_{user_ids[0]}_{user_ids[1]}'
         
         # Join room group
         await self.channel_layer.group_add(
@@ -53,13 +48,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message_type = text_data_json.get('type', 'message')
         
         if message_type == 'message':
-            message = text_data_json.get('message', '')
-            
-            if not message.strip():
-                return
+            message_data = {
+                'message': text_data_json.get('message', ''),
+                'attachment': text_data_json.get('attachment'),
+                'attachment_type': text_data_json.get('attachment_type', '')
+            }
             
             # Save message to database
-            saved_message = await self.save_message(message)
+            saved_message = await self.save_message(message_data)
             
             if saved_message:
                 # Send message to room group
@@ -67,11 +63,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     self.room_group_name,
                     {
                         'type': 'chat_message',
-                        'message': message,
-                        'sender_id': self.user.id,
-                        'sender_username': self.user.username,
-                        'timestamp': saved_message['created_at'],
-                        'message_id': saved_message['id']
+                        **saved_message
                     }
                 )
         
@@ -91,11 +83,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Send message to WebSocket."""
         await self.send(text_data=json.dumps({
             'type': 'message',
+            'id': event['id'],
             'message': event['message'],
             'sender_id': event['sender_id'],
             'sender_username': event['sender_username'],
-            'timestamp': event['timestamp'],
-            'message_id': event['message_id']
+            'timestamp': event['created_at'],
+            'attachment': event.get('attachment'),
+            'attachment_type': event.get('attachment_type'),
+            'attachment_name': event.get('attachment_name')
         }))
     
     async def typing_indicator(self, event):
@@ -110,9 +105,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
     
     @database_sync_to_async
-    def save_message(self, message):
+    def save_message(self, data):
         """Save message to database."""
-        from .models import ChatMessage, User
+        from .models import ChatMessage
+        from django.contrib.auth.models import User
         
         try:
             receiver = User.objects.get(id=self.other_user_id)
@@ -120,13 +116,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             chat_message = ChatMessage.objects.create(
                 sender=self.user,
                 receiver=receiver,
-                design_request_id=self.design_request_id if self.design_request_id else None,
-                message=message
+                message=data.get('message', ''),
+                attachment=data.get('attachment'),
+                attachment_type=data.get('attachment_type', '')
             )
             
             return {
                 'id': chat_message.id,
-                'created_at': chat_message.created_at.isoformat()
+                'created_at': chat_message.created_at.isoformat(),
+                'sender_id': self.user.id,
+                'sender_username': self.user.username,
+                'message': chat_message.message,
+                'attachment': chat_message.attachment.url if chat_message.attachment else None,
+                'attachment_type': chat_message.attachment_type,
+                'attachment_name': chat_message.attachment.name if chat_message.attachment else None
             }
         except User.DoesNotExist:
             return None

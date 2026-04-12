@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'presenta',
 ]
 
@@ -153,3 +154,11 @@ LOGIN_REDIRECT_URL = '/'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
+
+# ASGI/Channels configuration
+ASGI_APPLICATION = 'main_site.asgi.application'
+
+# Channel layers for WebSocket support
+CHANNEL_LAYERS = {
+    'BACKEND': 'channels.layers.InMemoryChannelLayer',
+}

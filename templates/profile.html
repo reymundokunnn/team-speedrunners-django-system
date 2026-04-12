@@ -88,6 +88,13 @@
                         <div class="profile-header-section">
                             <h1 class="profile-name">
                                 {{ target.first_name|default:target.username }} {{ target.last_name|default:"" }}
+                                {% if not is_self %}
+                                <a href="{% url 'chat' %}?user={{ target_django.id }}" class="profile-chat-icon" title="Chat with {{ target.first_name|default:target.username }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </a>
+                                {% endif %}
                                 {% if target.user_role == 'designer' and not is_self %}
                                 <span id="profileFavoriteIcon" class="profile-favorite-icon {% if viewer_favorited %}favorited{% endif %}" role="button"
                                     aria-label="{% if viewer_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}"
@@ -481,7 +488,7 @@
                         <div class="favorite-designers-grid">
                             {% for fav in my_favorite_designers %}
                             <div class="favorite-designer-card">
-                                <div class="favorite-designer-header">
+<div class="favorite-designer-header">
                                      {% if fav.designer.profile.presenta_user.profile_picture %}
                                      <img src="{{ fav.designer.profile.presenta_user.profile_picture.url }}"
                                          alt="{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }}"
@@ -492,20 +499,29 @@
                                      </div>
                                      {% endif %}
                                      <div class="favorite-designer-info">
-                                        <a href="{% url 'profile_detail' fav.designer.profile.presenta_user.username %}" class="favorite-designer-name">{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }} {{ fav.designer.profile.presenta_user.last_name|default:"" }}</a>
-                                        <span class="favorite-date">Added {{ fav.created_at|date:"M d, Y" }}</span>
-                                    </div>
-                                    <button type="button" class="btn-remove-favorite"
-                                        data-designer-id="{{ fav.designer.id }}" title="Remove from favorites">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polygon
-                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                            </polygon>
-                                        </svg>
-                                    </button>
-                                </div>
+                                         <a href="{% url 'profile_detail' fav.designer.profile.presenta_user.username %}" class="favorite-designer-name">{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }} {{ fav.designer.profile.presenta_user.last_name|default:"" }}</a>
+                                         <span class="favorite-date">Added {{ fav.created_at|date:"M d, Y" }}</span>
+                                     </div>
+                                     <div class="favorite-designer-actions">
+                                         <a href="{% url 'chat' %}?user={{ fav.designer.id }}" class="btn-chat-designer" title="Chat with designer">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                             </svg>
+                                         </a>
+                                         <button type="button" class="btn-remove-favorite"
+                                             data-designer-id="{{ fav.designer.id }}" title="Remove from favorites">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                 viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <polygon
+                                                     points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                                 </polygon>
+                                             </svg>
+                                         </button>
+                                     </div>
+                                 </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -1339,6 +1355,27 @@
         background: rgba(245, 158, 11, 0.18);
     }
 
+    .profile-chat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        margin-left: 10px;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+        text-decoration: none;
+    }
+
+    .profile-chat-icon:hover {
+        transform: scale(1.08);
+        background: rgba(59, 130, 246, 0.18);
+        color: #2563eb;
+    }
+
     .profile-options-menu {
         position: absolute;
         top: 12px;
@@ -1706,6 +1743,32 @@
     .btn-remove-favorite:hover {
         background: rgba(245, 158, 11, 0.1);
         color: #d97706;
+    }
+
+    .favorite-designer-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+    }
+
+    .btn-chat-designer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        color: #3b82f6;
+        text-decoration: none;
+    }
+
+    .btn-chat-designer:hover {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
     }
 
     .my-favorites-section .empty-state {

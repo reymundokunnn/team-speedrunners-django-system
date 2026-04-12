@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('services/', views.services, name='services'),
+    path('chat/', views.chat_page, name='chat'),
     path('', views.index, name='index'),
     path('signin/', views.login_view, name='signin'),
     path('register/', views.register, name='register'),
@@ -142,4 +143,14 @@ urlpatterns = [
          views.api_sample_item_detail, name='api_sample_item_detail'),
     path('api/samples/reorder/', views.api_sample_items_reorder,
          name='api_sample_items_reorder'),
+
+    # Chat API endpoints
+    path('api/chat/conversations/', views.api_chat_conversations,
+         name='api_chat_conversations'),
+    path('api/chat/messages/<int:user_id>/', views.api_chat_messages,
+         name='api_chat_messages'),
+    path('api/chat/send/<int:user_id>/', views.api_chat_send,
+         name='api_chat_send'),
+    path('api/chat/unread-count/', views.api_chat_unread_count,
+         name='api_chat_unread_count'),
 ]

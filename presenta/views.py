@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -291,6 +292,12 @@ def index(request):
 
 def services(request):
     return render(request, 'services.html')
+
+
+@login_required
+def chat_page(request):
+    initial_user = request.GET.get('user', '')
+    return render(request, 'chat.html', {'initial_user': initial_user})
 
 
 def logout_view(request):
@@ -3899,7 +3906,7 @@ def api_chat_conversations(request):
         
         # Get all conversations where the user is either sender or receiver
         from .models import ChatMessage
-        from django.db.models import Q, Max, Subquery, OuterRef
+        from django.db.models import Q, Max
         
         # Get unique conversations with the latest message
         conversations = ChatMessage.objects.filter(
@@ -3962,6 +3969,7 @@ def api_chat_messages(request, user_id):
     """API endpoint to get chat messages with a specific user."""
     try:
         from django.contrib.auth.models import User
+        from django.db.models import Q
         from .models import ChatMessage
         
         current_user = request.user
@@ -4006,7 +4014,9 @@ def api_chat_messages(request, user_id):
             }
         })
     except Exception as e:
-        print(f"Error getting chat messages: {e}")
+        print(f"Error getting chat messages: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'An error occurred'}, status=500)
 
 
@@ -4017,7 +4027,7 @@ def api_chat_send(request, user_id):
     try:
         from django.contrib.auth.models import User
         from .models import ChatMessage
-        import json
+        import mimetypes
         
         current_user = request.user
         
@@ -4026,21 +4036,33 @@ def api_chat_send(request, user_id):
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
         
-        # Parse request body
-        try:
-            data = json.loads(request.body)
-            message_text = data.get('message', '').strip()
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        message_text = request.POST.get('message', '').strip()
+        attachment = request.FILES.get('attachment')
         
-        if not message_text:
-            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+        if not message_text and not attachment:
+            return JsonResponse({'error': 'Message or attachment required'}, status=400)
+        
+        # Check file size limit (10MB)
+        if attachment and attachment.size > 10 * 1024 * 1024:
+            return JsonResponse({'error': 'File size cannot exceed 10MB'}, status=400)
+        
+        # Determine attachment type
+        attachment_type = ''
+        if attachment:
+            mime_type, _ = mimetypes.guess_type(attachment.name)
+            if mime_type:
+                if mime_type.startswith('image/'):
+                    attachment_type = 'image'
+                else:
+                    attachment_type = 'file'
         
         # Create the message
         message = ChatMessage.objects.create(
             sender=current_user,
             receiver=other_user,
-            message=message_text
+            message=message_text,
+            attachment=attachment,
+            attachment_type=attachment_type
         )
         
         return JsonResponse({
@@ -4052,6 +4074,9 @@ def api_chat_send(request, user_id):
                 'message': message.message,
                 'is_read': message.is_read,
                 'created_at': message.created_at.isoformat(),
+                'attachment': message.attachment.url if message.attachment else None,
+                'attachment_type': message.attachment_type,
+                'attachment_name': message.attachment.name if message.attachment else None
             }
         })
     except Exception as e:
