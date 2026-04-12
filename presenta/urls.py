@@ -56,6 +56,7 @@ urlpatterns = [
     # API endpoints
     path('api/notifications/', views.api_notifications, name='api_notifications'),
     path('api/activities/', views.api_activities, name='api_activities'),
+<<<<<<< HEAD
     path('api/completion-details/<int:request_id>/',
          views.get_completion_details, name='completion_details'),
     path('api/save-designer-rating/<int:request_id>/',
@@ -73,6 +74,16 @@ urlpatterns = [
     path('api/search-users/', views.api_search_users, name='api_search_users'),
     path('api/system-status/', views.api_system_status, name='api_system_status'),
 
+=======
+    path('api/completion-details/<int:request_id>/', views.get_completion_details, name='completion_details'),
+    path('api/save-designer-rating/<int:request_id>/', views.save_designer_rating, name='save_designer_rating'),
+    path('api/get-designer-rating/<int:request_id>/', views.get_designer_rating, name='get_designer_rating'),
+    path('api/reference-files/<int:request_id>/', views.get_reference_files, name='reference_files'),
+    path('api/finished-files/<int:request_id>/', views.get_finished_files, name='finished_files'),
+    path('api/upload-cover-photo/', views.api_upload_cover_photo, name='api_upload_cover_photo'),
+    path('api/clear-cover-photo/', views.api_clear_cover_photo, name='api_clear_cover_photo'),
+    
+>>>>>>> parent of 777989b (Added Chat system)
     # Admin user management
     path('manage/user/<int:user_id>/view/', views.view_user, name='view_user'),
     path('manage/user/<int:user_id>/edit/', views.edit_user, name='edit_user'),

@@ -1288,10 +1288,25 @@ padding: 20px;
         
         if (currentChatUserId) {
             messagePollingInterval = setInterval(() => {
-                loadMessages(currentChatUserId);
+                if (currentChatUserId) {
+                    loadMessages(currentChatUserId);
+                } else {
+                    clearInterval(messagePollingInterval);
+                    messagePollingInterval = null;
+                }
             }, 2000);
         }
     }
+    
+    // Cleanup polling on page unload
+    window.addEventListener('beforeunload', function() {
+        if (messagePollingInterval) {
+            clearInterval(messagePollingInterval);
+        }
+        if (websocket) {
+            websocket.close();
+        }
+    });
 
     // Fetch user info by ID
     async function fetchUserInfo(userId) {
@@ -1365,8 +1380,10 @@ padding: 20px;
         // Update active state in conversations list
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
+            if (item.onclick && item.getAttribute('onclick').includes(userId)) {
+                item.classList.add('active');
+            }
         });
-        event.currentTarget?.classList.add('active');
         
         // Load messages
         await loadMessages(userId);
@@ -1411,54 +1428,51 @@ padding: 20px;
             return;
         }
         
-        // Only update if messages changed
-        const currentMessages = container.querySelectorAll('.message');
-        if (currentMessages.length !== messages.length) {
-            container.innerHTML = messages.map(msg => {
-                    let attachmentHtml = '';
-                    if (msg.attachment) {
-                        if (msg.attachment_type === 'image') {
-                            attachmentHtml = `
-                                <div class="message-attachment">
-                                    <img src="${msg.attachment}" alt="${msg.attachment_name || 'attachment'}" style="max-width: 300px; border-radius: 8px; margin-bottom: 8px;">
-                                </div>
-                            `;
-                        } else if (msg.attachment) {
-                            attachmentHtml = `
-                                <div class="message-attachment file-attachment">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                    </svg>
-                                    <span>${msg.attachment_name || 'File'}</span>
-                                    <a href="${msg.attachment}" download>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="7 10 12 15 17 10"></polyline>
-                                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                                        </svg>
-                                    </a>
-                                </div>
-                            `;
-                        }
-                    }
-                    
-                    const messageText = msg.message ? `<p>${escapeHtml(msg.message)}</p>` : '';
-                    
-                    return `
-                        <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'}">
-                            <div class="message-content">
-                                ${attachmentHtml}
-                                ${messageText}
-                                <span class="message-time">${formatTime(msg.created_at)}</span>
+        // Always update messages to get latest content
+        container.innerHTML = messages.map(msg => {
+                let attachmentHtml = '';
+                if (msg.attachment) {
+                    if (msg.attachment_type === 'image') {
+                        attachmentHtml = `
+                            <div class="message-attachment">
+                                <img src="${msg.attachment}" alt="${msg.attachment_name || 'attachment'}" style="max-width: 300px; border-radius: 8px; margin-bottom: 8px;">
                             </div>
+                        `;
+                    } else if (msg.attachment) {
+                        attachmentHtml = `
+                            <div class="message-attachment file-attachment">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <span>${msg.attachment_name || 'File'}</span>
+                                <a href="${msg.attachment}" download>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </div>
+                        `;
+                    }
+                }
+                
+                const messageText = msg.message ? `<p>${escapeHtml(msg.message)}</p>` : '';
+                
+                return `
+                    <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'}">
+                        <div class="message-content">
+                            ${attachmentHtml}
+                            ${messageText}
+                            <span class="message-time">${formatTime(msg.created_at)}</span>
                         </div>
-                    `;
-                }).join('');
-            
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
-        }
+                    </div>
+                `;
+            }).join('');
+        
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
     }
 
     // Connect to WebSocket
@@ -1496,9 +1510,13 @@ padding: 20px;
 
         websocket.onclose = function(e) {
             console.log('WebSocket disconnected');
-            // Try to reconnect after 3 seconds only if there's an active conversation
-            if (currentChatUserId) {
-                setTimeout(() => connectWebSocket(currentChatUserId), 3000);
+            // Try to reconnect after 3 seconds only if there's an active conversation and normal close
+            if (currentChatUserId && e.code !== 403 && e.code !== 404) {
+                setTimeout(() => {
+                    if (currentChatUserId) {
+                        connectWebSocket(currentChatUserId);
+                    }
+                }, 3000);
             }
         };
 
@@ -1516,7 +1534,7 @@ padding: 20px;
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
         
-        if (!message && !selectedFile || !currentChatUserId) return;
+        if ((!message && !selectedFile) || !currentChatUserId) return;
 
         // Create form data for file upload
         const formData = new FormData();
@@ -1602,26 +1620,7 @@ padding: 20px;
         if (preview) preview.remove();
     }
             
-            // Remove welcome message if present
-            const welcome = container.querySelector('.chat-welcome');
-            if (welcome) {
-                welcome.remove();
-            }
-            
-            container.insertAdjacentHTML('beforeend', messageHtml);
-            container.scrollTop = container.scrollHeight;
-            
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
 
-        // Clear input
-        input.value = '';
-        autoResize(input);
-        
-        // Stop typing indicator
-        sendTypingIndicator(false);
-    }
 
     // Append message to chat
     function appendMessage(data) {

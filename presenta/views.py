@@ -4295,10 +4295,24 @@ def api_chat_send(request, user_id):
         if attachment and attachment.size > 10 * 1024 * 1024:
             return JsonResponse({'error': 'File size cannot exceed 10MB'}, status=400)
         
-        # Determine attachment type
+        # Determine attachment type and validate file
         attachment_type = ''
         if attachment:
             mime_type, _ = mimetypes.guess_type(attachment.name)
+            
+            # Allowed file types
+            allowed_types = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'application/pdf',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'
+            ]
+            
+            if mime_type not in allowed_types:
+                return JsonResponse({'error': 'File type not allowed'}, status=400)
+            
             if mime_type:
                 if mime_type.startswith('image/'):
                     attachment_type = 'image'

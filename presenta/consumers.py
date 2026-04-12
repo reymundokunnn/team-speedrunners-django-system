@@ -18,6 +18,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Get the other user ID from URL
         self.other_user_id = self.scope['url_route']['kwargs']['user_id']
         
+        # Verify other user exists
+        try:
+            self.other_user = await self.get_other_user()
+        except:
+            await self.close(code=404)
+            return
+        
+        # Check if user is blocked
+        is_blocked = await self.is_user_blocked()
+        if is_blocked:
+            await self.close(code=403)
+            return
+        
         # Create a unique room name for this conversation
         # Sort user IDs to ensure same room name regardless of who connects
         user_ids = sorted([str(self.user.id), str(self.other_user_id)])
@@ -44,30 +57,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     
     async def receive(self, text_data):
         """Receive message from WebSocket."""
-        text_data_json = json.loads(text_data)
+        try:
+            text_data_json = json.loads(text_data)
+        except json.JSONDecodeError:
+            return
+        
         message_type = text_data_json.get('type', 'message')
         
-        if message_type == 'message':
-            message_data = {
-                'message': text_data_json.get('message', ''),
-                'attachment': text_data_json.get('attachment'),
-                'attachment_type': text_data_json.get('attachment_type', '')
-            }
-            
-            # Save message to database
-            saved_message = await self.save_message(message_data)
-            
-            if saved_message:
-                # Send message to room group
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': 'chat_message',
-                        **saved_message
-                    }
-                )
-        
-        elif message_type == 'typing':
+        if message_type == 'typing':
             # Send typing indicator to room group
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -105,34 +102,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
     
     @database_sync_to_async
-    def save_message(self, data):
-        """Save message to database."""
-        from .models import ChatMessage
+    def get_other_user(self):
         from django.contrib.auth.models import User
-        
-        try:
-            receiver = User.objects.get(id=self.other_user_id)
-            
-            chat_message = ChatMessage.objects.create(
-                sender=self.user,
-                receiver=receiver,
-                message=data.get('message', ''),
-                attachment=data.get('attachment'),
-                attachment_type=data.get('attachment_type', '')
-            )
-            
-            return {
-                'id': chat_message.id,
-                'created_at': chat_message.created_at.isoformat(),
-                'sender_id': self.user.id,
-                'sender_username': self.user.username,
-                'message': chat_message.message,
-                'attachment': chat_message.attachment.url if chat_message.attachment else None,
-                'attachment_type': chat_message.attachment_type,
-                'attachment_name': chat_message.attachment.name if chat_message.attachment else None
-            }
-        except User.DoesNotExist:
-            return None
+        return User.objects.get(id=self.other_user_id)
+    
+    @database_sync_to_async
+    def is_user_blocked(self):
+        from .models import Block
+        return Block.objects.filter(
+            blocker_id=self.other_user_id,
+            blocked_user=self.user
+        ).exists()
     
     @database_sync_to_async
     def mark_messages_as_read(self):
