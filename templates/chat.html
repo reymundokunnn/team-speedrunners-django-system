@@ -5,14 +5,17 @@
 
 {% block styles %}
 <style>
+.dashboard-section .main {
+    padding: 0 !important;
+}
 .chat-container {
     display: flex;
     height: calc(100vh - 70px);
     background-color: #ffffff;
-    margin: 0;
     border-radius: 0;
     overflow: hidden;
     box-shadow: none;
+    margin-top: 40px;
 }
 
 .chat-sidebar {
@@ -21,21 +24,6 @@
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
-}
-
-.chat-sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 16px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.chat-sidebar-header h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin: 0;
 }
 
 .chat-settings-btn {
@@ -319,6 +307,122 @@
     margin-bottom: 16px;
 }
 
+.message:hover .message-menu-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.message-menu-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.message.sent .message-menu-btn {
+    left: -44px;
+}
+
+.message.received .message-menu-btn {
+    right: -44px;
+}
+
+.message-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+}
+
+.message-menu-btn svg {
+    width: 16px;
+    height: 16px;
+    color: #6b7280;
+}
+
+.message-popup-menu {
+    position: absolute;
+    top: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    min-width: 120px;
+    z-index: 100;
+    display: none;
+    border: 1px solid #e5e7eb;
+}
+
+.message.sent .message-popup-menu {
+    left: -140px;
+}
+
+.message.received .message-popup-menu {
+    right: -140px;
+}
+
+.message-popup-menu.show {
+    display: block;
+}
+
+.message-popup-menu::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    width: 0;
+    height: 0;
+}
+
+.message.sent .message-popup-menu::before {
+    right: -6px;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 6px solid white;
+}
+
+.message.received .message-popup-menu::before {
+    left: -6px;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid white;
+}
+
+.message-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: background-color 0.2s ease;
+}
+
+.message-menu-item:hover {
+    background-color: #f3f4f6;
+}
+
+.message-menu-item.danger {
+    color: #dc2626;
+}
+
+.message-menu-item.danger:hover {
+    background-color: #fef2f2;
+}
+
 .message.sent {
     justify-content: flex-end;
 }
@@ -333,6 +437,50 @@
     border-radius: 18px;
     position: relative;
     transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.message:hover .message-menu-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.message-menu-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.message.sent .message-menu-btn {
+    left: -44px;
+}
+
+.message.received .message-menu-btn {
+    right: -44px;
+}
+
+.message-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.message-menu-btn svg {
+    width: 16px;
+    height: 16px;
+    color: #6b7280;
 }
 
 .message.sent .message-content {
@@ -465,6 +613,47 @@ body.dark-mode .message.received .message-content {
     color: #f9fafb;
 }
 
+body.dark-mode .message-menu-btn {
+    background-color: rgba(31, 41, 55, 0.9);
+}
+
+body.dark-mode .message-menu-btn:hover {
+    background-color: rgba(31, 41, 55, 1);
+}
+
+body.dark-mode .message-menu-btn svg {
+    color: #d1d5db;
+}
+
+body.dark-mode .message-popup-menu {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.dark-mode .message.sent .message-popup-menu::before {
+    border-left-color: #1f2937;
+}
+
+body.dark-mode .message.received .message-popup-menu::before {
+    border-right-color: #1f2937;
+}
+
+body.dark-mode .message-menu-item {
+    color: #f9fafb;
+}
+
+body.dark-mode .message-menu-item:hover {
+    background-color: #374151;
+}
+
+body.dark-mode .message-menu-item.danger {
+    color: #f87171;
+}
+
+body.dark-mode .message-menu-item.danger:hover {
+    background-color: #451a1a;
+}
+
 body.dark-mode .chat-welcome {
     color: #9ca3af;
 }
@@ -485,6 +674,98 @@ body.dark-mode .typing-dot {
     background-color: #6b7280;
 }
 
+body.dark-mode .btn-image-upload {
+    color: #10b981;
+}
+
+body.dark-mode .btn-image-upload:hover {
+    background-color: #064e3b;
+    color: #34d399;
+}
+
+body.dark-mode .message-action-indicator {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+body.dark-mode .action-indicator-text {
+    color: #f9fafb;
+}
+
+body.dark-mode .action-indicator-text .reply-name {
+    color: #f9fafb;
+}
+
+body.dark-mode .action-indicator-text .reply-message {
+    color: #d1d5db;
+}
+
+body.dark-mode .action-cancel-btn:hover {
+    background-color: #4b5563;
+    color: #f9fafb;
+}
+
+.message-reply-indicator {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-left: 3px solid #e87f14;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.reply-line {
+    width: 2px;
+    height: 100%;
+    background-color: #e87f14;
+    flex-shrink: 0;
+}
+
+.reply-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.reply-sender {
+    font-weight: 600;
+    color: #e87f14;
+    margin-bottom: 2px;
+}
+
+.reply-text {
+    color: #6b7280;
+    word-wrap: break-word;
+    line-height: 1.3;
+}
+
+.reply-text i {
+    font-style: italic;
+    color: #9ca3af;
+}
+
+body.dark-mode .message-reply-indicator {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .reply-sender {
+    color: #fbbf24;
+}
+
+body.dark-mode .reply-text {
+    color: #d1d5db;
+}
+
+body.dark-mode .reply-text i {
+    color: #9ca3af;
+}
+
+body.dark-mode .image-preview img {
+    border: 1px solid #374151;
+}
+
 .chat-sidebar {
     width: 380px;
     background-color: #ffffff;
@@ -496,12 +777,11 @@ body.dark-mode .typing-dot {
 .chat-sidebar-header {
     display: flex;
     align-items: center;
-    padding: 20px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 25px 24px 5px;
 }
 
 .chat-sidebar-header h2 {
-    font-size: 1.25rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: #1f2937;
     margin: 0;
@@ -766,6 +1046,55 @@ body.dark-mode .typing-dot {
     border-top: 1px solid #e5e7eb;
 }
 
+.message-action-indicator {
+    padding: 12px 16px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.action-indicator-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.action-indicator-text {
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.action-indicator-text .reply-name {
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.action-indicator-text .reply-message {
+    font-weight: 400;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.action-cancel-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-cancel-btn:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
 .chat-input-form {
     display: flex;
     gap: 12px;
@@ -787,11 +1116,11 @@ body.dark-mode .typing-dot {
 .chat-input-wrapper {
     flex: 1;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 12px;
     background-color: #f3f4f6;
     border-radius: 22px;
-    padding: 12px 16px;
+    padding: 2px 16px;
 }
 
 .chat-input-wrapper textarea {
@@ -814,8 +1143,8 @@ body.dark-mode .typing-dot {
 }
 
 .btn-send {
-    background-color: #e87f14;
-    color: white;
+    background-color: transparent;
+    color: #e87f14;
     border: none;
     width: 44px;
     height: 44px;
@@ -1041,6 +1370,62 @@ padding: 20px;
     height: 0;
 }
 
+.attachment-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.btn-image-upload {
+    color: #059669;
+}
+
+.btn-image-upload:hover {
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.image-preview-container {
+    padding: 8px 24px 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.image-preview {
+    position: relative;
+    display: inline-block;
+    max-width: 200px;
+    margin-bottom: 8px;
+}
+
+.image-preview img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    max-height: 150px;
+    object-fit: cover;
+}
+
+.image-preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.image-preview-remove:hover {
+    background: rgba(220, 38, 38, 0.9);
+}
+
 .file-preview-container {
     padding: 8px 24px 0;
     border-top: 1px solid #e5e7eb;
@@ -1106,7 +1491,6 @@ padding: 20px;
     .chat-container {
         flex-direction: column;
         height: calc(100vh - 60px);
-        margin: 0 10px 10px;
     }
 
     .chat-sidebar {
@@ -1124,7 +1508,17 @@ padding: 20px;
 {% csrf_token %}
 
 {% block content %}
-<div class="chat-container">
+<section class="dashboard-section">
+    <div class="dashboard-container">
+        {% if user.profile.user_role == 'admin' %}
+        {% include "partials/sidebar_admin.html" %}
+        {% elif user.profile.user_role == 'designer' %}
+        {% include "partials/sidebar_designer.html" %}
+        {% else %}
+        {% include "partials/sidebar_user.html" %}
+        {% endif %}
+        <div class="main">
+            <div class="chat-container">
     <div class="chat-sidebar">
         <div class="chat-sidebar-header">
             <h2>Messages</h2>
@@ -1164,12 +1558,37 @@ padding: 20px;
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                 </div>
-                <h3>Welcome to Chat</h3>
-                <p>Select a conversation from the sidebar or start a new one</p>
+                <h3>Communicate with clients or designers</h3>
+                <p>Begin by selecting a conversation from the sidebar or start a new one.</p>
             </div>
         </div>
         
-        <div class="chat-input-container" id="chatInputContainer" style="display: none;">
+    <div class="chat-input-container" id="chatInputContainer" style="display: none;">
+        <!-- Message action indicator -->
+        <div class="message-action-indicator" id="messageActionIndicator" style="display: none;">
+            <div class="action-indicator-content">
+                <span class="action-indicator-text" id="actionIndicatorText"></span>
+                <button class="action-cancel-btn" onclick="cancelMessageAction()" title="Cancel (ESC)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Image preview container -->
+        <div class="image-preview-container" id="imagePreviewContainer" style="display: none;">
+            <img id="imagePreviewImg" src="" alt="Image preview">
+            <button type="button" class="image-preview-remove" onclick="clearSelectedImage()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+            </div>
+
             <div class="typing-indicator" id="typingIndicator" style="display: none;">
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
@@ -1180,15 +1599,25 @@ padding: 20px;
             </div>
             <form class="chat-input-form" id="chatForm" onsubmit="sendMessage(event)" enctype="multipart/form-data">
                 <div class="chat-input-wrapper">
-                    <label class="btn-file-upload">
-                        <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" onchange="handleFileSelect(event)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                        </svg>
-                    </label>
-                    <textarea 
-                        id="messageInput" 
-                        placeholder="Type a message..." 
+                    <div class="attachment-buttons">
+                        <label class="btn-file-upload" title="Attach file">
+                            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" onchange="handleFileSelect(event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </label>
+                        <label class="btn-file-upload btn-image-upload" title="Attach image">
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="9" cy="9" r="2"></circle>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                            </svg>
+                        </label>
+                    </div>
+                    <textarea
+                        id="messageInput"
+                        placeholder="Type a message..."
                         rows="1"
                         onkeydown="handleKeyDown(event)"
                         oninput="autoResize(this)"
@@ -1224,8 +1653,11 @@ padding: 20px;
                 <a href="#" class="btn-view-profile" id="viewProfileLink">View Profile</a>
             </div>
         </div>
+        </div>
     </div>
-</div>
+        </div>
+    </div>
+</section>
 
 <!-- New Chat Modal -->
 <div class="new-chat-modal" id="newChatModal">
@@ -1387,10 +1819,16 @@ padding: 20px;
         
         // Load messages
         await loadMessages(userId);
-        
+
+        // Scroll to bottom on initial load
+        const container = document.getElementById('chatMessages');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+
         // Connect to WebSocket for this conversation
         connectWebSocket(userId);
-        
+
         // Start polling fallback
         startMessagePolling();
     }
@@ -1425,7 +1863,7 @@ padding: 20px;
     // Render messages
     function renderMessages(messages) {
         const container = document.getElementById('chatMessages');
-        
+
         if (messages.length === 0) {
             container.innerHTML = `
                 <div class="chat-welcome">
@@ -1440,7 +1878,13 @@ padding: 20px;
             `;
             return;
         }
-        
+
+        // Store which menus are currently open
+        const openMenus = [];
+        document.querySelectorAll('.message-popup-menu.show').forEach(menu => {
+            openMenus.push(menu.id.replace('menu-', ''));
+        });
+
         // Always update messages to get latest content
         container.innerHTML = messages.map(msg => {
                 let attachmentHtml = '';
@@ -1476,6 +1920,67 @@ padding: 20px;
                 return `
                     <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'}">
                         <div class="message-content">
+                            <button class="message-menu-btn" onclick="toggleMessageMenu(event, ${msg.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="message-popup-menu" id="menu-${msg.id}">
+                                <button class="message-menu-item" onclick="replyToMessage(${msg.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <polyline points="9 14 4 9 9 4"></polyline>
+                                        <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                                    </svg>
+                                    Reply
+                                </button>
+                                <button class="message-menu-item" onclick="forwardMessage(${msg.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <polyline points="15 14 20 9 15 4"></polyline>
+                                        <path d="M4 20v-7a4 4 0 0 1 4-4h12"></path>
+                                    </svg>
+                                    Forward
+                                </button>
+                                ${msg.sender_id === {{ request.user.id }} ? `
+                                <button class="message-menu-item" onclick="editMessage(${msg.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="message-menu-item danger" onclick="deleteMessage(${msg.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                    Delete
+                                </button>
+                                ` : `
+                                <button class="message-menu-item danger" onclick="reportMessage(${msg.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    Report
+                                </button>
+                                `}
+                            </div>
+                            ${msg.reply_to ? `
+                            <div class="message-reply-indicator">
+                                <div class="reply-line"></div>
+                                <div class="reply-content">
+                                    <div class="reply-sender">${msg.reply_to.sender_username}</div>
+                                    <div class="reply-text">
+                                        ${msg.reply_to.attachment_type === 'image' ? '<i>[Image]</i>' :
+                                          msg.reply_to.attachment_type === 'file' ? '<i>[File]</i>' :
+                                          msg.reply_to.message ? msg.reply_to.message.substring(0, 100) + (msg.reply_to.message.length > 100 ? '...' : '') : '<i>[Message]</i>'}
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                             ${attachmentHtml}
                             ${messageText}
                             <span class="message-time">${formatTime(msg.created_at)}</span>
@@ -1483,9 +1988,20 @@ padding: 20px;
                     </div>
                 `;
             }).join('');
-        
-        // Scroll to bottom
-        container.scrollTop = container.scrollHeight;
+
+        // Restore open menus
+        openMenus.forEach(messageId => {
+            const menu = document.getElementById(`menu-${messageId}`);
+            if (menu) {
+                menu.classList.add('show');
+            }
+        });
+
+        // Only scroll to bottom if user is already near the bottom
+        const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
+        if (isAtBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
     }
 
     // Connect to WebSocket
@@ -1540,46 +2056,99 @@ padding: 20px;
 
     // Send message
     let selectedFile = null;
+    let selectedImage = null;
 
     async function sendMessage(event) {
         event.preventDefault();
-        
+
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
-        
-        if ((!message && !selectedFile) || !currentChatUserId) return;
+        const editId = input.getAttribute('data-edit-id');
 
+        if ((!message && !selectedFile && !selectedImage) || !currentChatUserId) return;
+
+        // Check if we're editing a message
+        if (editId) {
+            // Edit existing message
+            try {
+                const response = await fetch(`/api/chat/edit/${editId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update the message in UI
+                    updateMessageInUI(editId, data.message);
+                } else {
+                    try {
+                        const errorData = await response.json();
+                        alert(`Failed to edit message: ${errorData.error || 'Unknown error'}`);
+                    } catch {
+                        alert('Failed to edit message: Server error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error editing message:', error);
+                alert('Failed to edit message');
+            }
+        } else {
+            // Send new message
         // Create form data for file upload
         const formData = new FormData();
         formData.append('message', message);
         if (selectedFile) {
             formData.append('attachment', selectedFile);
+        } else if (selectedImage) {
+            formData.append('attachment', selectedImage);
         }
 
-        // Send via API
-        try {
-            const response = await fetch(`/api/chat/send/${currentChatUserId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            // Add message to UI immediately
-            appendMessage(data.message);
-            
-            // Clear inputs
-            input.value = '';
-            autoResize(input);
-            clearSelectedFile();
-            
-        } catch (error) {
-            console.error('Error sending message:', error);
+        // Include reply_to if replying
+        const replyTo = input.getAttribute('data-reply-to');
+        if (replyTo) {
+            formData.append('reply_to', replyTo);
         }
-        
+
+            // Send via API
+            try {
+                const response = await fetch(`/api/chat/send/${currentChatUserId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Add message to UI immediately
+                appendMessage(data.message);
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        // Clear inputs and action state
+        input.value = '';
+        input.removeAttribute('data-edit-id');
+        input.removeAttribute('data-reply-to');
+        input.removeAttribute('data-action-type');
+        input.placeholder = 'Type a message...';
+        autoResize(input);
+        clearSelectedFile();
+        clearSelectedImage();
+
+        // Hide action indicator
+        const indicator = document.getElementById('messageActionIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+
         // Stop typing indicator
         sendTypingIndicator(false);
     }
@@ -1588,16 +2157,39 @@ padding: 20px;
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
-        
+
         // 10MB limit
         if (file.size > 10 * 1024 * 1024) {
             alert('File size cannot exceed 10MB');
             event.target.value = '';
             return;
         }
-        
+
+        // Clear any selected image first
+        clearSelectedImage();
+
         selectedFile = file;
         showFilePreview(file);
+        event.target.value = '';
+    }
+
+    // Handle image selection
+    function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 10MB limit
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size cannot exceed 10MB');
+            event.target.value = '';
+            return;
+        }
+
+        // Clear any selected file first
+        clearSelectedFile();
+
+        selectedImage = file;
+        showImagePreview(file);
         event.target.value = '';
     }
     
@@ -1631,6 +2223,33 @@ padding: 20px;
         selectedFile = null;
         const preview = document.getElementById('filePreview');
         if (preview) preview.remove();
+    }
+
+    // Show image preview
+    function showImagePreview(file) {
+        const container = document.getElementById('imagePreviewContainer');
+        const img = document.getElementById('imagePreviewImg');
+
+        // Create object URL for the image
+        const imageUrl = URL.createObjectURL(file);
+        img.src = imageUrl;
+
+        container.style.display = 'block';
+    }
+
+    // Clear selected image
+    function clearSelectedImage() {
+        selectedImage = null;
+        const container = document.getElementById('imagePreviewContainer');
+        const img = document.getElementById('imagePreviewImg');
+
+        // Revoke object URL to free memory
+        if (img.src && img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+
+        img.src = '';
+        container.style.display = 'none';
     }
             
 
@@ -1672,10 +2291,72 @@ padding: 20px;
         
         const messageHtml = `
             <div class="message ${isSent ? 'sent' : 'received'}">
-                <div class="message-content">
-                    ${attachmentHtml}
-                    ${messageText}
-                    <span class="message-time">${formatTime(data.timestamp || data.created_at)}</span>
+                    <div class="message-content">
+                        <button class="message-menu-btn" onclick="toggleMessageMenu(event, ${data.id})">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                        <div class="message-popup-menu" id="menu-${data.id}">
+                            <button class="message-menu-item" onclick="replyToMessage(${data.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                    <polyline points="9 14 4 9 9 4"></polyline>
+                                    <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                                </svg>
+                                Reply
+                            </button>
+                            <button class="message-menu-item" onclick="forwardMessage(${data.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                    <polyline points="15 14 20 9 15 4"></polyline>
+                                    <path d="M4 20v-7a4 4 0 0 1 4-4h12"></path>
+                                </svg>
+                                Forward
+                            </button>
+                            ${isSent ? `
+                            <button class="message-menu-item" onclick="editMessage(${data.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                            </button>
+                            <button class="message-menu-item danger" onclick="deleteMessage(${data.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                                Delete
+                            </button>
+                            ` : `
+                            <button class="message-menu-item danger" onclick="reportMessage(${data.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Report
+                            </button>
+                            `}
+                        </div>
+                        ${data.reply_to ? `
+                        <div class="message-reply-indicator">
+                            <div class="reply-line"></div>
+                            <div class="reply-content">
+                                <div class="reply-sender">${data.reply_to.sender_username}</div>
+                                <div class="reply-text">
+                                    ${data.reply_to.attachment_type === 'image' ? '<i>[Image]</i>' :
+                                      data.reply_to.attachment_type === 'file' ? '<i>[File]</i>' :
+                                      data.reply_to.message ? data.reply_to.message.substring(0, 100) + (data.reply_to.message.length > 100 ? '...' : '') : '<i>[Message]</i>'}
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${attachmentHtml}
+                        ${messageText}
+                        <span class="message-time">${formatTime(data.timestamp || data.created_at)}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -1689,7 +2370,7 @@ padding: 20px;
         container.insertAdjacentHTML('beforeend', messageHtml);
         
         // Auto scroll only if user is already at bottom
-        const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
+        const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
         if (isAtBottom) {
             container.scrollTop = container.scrollHeight;
         }
@@ -1700,6 +2381,16 @@ padding: 20px;
 
     // Handle key down events
     function handleKeyDown(event) {
+        const input = document.getElementById('messageInput');
+        const hasAction = input && (input.hasAttribute('data-edit-id') || input.hasAttribute('data-reply-to'));
+
+        // Don't handle Enter if ESC should cancel action
+        if (event.key === 'Escape' && hasAction) {
+            event.preventDefault();
+            cancelMessageAction();
+            return;
+        }
+
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             event.stopPropagation();
@@ -1879,6 +2570,190 @@ padding: 20px;
     function toggleChatInfo() {
         const panel = document.getElementById('chatInfoPanel');
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Message menu functions
+    function toggleMessageMenu(event, messageId) {
+        event.stopPropagation();
+
+        // Close any open menus
+        document.querySelectorAll('.message-popup-menu.show').forEach(menu => {
+            if (menu.id !== `menu-${messageId}`) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Toggle current menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    function replyToMessage(messageId) {
+        // Close menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) menu.classList.remove('show');
+
+        // Find the message content and user info
+        const messageElement = menu.closest('.message');
+        const messageContent = messageElement.querySelector('.message-content p');
+        const messageText = messageContent ? messageContent.textContent : '';
+
+        // Get user name (from message data or find another way)
+        // For now, we'll use a generic approach
+        const userName = currentChatUserName || 'User';
+
+        // Show action indicator
+        const indicator = document.getElementById('messageActionIndicator');
+        const indicatorText = document.getElementById('actionIndicatorText');
+        if (indicator && indicatorText) {
+            indicatorText.innerHTML = `Replying to <span class="reply-name">${userName}</span> <span class="reply-message">"${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"</span>`;
+            indicator.style.display = 'block';
+        }
+
+        // Set reply context
+        const input = document.getElementById('messageInput');
+        if (input) {
+            input.focus();
+            input.setAttribute('data-reply-to', messageId);
+            input.setAttribute('data-action-type', 'reply');
+        }
+    }
+
+    function forwardMessage(messageId) {
+        // Close menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) menu.classList.remove('show');
+
+        // TODO: Implement forward functionality
+        alert('Forward functionality will be implemented');
+    }
+
+    function editMessage(messageId) {
+        // Close menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) menu.classList.remove('show');
+
+        // Find the message content
+        const messageElement = menu.closest('.message');
+        const messageContent = messageElement.querySelector('.message-content p');
+        const currentText = messageContent ? messageContent.textContent : '';
+
+        // Show action indicator
+        const indicator = document.getElementById('messageActionIndicator');
+        const indicatorText = document.getElementById('actionIndicatorText');
+        if (indicator && indicatorText) {
+            indicatorText.textContent = 'Editing message';
+            indicator.style.display = 'block';
+        }
+
+        // Set edit mode
+        const input = document.getElementById('messageInput');
+        if (input) {
+            input.value = currentText;
+            input.focus();
+            input.setAttribute('data-edit-id', messageId);
+            input.setAttribute('data-action-type', 'edit');
+        }
+    }
+
+    function deleteMessage(messageId) {
+        // Close menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) menu.classList.remove('show');
+
+        if (confirm('Are you sure you want to delete this message?')) {
+            // TODO: Implement delete functionality with API call
+            fetch(`/api/chat/delete/${messageId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove message from UI
+                    const messageElement = document.getElementById(`menu-${messageId}`).closest('.message');
+                    if (messageElement) {
+                        messageElement.remove();
+                    }
+                } else {
+                    alert('Failed to delete message');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting message:', error);
+                alert('Failed to delete message');
+            });
+        }
+    }
+
+    function reportMessage(messageId) {
+        // Close menu
+        const menu = document.getElementById(`menu-${messageId}`);
+        if (menu) menu.classList.remove('show');
+
+        // TODO: Implement report functionality
+        alert('Report functionality will be implemented');
+    }
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.message-menu-btn') && !event.target.closest('.message-popup-menu')) {
+            document.querySelectorAll('.message-popup-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    // ESC key support for canceling actions
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const input = document.getElementById('messageInput');
+            const hasAction = input && (input.hasAttribute('data-edit-id') || input.hasAttribute('data-reply-to'));
+
+            if (hasAction) {
+                event.preventDefault();
+                cancelMessageAction();
+            }
+        }
+    });
+
+    // Update message in UI after editing
+    function updateMessageInUI(messageId, updatedMessage) {
+        const messageElement = document.querySelector(`#menu-${messageId}`).closest('.message');
+        if (messageElement) {
+            const messageContent = messageElement.querySelector('.message-content p');
+            if (messageContent) {
+                messageContent.textContent = updatedMessage.message;
+            }
+        }
+    }
+
+    function cancelMessageAction() {
+        const input = document.getElementById('messageInput');
+        const indicator = document.getElementById('messageActionIndicator');
+
+        if (input) {
+            // Clear action attributes
+            input.removeAttribute('data-edit-id');
+            input.removeAttribute('data-reply-to');
+            input.removeAttribute('data-action-type');
+
+            // Reset input
+            input.value = '';
+            input.placeholder = 'Type a message...';
+
+            // Clear any selected files/images
+            clearSelectedFile();
+            clearSelectedImage();
+        }
+
+        // Hide indicator
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
     }
 
     // Format time

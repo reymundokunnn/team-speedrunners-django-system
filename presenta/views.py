@@ -4259,6 +4259,15 @@ def api_chat_messages(request, user_id):
                 'message': msg.message,
                 'is_read': msg.is_read,
                 'created_at': msg.created_at.isoformat(),
+                'attachment': msg.attachment.url if msg.attachment else None,
+                'attachment_type': msg.attachment_type,
+                'attachment_name': msg.attachment.name if msg.attachment else None,
+                'reply_to': {
+                    'id': msg.reply_to.id if msg.reply_to else None,
+                    'sender_username': msg.reply_to.sender.username if msg.reply_to else None,
+                    'message': msg.reply_to.message if msg.reply_to else None,
+                    'attachment_type': msg.reply_to.attachment_type if msg.reply_to else None,
+                } if msg.reply_to else None
             })
         
         # Get presenta user profile for profile picture
@@ -4303,7 +4312,8 @@ def api_chat_send(request, user_id):
         
         message_text = request.POST.get('message', '').strip()
         attachment = request.FILES.get('attachment')
-        
+        reply_to_id = request.POST.get('reply_to')
+
         if not message_text and not attachment:
             return JsonResponse({'error': 'Message or attachment required'}, status=400)
         
@@ -4335,13 +4345,26 @@ def api_chat_send(request, user_id):
                 else:
                     attachment_type = 'file'
         
+        # Handle reply_to
+        reply_to_message = None
+        if reply_to_id:
+            try:
+                reply_to_message = ChatMessage.objects.get(id=reply_to_id)
+                # Ensure the reply_to message is part of this conversation
+                if not ((reply_to_message.sender == current_user and reply_to_message.receiver == other_user) or
+                        (reply_to_message.sender == other_user and reply_to_message.receiver == current_user)):
+                    return JsonResponse({'error': 'Invalid reply reference'}, status=400)
+            except ChatMessage.DoesNotExist:
+                return JsonResponse({'error': 'Reply message not found'}, status=400)
+
         # Create the message
         message = ChatMessage.objects.create(
             sender=current_user,
             receiver=other_user,
             message=message_text,
             attachment=attachment,
-            attachment_type=attachment_type
+            attachment_type=attachment_type,
+            reply_to=reply_to_message
         )
         
         return JsonResponse({
@@ -4355,11 +4378,99 @@ def api_chat_send(request, user_id):
                 'created_at': message.created_at.isoformat(),
                 'attachment': message.attachment.url if message.attachment else None,
                 'attachment_type': message.attachment_type,
-                'attachment_name': message.attachment.name if message.attachment else None
+                'attachment_name': message.attachment.name if message.attachment else None,
+                'reply_to': {
+                    'id': message.reply_to.id if message.reply_to else None,
+                    'sender_username': message.reply_to.sender.username if message.reply_to else None,
+                    'message': message.reply_to.message if message.reply_to else None,
+                    'attachment_type': message.reply_to.attachment_type if message.reply_to else None,
+                } if message.reply_to else None
             }
         })
     except Exception as e:
         print(f"Error sending chat message: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_chat_edit(request, message_id):
+    """API endpoint to edit a chat message."""
+    try:
+        import json
+        from .models import ChatMessage
+
+        current_user = request.user
+
+        try:
+            message = ChatMessage.objects.get(id=message_id)
+        except ChatMessage.DoesNotExist:
+            return JsonResponse({'error': 'Message not found'}, status=404)
+
+        # Check if user owns the message
+        if message.sender != current_user:
+            return JsonResponse({'error': 'You can only edit your own messages'}, status=403)
+
+        # Get new message content from JSON body
+        try:
+            data = json.loads(request.body)
+            new_message = data.get('message', '').strip()
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+        # Update the message
+        message.message = new_message
+        message.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': {
+                'id': message.id,
+                'sender_id': message.sender.id,
+                'sender_username': message.sender.username,
+                'message': message.message,
+                'is_read': message.is_read,
+                'created_at': message.created_at.isoformat(),
+                'attachment': message.attachment.url if message.attachment else None,
+                'attachment_type': message.attachment_type,
+                'attachment_name': message.attachment.name if message.attachment else None,
+                'reply_to': {
+                    'id': message.reply_to.id if message.reply_to else None,
+                    'sender_username': message.reply_to.sender.username if message.reply_to else None,
+                    'message': message.reply_to.message if message.reply_to else None,
+                    'attachment_type': message.reply_to.attachment_type if message.reply_to else None,
+                } if message.reply_to else None
+            }
+        })
+    except Exception as e:
+        print(f"Error editing chat message: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def api_chat_delete(request, message_id):
+    """API endpoint to delete a chat message."""
+    try:
+        from .models import ChatMessage
+
+        current_user = request.user
+
+        try:
+            message = ChatMessage.objects.get(id=message_id)
+        except ChatMessage.DoesNotExist:
+            return JsonResponse({'error': 'Message not found'}, status=404)
+
+        # Check if user owns the message
+        if message.sender != current_user:
+            return JsonResponse({'error': 'You can only delete your own messages'}, status=403)
+
+        # Delete the message
+        message.delete()
+
+        return JsonResponse({'success': True})
+    except Exception as e:
+        print(f"Error deleting chat message: {e}")
         return JsonResponse({'error': 'An error occurred'}, status=500)
 
 

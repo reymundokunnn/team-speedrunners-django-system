@@ -656,6 +656,7 @@ class ChatMessage(models.Model):
     message = models.TextField(blank=True)
     attachment = models.FileField(upload_to='chat_attachments/', null=True, blank=True)
     attachment_type = models.CharField(max_length=50, blank=True)
+    reply_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='replies')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
