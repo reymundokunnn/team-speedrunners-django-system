@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
 
 
 class User(models.Model):
@@ -643,3 +644,54 @@ class FavoriteDesigner(models.Model):
     def is_favorited(cls, client, designer):
         """Check if a client has favorited a designer."""
         return cls.objects.filter(client=client, designer=designer).exists()
+
+# chat system
+
+class ChatMessage(models.Model):
+    """Model for storing chat messages between users."""
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
+    message = models.TextField(blank=True)
+    attachment = models.FileField(upload_to='chat_attachments/', null=True, blank=True)
+    attachment_type = models.CharField(max_length=50, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['sender', 'receiver', '-created_at']),
+            models.Index(fields=['receiver', 'is_read']),
+        ]
+
+    def __str__(self):
+        return f"{self.sender.username} to {self.receiver.username}: {self.message[:50]}"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.sender == self.receiver:
+            raise ValidationError("Cannot send message to yourself.")
+        
+        if not self.message.strip() and not self.attachment:
+            raise ValidationError("Message or attachment is required.")
+        
+        # Check if receiver blocked sender
+        from .models import Block
+        if Block.objects.filter(blocker=self.receiver, blocked_user=self.sender).exists():
+            raise ValidationError("Cannot send message to this user.")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def mark_as_read(cls, receiver, sender):
+        """Mark all messages from sender to receiver as read."""
+        from django.db import transaction
+        with transaction.atomic():
+            cls.objects.select_for_update().filter(
+                receiver=receiver, sender=sender, is_read=False
+            ).update(is_read=True)
