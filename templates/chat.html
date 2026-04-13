@@ -1351,10 +1351,10 @@ padding: 20px;
         }
 
         container.innerHTML = conversations.map(conv => `
-            <div class="conversation-item ${conv.user.id === currentChatUserId ? 'active' : ''}" 
+            <div class="conversation-item ${conv.user.id === currentChatUserId ? 'active' : ''}"
                  onclick="openConversation(${conv.user.id}, '${conv.user.username}', '${conv.user.first_name || ''}', '${conv.user.last_name || ''}')">
                 <div class="conversation-avatar">
-                    <img src="{% static 'img/default-avatar.png' %}" alt="${conv.user.username}">
+                    <img src="${conv.user.profile_picture || '{% static "img/default-avatar.png" %}'}" alt="${conv.user.username}">
                     ${conv.unread_count > 0 ? `<span class="unread-badge">${conv.unread_count}</span>` : ''}
                 </div>
                 <div class="conversation-details">
@@ -1400,9 +1400,22 @@ padding: 20px;
         try {
             const response = await fetch(`/api/chat/messages/${userId}/`);
             const data = await response.json();
-            
+
             if (data.messages) {
                 renderMessages(data.messages);
+            }
+
+            // Update user info from API response
+            if (data.user) {
+                const avatarImg = document.getElementById('chatUserAvatar');
+                if (data.user.profile_picture) {
+                    avatarImg.src = data.user.profile_picture;
+                } else {
+                    avatarImg.src = '{% static "img/default-avatar.png" %}';
+                }
+
+                document.getElementById('chatUserName').textContent =
+                    data.user.first_name ? `${data.user.first_name} ${data.user.last_name || ''}`.trim() : data.user.username;
             }
         } catch (error) {
             console.error('Error loading messages:', error);

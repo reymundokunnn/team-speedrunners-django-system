@@ -4192,12 +4192,20 @@ def api_chat_conversations(request):
                     is_read=False
                 ).count()
                 
+                # Get presenta user profile for profile picture
+                try:
+                    presenta_user = other_user.presenta_user
+                    profile_picture_url = presenta_user.profile_picture.url if presenta_user.profile_picture else None
+                except:
+                    profile_picture_url = None
+
                 conversation_list.append({
                     'user': {
                         'id': other_user.id,
                         'username': other_user.username,
                         'first_name': other_user.first_name,
                         'last_name': other_user.last_name,
+                        'profile_picture': profile_picture_url,
                     },
                     'last_message': latest_message.message if latest_message else '',
                     'last_message_time': latest_message.created_at.isoformat() if latest_message else '',
@@ -4253,6 +4261,13 @@ def api_chat_messages(request, user_id):
                 'created_at': msg.created_at.isoformat(),
             })
         
+        # Get presenta user profile for profile picture
+        try:
+            presenta_user = other_user.presenta_user
+            profile_picture_url = presenta_user.profile_picture.url if presenta_user.profile_picture else None
+        except:
+            profile_picture_url = None
+
         return JsonResponse({
             'messages': message_list,
             'user': {
@@ -4260,6 +4275,7 @@ def api_chat_messages(request, user_id):
                 'username': other_user.username,
                 'first_name': other_user.first_name,
                 'last_name': other_user.last_name,
+                'profile_picture': profile_picture_url,
             }
         })
     except Exception as e:
