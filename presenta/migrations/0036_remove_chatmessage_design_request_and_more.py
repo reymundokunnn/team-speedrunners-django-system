@@ -12,10 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='chatmessage',
-            name='design_request',
-        ),
         migrations.AddField(
             model_name='chatmessage',
             name='updated_at',
