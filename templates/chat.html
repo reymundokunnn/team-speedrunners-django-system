@@ -11,11 +11,10 @@
 .chat-container {
     display: flex;
     height: calc(100vh - 70px);
-    background-color: #ffffff;
     border-radius: 0;
     overflow: hidden;
     box-shadow: none;
-    margin-top: 40px;
+    margin-top: 36px;
 }
 
 .chat-sidebar {
@@ -194,11 +193,11 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
+    background-color: transparent;
 }
 
 .chat-main-header {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
@@ -228,6 +227,50 @@
 .chat-user-status {
     font-size: 0.85rem;
     color: #6b7280;
+    font-weight: 500;
+}
+
+.status-online {
+    color: #10b981;
+}
+
+.status-idle {
+    color: #f59e0b;
+}
+
+.status-do_not_disturb {
+    color: #ef4444;
+}
+
+.status-offline {
+    color: #6b7280;
+}
+
+.avatar-status-indicator {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-status-indicator.status-online {
+    background-color: #10b981;
+}
+
+.avatar-status-indicator.status-idle {
+    background-color: #f59e0b;
+}
+
+.avatar-status-indicator.status-do_not_disturb {
+    background-color: #ef4444;
+}
+
+.avatar-status-indicator.status-offline {
+    background-color: #6b7280;
 }
 
 .chat-actions .btn-icon {
@@ -533,13 +576,9 @@
 }
 
 /* Dark Mode Styles */
-body.dark-mode .chat-container {
-    background-color: #1f2937;
-}
-
 body.dark-mode .chat-sidebar {
-    background-color: #1f2937;
-    border-right-color: #374151;
+    background-color: #222222;
+    border: 0;
 }
 
 body.dark-mode .chat-sidebar-header h2 {
@@ -585,7 +624,7 @@ body.dark-mode .conversation-preview {
 }
 
 body.dark-mode .chat-main {
-    background-color: #111827;
+    background-color: #111111;
 }
 
 body.dark-mode .chat-main-header {
@@ -598,6 +637,38 @@ body.dark-mode .chat-user-details h3 {
 
 body.dark-mode .chat-user-status {
     color: #9ca3af;
+}
+
+body.dark-mode .status-online {
+    color: #34d399;
+}
+
+body.dark-mode .status-idle {
+    color: #fbbf24;
+}
+
+body.dark-mode .status-do_not_disturb {
+    color: #f87171;
+}
+
+body.dark-mode .status-offline {
+    color: #9ca3af;
+}
+
+body.dark-mode .avatar-status-indicator.status-online {
+    background-color: #34d399;
+}
+
+body.dark-mode .avatar-status-indicator.status-idle {
+    background-color: #fbbf24;
+}
+
+body.dark-mode .avatar-status-indicator.status-do_not_disturb {
+    background-color: #f87171;
+}
+
+body.dark-mode .avatar-status-indicator.status-offline {
+    background-color: #9ca3af;
 }
 
 body.dark-mode .chat-actions .btn-icon:hover {
@@ -887,14 +958,6 @@ body.dark-mode .image-preview img {
     background-color: #ffffff;
 }
 
-.chat-main-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
-}
-
 .chat-user-info {
     display: flex;
     align-items: center;
@@ -909,10 +972,10 @@ body.dark-mode .image-preview img {
 }
 
 .chat-user-details h3 {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--text-primary, #1f2937);
-    margin: 0 0 4px;
+    margin: 0 0 -4px;
 }
 
 .chat-user-status {
@@ -1042,22 +1105,19 @@ body.dark-mode .image-preview img {
 }
 
 .chat-input-container {
-    padding: 16px 24px;
     border-top: 1px solid #e5e7eb;
 }
 
 .message-action-indicator {
-    padding: 12px 16px;
-    background-color: #f3f4f6;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border: 1px solid #e5e7eb;
+    width: 100%;
+    line-height: 1.3em;
 }
 
 .action-indicator-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 10px 20px;
 }
 
 .action-indicator-text {
@@ -1118,9 +1178,10 @@ body.dark-mode .image-preview img {
     display: flex;
     align-items: center;
     gap: 12px;
-    background-color: #f3f4f6;
+    border: 1px solid #cfcfcf;
     border-radius: 22px;
     padding: 2px 16px;
+    margin: 10px;
 }
 
 .chat-input-wrapper textarea {
@@ -1534,6 +1595,7 @@ padding: 20px;
             <div class="chat-user-info">
                 <div class="chat-user-avatar">
                     <img src="{% static 'img/default-avatar.png' %}" alt="User Avatar" id="chatUserAvatar">
+                    <div class="avatar-status-indicator status-offline" id="chatUserStatusIndicator"></div>
                 </div>
                 <div class="chat-user-details">
                     <h3 id="chatUserName">Select a conversation</h3>
@@ -1787,6 +1849,7 @@ padding: 20px;
                  onclick="openConversation(${conv.user.id}, '${conv.user.username}', '${conv.user.first_name || ''}', '${conv.user.last_name || ''}')">
                 <div class="conversation-avatar">
                     <img src="${conv.user.profile_picture || '{% static "img/default-avatar.png" %}'}" alt="${conv.user.username}">
+                    <div class="avatar-status-indicator status-${conv.user.online_status || 'offline'}"></div>
                     ${conv.unread_count > 0 ? `<span class="unread-badge">${conv.unread_count}</span>` : ''}
                 </div>
                 <div class="conversation-details">
@@ -1808,6 +1871,7 @@ padding: 20px;
         // Update UI
         document.getElementById('chatUserName').textContent = currentChatUserName;
         document.getElementById('chatInputContainer').style.display = 'flex';
+        document.getElementById('chatHeader').style.display = 'flex';
         
         // Update active state in conversations list
         document.querySelectorAll('.conversation-item').forEach(item => {
@@ -1854,6 +1918,17 @@ padding: 20px;
 
                 document.getElementById('chatUserName').textContent =
                     data.user.first_name ? `${data.user.first_name} ${data.user.last_name || ''}`.trim() : data.user.username;
+
+                // Update user status
+                const statusElement = document.getElementById('chatUserStatus');
+                const statusIndicator = document.getElementById('chatUserStatusIndicator');
+                if (statusElement && data.user.online_status) {
+                    statusElement.textContent = formatUserStatus(data.user.online_status);
+                    statusElement.className = `chat-user-status status-${data.user.online_status}`;
+                }
+                if (statusIndicator && data.user.online_status) {
+                    statusIndicator.className = `avatar-status-indicator status-${data.user.online_status}`;
+                }
             }
         } catch (error) {
             console.error('Error loading messages:', error);
@@ -2608,7 +2683,7 @@ padding: 20px;
         const indicator = document.getElementById('messageActionIndicator');
         const indicatorText = document.getElementById('actionIndicatorText');
         if (indicator && indicatorText) {
-            indicatorText.innerHTML = `Replying to <span class="reply-name">${userName}</span> <span class="reply-message">"${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"</span>`;
+            indicatorText.innerHTML = `Replying to <span class="reply-name">${userName}</span><br><span class="reply-message">${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}</span>`;
             indicator.style.display = 'block';
         }
 
@@ -2776,6 +2851,20 @@ padding: 20px;
         
         // Otherwise show date
         return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    // Format user status for display
+    function formatUserStatus(status) {
+        switch (status) {
+            case 'online':
+                return 'Online';
+            case 'idle':
+                return 'Idle';
+            case 'do_not_disturb':
+                return 'Do Not Disturb';
+            default:
+                return 'Offline';
+        }
     }
 
     // Escape HTML

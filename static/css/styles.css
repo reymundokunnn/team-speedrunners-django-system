@@ -950,7 +950,7 @@ body.dark-mode header .right .user-info-wrapper .user-dropdown-menu {
 
 /* Dark mode for search */
 body.dark-mode .header-search input {
-    background-color: #374151;
+    background-color: #3f3f3f;
     border-color: transparent;
     color: #F9FAFB;
 }
@@ -13982,7 +13982,8 @@ body:not(.dark-mode) .profile-container .modal-body textarea {
 
 .other-icons {
     display: flex;
-    gap: 15px;
+    gap: 8px;
+    align-items: center;
 }
 
 /* Icon Wrapper for Popups */

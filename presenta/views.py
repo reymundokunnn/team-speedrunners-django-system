@@ -4206,6 +4206,7 @@ def api_chat_conversations(request):
                         'first_name': other_user.first_name,
                         'last_name': other_user.last_name,
                         'profile_picture': profile_picture_url,
+                        'online_status': presenta_user.online_status if presenta_user else 'offline',
                     },
                     'last_message': latest_message.message if latest_message else '',
                     'last_message_time': latest_message.created_at.isoformat() if latest_message else '',
@@ -4285,6 +4286,7 @@ def api_chat_messages(request, user_id):
                 'first_name': other_user.first_name,
                 'last_name': other_user.last_name,
                 'profile_picture': profile_picture_url,
+                'online_status': presenta_user.online_status if presenta_user else 'offline',
             }
         })
     except Exception as e:

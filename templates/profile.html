@@ -81,6 +81,10 @@
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
                             </a>
+                            {% else %}
+                            <div class="profile-status-icon" title="{{ target.presenta_user.online_status|title }} - {{ target.presenta_user.get_online_status_display }}">
+                                <div class="status-indicator status-{{ target.presenta_user.online_status }}"></div>
+                            </div>
                             {% endif %}
                         </div>
 
@@ -2014,6 +2018,43 @@
         display: flex;
         gap: 12px;
         justify-content: flex-end;
+    }
+
+    /* Profile Status Icon */
+    .profile-status-icon {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-online {
+        background-color: #10b981;
+    }
+
+    .status-idle {
+        background-color: #f59e0b;
+    }
+
+    .status-do_not_disturb {
+        background-color: #ef4444;
+    }
+
+    .status-offline {
+        background-color: #6b7280;
     }
 </style>
 {% endblock %}
