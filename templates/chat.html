@@ -1594,7 +1594,7 @@ padding: 20px;
         <div class="chat-main-header" id="chatHeader">
             <div class="chat-user-info">
                 <div class="chat-user-avatar">
-                    <img src="{% static 'img/default-avatar.png' %}" alt="User Avatar" id="chatUserAvatar">
+                    <img src="{% static 'img/default-avatar.svg' %}" alt="User Avatar" id="chatUserAvatar">
                     <div class="avatar-status-indicator status-offline" id="chatUserStatusIndicator"></div>
                 </div>
                 <div class="chat-user-details">
@@ -1707,7 +1707,7 @@ padding: 20px;
         </div>
         <div class="chat-info-content">
             <div class="chat-info-user">
-                <img src="{% static 'img/default-avatar.png' %}" alt="User Avatar" id="infoUserAvatar">
+                <img src="{% static 'img/default-avatar.svg' %}" alt="User Avatar" id="infoUserAvatar">
                 <h4 id="infoUserName">User Name</h4>
                 <p id="infoUserRole">Role</p>
             </div>
@@ -1848,7 +1848,7 @@ padding: 20px;
             <div class="conversation-item ${conv.user.id === currentChatUserId ? 'active' : ''}"
                  onclick="openConversation(${conv.user.id}, '${conv.user.username}', '${conv.user.first_name || ''}', '${conv.user.last_name || ''}')">
                 <div class="conversation-avatar">
-                    <img src="${conv.user.profile_picture || '{% static "img/default-avatar.png" %}'}" alt="${conv.user.username}">
+                    <img src="${conv.user.profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${conv.user.username}">
                     <div class="avatar-status-indicator status-${conv.user.online_status || 'offline'}"></div>
                     ${conv.unread_count > 0 ? `<span class="unread-badge">${conv.unread_count}</span>` : ''}
                 </div>
@@ -1913,7 +1913,7 @@ padding: 20px;
                 if (data.user.profile_picture) {
                     avatarImg.src = data.user.profile_picture;
                 } else {
-                    avatarImg.src = '{% static "img/default-avatar.png" %}';
+                    avatarImg.src = '{% static "img/default-avatar.svg" %}';
                 }
 
                 document.getElementById('chatUserName').textContent =
@@ -2579,7 +2579,7 @@ padding: 20px;
             <div class="user-search-item ${index === selectedIndex ? 'selected' : ''}" 
                  data-index="${index}"
                  onclick="startNewConversation(${user.id}, '${user.username}', '${user.first_name || ''}', '${user.last_name || ''}')">
-                <img src="{% static 'img/default-avatar.png' %}" alt="${user.username}">
+                <img src="{% static 'img/default-avatar.svg' %}" alt="${user.username}">
                 <div class="user-search-details">
                     <h4>${highlightMatch(user.first_name || user.username, query)} ${user.last_name || ''}</h4>
                     <p>${user.email}</p>

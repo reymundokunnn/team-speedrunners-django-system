@@ -94,6 +94,7 @@ urlpatterns = [
 
     # Activity management
     path('activities/clear/', views.clear_activities, name='clear_activities'),
+    path('api/notifications/<int:notification_id>/delete/', views.delete_notification, name='delete_notification'),
 
     # Password reset
     path('password-reset/lookup/', views.password_reset_lookup,

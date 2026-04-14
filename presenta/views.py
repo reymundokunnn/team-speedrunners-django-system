@@ -122,6 +122,25 @@ def api_notifications(request):
 
 
 @login_required(login_url='signin')
+@require_http_methods(["POST"])
+def delete_notification(request, notification_id):
+    """API endpoint to delete/clear an individual notification."""
+    from .models import Activity
+    
+    notification = get_object_or_404(Activity, id=notification_id)
+    
+    # Verify the notification belongs to the current user
+    if notification.user != request.user:
+        return JsonResponse({'error': 'Access denied.'}, status=403)
+    
+    # Mark as cleared instead of deleting to preserve audit trail
+    notification.is_cleared = True
+    notification.save()
+    
+    return JsonResponse({'success': True, 'message': 'Notification cleared.'})
+
+
+@login_required(login_url='signin')
 def api_search_users(request):
     """API endpoint to search for users (clients and designers)."""
     from django.db.models import Q

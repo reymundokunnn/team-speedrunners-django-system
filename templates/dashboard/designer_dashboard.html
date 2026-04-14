@@ -39,27 +39,27 @@
                     <div class="stat-card">
                         <div class="number pending">{{ total_assigned }}</div>
                         <span>Assigned Projects</span>
-                        <img src="{% static 'img/dashboard/assign.png' %}" alt="Assigned">
+                        <img src="{% static 'img/dashboard/assign.svg' %}" alt="Assigned">
                     </div>
                     <div class="stat-card">
                         <div class="number pending">{{ pending }}</div>
                         <span>Pending</span>
-                        <img src="{% static 'img/dashboard/pending.png' %}" alt="Pending">
+                        <img src="{% static 'img/dashboard/pending.svg' %}" alt="Pending">
                     </div>
                     <div class="stat-card">
                         <div class="number wip">{{ in_progress }}</div>
                         <span>In Progress</span>
-                        <img src="{% static 'img/dashboard/wip.png' %}" alt="In progress">
+                        <img src="{% static 'img/dashboard/wip.svg' %}" alt="In progress">
                     </div>
                     <div class="stat-card">
                         <div class="number payment">{{ for_payment }}</div>
                         <span>For Payment</span>
-                        <img src="{% static 'img/dashboard/payment.png' %}" alt="For payment">
+                        <img src="{% static 'img/dashboard/payment.svg' %}" alt="For payment">
                     </div>
                     <div class="stat-card">
                         <div class="number done">{{ completed }}</div>
                         <span>Completed</span>
-                        <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
+                        <img src="{% static 'img/dashboard/done.svg' %}" alt="Completed">
                     </div>
                 </div>
                 
@@ -500,7 +500,11 @@
 <div class="confirm-modal" id="confirmModal">
     <div class="modal-overlay" onclick="closeConfirmModal()"></div>
     <div class="modal-container confirm-dialog">
-        <div class="confirm-icon">⚠️</div>
+        <svg class="confirm-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="48" height="48">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
         <h3>Confirm Completion</h3>
         <p>Are you sure you want to mark this project as <strong>Completed</strong>?</p>
         <p class="confirm-note">This action cannot be undone. Once marked as completed, you won't be able to make changes.</p>
@@ -515,7 +519,11 @@
 <div class="confirm-modal" id="cancelConfirmModal">
     <div class="modal-overlay" onclick="closeCancelConfirmModal()"></div>
     <div class="modal-container confirm-dialog">
-        <div class="confirm-icon">❌</div>
+        <svg class="confirm-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="48" height="48">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
         <h3>Cancel Project</h3>
         <p>Are you sure you want to <strong>cancel</strong> this project?</p>
         <p class="confirm-note">This will unassign you from the project and mark it as cancelled.</p>

@@ -799,7 +799,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.dataset.requester,
                 link.dataset.deadline,
                 link.dataset.budget,
-                link.dataset.completedAt
+                link.dataset.completedAt,
+                link.dataset.revisionNotes
             );
         });
     });
@@ -984,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt) {
+function openProjectModal(id, title, description, status, requester, deadline, budget, completedAt, revisionNotes) {
     currentDesignId = id;
     document.getElementById('modalDesignId').value = id;
     document.getElementById('modalProjectTitle').textContent = title;
@@ -992,6 +993,16 @@ function openProjectModal(id, title, description, status, requester, deadline, b
     document.getElementById('modalRequester').textContent = requester;
     document.getElementById('modalDeadline').textContent = deadline;
     document.getElementById('modalBudget').textContent = budget;
+    
+    // Handle revision notes
+    var revisionNotesSection = document.getElementById('revisionNotesSection');
+    var modalRevisionNotes = document.getElementById('modalRevisionNotes');
+    if (revisionNotes && revisionNotes.trim() !== '') {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'block';
+        if (modalRevisionNotes) modalRevisionNotes.innerHTML = '<p class="revision-notes-text">' + revisionNotes + '</p>';
+    } else {
+        if (revisionNotesSection) revisionNotesSection.style.display = 'none';
+    }
 
     var statusBadge = document.getElementById('modalProjectStatus');
     statusBadge.className = 'status-badge status-' + status;
@@ -1333,6 +1344,99 @@ function confirmDelete(btn) {
         .catch(function(error) {
             console.error('Error:', error);
             alert('Error deleting design request. Please try again.');
+        });
+    }
+    return false;
+}
+
+/* User Dashboard - Revision Request Modal */
+function openRevisionModal(button) {
+    console.log('openRevisionModal called', button);
+    var requestId = button.dataset.requestId;
+    console.log('requestId:', requestId);
+    var title = button.dataset.title;
+    
+    // Get the modal
+    var modal = document.getElementById('revisionModal');
+    console.log('Revision modal:', modal);
+    var form = document.getElementById('revisionForm');
+    var titleEl = document.getElementById('revisionRequestTitle');
+    var notesField = document.getElementById('revision_notes');
+    
+    if (modal && form && titleEl) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/request-revision/';
+        
+        // Set the title
+        titleEl.textContent = title;
+        
+        // Clear the notes field
+        if (notesField) notesField.value = '';
+        
+        // Show the modal using openModal for consistency
+        openModal('revisionModal');
+    } else {
+        console.error('Revision modal elements not found:', { modal: modal, form: form, titleEl: titleEl });
+    }
+}
+
+function closeRevisionModal() {
+    var modal = document.getElementById('revisionModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+function confirmRevision(btn) {
+    var form = document.getElementById('revisionForm');
+    if (form) {
+        // Extract request ID from form action
+        var action = form.action;
+        var match = action.match(/\/design-request\/(\d+)\/request-revision\//);
+        var requestId = match ? match[1] : null;
+        
+        if (!requestId) {
+            alert('Error: Could not get request ID');
+            return false;
+        }
+        
+        // Get revision notes
+        var revisionNotes = document.getElementById('revision_notes').value.trim();
+        
+        if (!revisionNotes) {
+            alert('Please enter revision notes.');
+            return false;
+        }
+        
+        // Get CSRF token
+        var csrftoken = getCookie('csrftoken');
+        
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'revision_notes=' + encodeURIComponent(revisionNotes)
+        })
+        .then(function(response) {
+            if (response.ok) {
+                // Close modal
+                closeRevisionModal();
+                // Reload the page to show updated status
+                window.location.reload();
+            } else {
+                response.json().then(function(data) {
+                    alert(data.error || 'Error requesting revision. Please try again.');
+                }).catch(function() {
+                    alert('Error requesting revision. Please try again.');
+                });
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error requesting revision. Please try again.');
         });
     }
     return false;
@@ -2404,6 +2508,12 @@ document.addEventListener('DOMContentLoaded', function () {
 function openCompletionModal(requestId) {
     console.log('Opening completion modal for request ID:', requestId);
     openModal('completionModal');
+    
+    // Store request ID in the modal for revision button
+    var completionModal = document.getElementById('completionModal');
+    if (completionModal) {
+        completionModal.setAttribute('data-request-id', requestId);
+    }
 
     // Fetch completion details from API
     fetch('/api/completion-details/' + requestId + '/')
@@ -2488,6 +2598,51 @@ function openCompletionModal(requestId) {
 
 function closeCompletionModal() {
     closeModal('completionModal');
+}
+
+function requestRevisionFromModal() {
+    // Get request ID from the completion modal
+    var completionModal = document.getElementById('completionModal');
+    if (!completionModal) {
+        console.error('Completion modal not found');
+        return;
+    }
+    
+    var requestId = completionModal.getAttribute('data-request-id');
+    if (!requestId) {
+        console.error('Request ID not found in completion modal');
+        alert('Error: Could not get request ID');
+        return;
+    }
+    
+    // Get the title from the completion modal
+    var titleEl = document.getElementById('completionTitle');
+    var title = titleEl ? titleEl.textContent : 'Unknown Project';
+    
+    // Close the completion modal
+    closeCompletionModal();
+    
+    // Open the revision modal
+    var revisionModal = document.getElementById('revisionModal');
+    var form = document.getElementById('revisionForm');
+    var titleElRevision = document.getElementById('revisionRequestTitle');
+    var notesField = document.getElementById('revision_notes');
+    
+    if (revisionModal && form && titleElRevision) {
+        // Set the form action
+        form.action = '/design-request/' + requestId + '/request-revision/';
+        
+        // Set the title
+        titleElRevision.textContent = title;
+        
+        // Clear the notes field
+        if (notesField) notesField.value = '';
+        
+        // Show the revision modal
+        openModal('revisionModal');
+    } else {
+        console.error('Revision modal elements not found');
+    }
 }
 
 // Rating System Functions
@@ -3562,7 +3717,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function () {
             var designId = this.getAttribute('data-design-id');
             if (designId && typeof openProjectModal === 'function') {
-                openProjectModal(parseInt(designId));
+                openProjectModal(parseInt(designId), null, null, null, null, null, null, null, null);
             }
         });
     });
@@ -4293,7 +4448,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 
                 html += `
-                    <div class="notification-item">
+                    <div class="notification-item" data-notification-id="${notification.id}">
                         <div class="notification-icon">
                             ${icon}
                         </div>
@@ -4301,10 +4456,75 @@ document.addEventListener('DOMContentLoaded', function () {
                             <p class="notification-message">${notification.message}</p>
                             <span class="notification-time">${notification.time_ago}</span>
                         </div>
+                        <button class="notification-delete-btn" data-notification-id="${notification.id}" title="Delete notification">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
                     </div>
                 `;
             });
             notificationList.innerHTML = html;
+            
+            // Add click handlers for delete buttons
+            document.querySelectorAll('.notification-delete-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    
+                    const notificationId = this.getAttribute('data-notification-id');
+                    const notificationItem = this.closest('.notification-item');
+                    
+                    // Delete notification on the server
+                    fetch(`/api/notifications/${notificationId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(),
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => response.json()).then(data => {
+                        if (data.success) {
+                            // Add fade out animation
+                            notificationItem.style.transition = 'opacity 0.3s ease, height 0.3s ease';
+                            notificationItem.style.opacity = '0';
+                            notificationItem.style.height = notificationItem.offsetHeight + 'px';
+                            
+                            setTimeout(() => {
+                                notificationItem.style.height = '0';
+                                notificationItem.style.padding = '0';
+                                notificationItem.style.margin = '0';
+                                notificationItem.style.overflow = 'hidden';
+                                
+                                setTimeout(() => {
+                                    notificationItem.remove();
+                                    
+                                    // Check if there are any notifications left
+                                    const remainingNotifications = document.querySelectorAll('.notification-item');
+                                    if (remainingNotifications.length === 0) {
+                                        document.querySelector('.notification-list').innerHTML = `
+                                            <div class="notification-empty">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                </svg>
+                                                <p>No notifications yet</p>
+                                            </div>
+                                        `;
+                                        
+                                        // Remove notification badge
+                                        const notificationToggle = document.getElementById('notification-toggle');
+                                        const notificationBadge = document.getElementById('notification-badge');
+                                        if (notificationToggle) notificationToggle.classList.remove('has-notifications');
+                                        if (notificationBadge) notificationBadge.style.display = 'none';
+                                    }
+                                }, 300);
+                            }, 300);
+                        }
+                    }).catch(error => {
+                        console.error('Error deleting notification:', error);
+                    });
+                });
+            });
         }
     }
     

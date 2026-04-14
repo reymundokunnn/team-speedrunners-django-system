@@ -33,7 +33,11 @@
 <header>
     <div class="left">
         {% if user.is_authenticated %}
-        <img src="{% static 'img/menu.png' %}" class="side-menu-icon">
+        <svg class="side-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
         {% if user.is_superuser or user.profile.user_role == 'admin' %}
         <a href="{% url 'admin_dashboard' %}">
             <img src="{% static 'img/logo-no-wm.png' %}" alt="Logo" class="logo-light logo-header-small">
@@ -81,7 +85,7 @@
                     {% if profile_picture_url %}
                     <img src="{{ profile_picture_url }}" alt="Avatar" class="user-avatar" height="32">
                     {% else %}
-                    <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="user-avatar" height="32">
+                    <img src="{% static 'img/default-avatar.svg' %}" alt="Avatar" class="user-avatar" height="32">
                     {% endif %}
                     <div class="user-status-badge" id="user-status-badge"
                         data-status="{{ user.presenta_user.online_status }}"></div>
@@ -90,17 +94,26 @@
             <div class="user-dropdown-menu" id="user-dropdown-menu">
                 {% if user.is_superuser or user.profile.user_role == 'admin' %}
                 <a href="{% url 'admin_dashboard' %}" class="dropdown-item">
-                    <img src="{% static 'img/user-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                     <span>Dashboard</span>
                 </a>
                 {% elif user.profile.user_role == 'designer' %}
                 <a href="{% url 'designer_dashboard' %}" class="dropdown-item">
-                    <img src="{% static 'img/user-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                     <span>Dashboard</span>
                 </a>
                 {% else %}
                 <a href="{% url 'user_dashboard' %}" class="dropdown-item">
-                    <img src="{% static 'img/user-icon.svg' %}" alt="Dashboard" class="dropdown-icon">
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                     <span>Dashboard</span>
                 </a>
                 {% endif %}
@@ -121,12 +134,19 @@
                     <span>View Profile</span>
                 </a>
                 <a href="{% url 'settings' %}" class="dropdown-item">
-                    <img src="{% static 'img/dashboard-icon.svg' %}" alt="Settings" class="dropdown-icon">
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
                     <span>Settings</span>
                 </a>
                 <hr class="dropdown-divider">
                 <a href="{% url 'presenta_logout' %}" class="dropdown-item logout">
-                    <img src="{% static 'img/logout-icon.svg' %}" alt="Logout" class="dropdown-icon">
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v1"></path>
+                    </svg>
                     <span>Sign out</span>
                 </a>
             </div>
@@ -163,55 +183,61 @@
                     <div class="notification-list">
                         {% if notifications %}
                         {% for notification in notifications %}
-                        <div class="notification-item">
-                            <div class="notification-icon">
-                                {% if notification.type == 'assigned' or notification.type == 'designer_assigned' %}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="8.5" cy="7" r="4"></circle>
-                                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                                </svg>
-                                {% elif notification.type == 'status_changed' %}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <polyline points="9 11 12 14 22 4"></polyline>
-                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                                </svg>
-                                {% elif notification.type == 'completed' %}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
-                                {% elif notification.type == 'request_submitted' %}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="12" y1="18" x2="12" y2="12"></line>
-                                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                                </svg>
-                                {% else %}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
-                                {% endif %}
-                            </div>
-                            <div class="notification-content">
-                                <p class="notification-message">{{ notification.message }}</p>
-                                <span class="notification-time">{{ notification.time_ago }}</span>
-                            </div>
-                        </div>
+                         <div class="notification-item" data-notification-id="{{ notification.id }}">
+                             <div class="notification-icon">
+                                 {% if notification.type == 'assigned' or notification.type == 'designer_assigned' %}
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                     <circle cx="8.5" cy="7" r="4"></circle>
+                                     <line x1="20" y1="8" x2="20" y2="14"></line>
+                                     <line x1="23" y1="11" x2="17" y2="11"></line>
+                                 </svg>
+                                 {% elif notification.type == 'status_changed' %}
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <polyline points="9 11 12 14 22 4"></polyline>
+                                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                 </svg>
+                                 {% elif notification.type == 'completed' %}
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                 </svg>
+                                 {% elif notification.type == 'request_submitted' %}
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                     <polyline points="14 2 14 8 20 8"></polyline>
+                                     <line x1="12" y1="18" x2="12" y2="12"></line>
+                                     <line x1="9" y1="15" x2="15" y2="15"></line>
+                                 </svg>
+                                 {% else %}
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <circle cx="12" cy="12" r="10"></circle>
+                                     <line x1="12" y1="8" x2="12" y2="12"></line>
+                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                 </svg>
+                                 {% endif %}
+                             </div>
+                             <div class="notification-content">
+                                 <p class="notification-message">{{ notification.message }}</p>
+                                 <span class="notification-time">{{ notification.time_ago }}</span>
+                             </div>
+                             <button class="notification-delete-btn" data-notification-id="{{ notification.id }}" title="Delete notification">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                     <line x1="18" y1="6" x2="6" y2="18"></line>
+                                     <line x1="6" y1="6" x2="18" y2="18"></line>
+                                 </svg>
+                             </button>
+                         </div>
                         {% endfor %}
                         {% else %}
                         <div class="notification-empty">
@@ -242,7 +268,11 @@
         </div>
         {% else %}
         <div class="menu-btn">
-            <img src="{% static 'img/menu.png' %}" class="menu-icon" height="15">
+            <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
             <span>Menu</span>
         </div>
         <a href="{% url 'services' %}">Services</a>
@@ -252,13 +282,27 @@
         <a href="{% url 'signin' %}" class="sign-in">Sign in</a>
         {% endif %}
     </nav>
-    <div class="dark-toggle-switcher">
-        <label class="switch">
-            <input type="checkbox">
-            <span class="slider round"></span>
-        </label>
-    </div>
-    <img src="{% static 'img/moon.svg' %}" class="dark-mode-icon">
+    <button class="dark-mode-toggle-btn" id="darkModeToggle" aria-label="Toggle dark mode">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <defs>
+                <mask id="moonMask">
+                    <rect x="0" y="0" width="24" height="24" fill="white"/>
+                    <circle class="mask-circle" cx="24" cy="0" r="12" fill="black"/>
+                </mask>
+            </defs>
+            <circle class="sun-body" cx="12" cy="12" r="5" mask="url(#moonMask)"/>
+            <g class="sun-rays" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </g>
+        </svg>
+    </button>
     <div class="mobile-dropdown-hidden">
         <a href="{% url 'services' %}">Services</a>
         <a href="{% url 'pricing' %}">Pricing</a>
@@ -436,44 +480,107 @@
         }
     });
 
-    // Clear all notifications button
-    const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
-    if (clearNotificationsBtn) {
-        clearNotificationsBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
+     // Clear all notifications button
+     const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+     if (clearNotificationsBtn) {
+         clearNotificationsBtn.addEventListener('click', function (e) {
+             e.stopPropagation();
 
-            // Clear notifications on the server
-            fetch('/activities/clear/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json()).then(data => {
-                // After clearing, update localStorage to remember these are read
-                if (notificationIds.length > 0) {
-                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
-                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
-                }
+             // Clear notifications on the server
+             fetch('/activities/clear/', {
+                 method: 'POST',
+                 headers: {
+                     'X-CSRFToken': getCSRFToken(),
+                     'Content-Type': 'application/json'
+                 }
+             }).then(response => response.json()).then(data => {
+                 // After clearing, update localStorage to remember these are read
+                 if (notificationIds.length > 0) {
+                     const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                     localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                 }
 
-                // Close the popup
-                closePopup(notificationPopup);
+                 // Close the popup
+                 closePopup(notificationPopup);
 
-                // Reload the page to refresh notifications
-                window.location.reload();
-            }).catch(error => {
-                console.error('Error clearing notifications:', error);
-                // Still update localStorage even if server call fails
-                if (notificationIds.length > 0) {
-                    const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
-                    localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
-                }
+                 // Reload the page to refresh notifications
+                 window.location.reload();
+             }).catch(error => {
+                 console.error('Error clearing notifications:', error);
+                 // Still update localStorage even if server call fails
+                 if (notificationIds.length > 0) {
+                     const updatedReadIds = [...new Set([...readNotificationIds, ...notificationIds])];
+                     localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                 }
 
-                // Close the popup
-                closePopup(notificationPopup);
-            });
-        });
-    }
+                 // Close the popup
+                 closePopup(notificationPopup);
+             });
+         });
+     }
+
+     // Individual notification delete buttons
+     document.querySelectorAll('.notification-delete-btn').forEach(btn => {
+         btn.addEventListener('click', function (e) {
+             e.stopPropagation();
+             
+             const notificationId = this.getAttribute('data-notification-id');
+             const notificationItem = this.closest('.notification-item');
+             
+             // Delete notification on the server
+             fetch(`/api/notifications/${notificationId}/delete/`, {
+                 method: 'POST',
+                 headers: {
+                     'X-CSRFToken': getCSRFToken(),
+                     'Content-Type': 'application/json'
+                 }
+             }).then(response => response.json()).then(data => {
+                 if (data.success) {
+                     // Add fade out animation
+                     notificationItem.style.transition = 'opacity 0.3s ease, height 0.3s ease';
+                     notificationItem.style.opacity = '0';
+                     notificationItem.style.height = notificationItem.offsetHeight + 'px';
+                     
+                     setTimeout(() => {
+                         notificationItem.style.height = '0';
+                         notificationItem.style.padding = '0';
+                         notificationItem.style.margin = '0';
+                         notificationItem.style.overflow = 'hidden';
+                         
+                         setTimeout(() => {
+                             notificationItem.remove();
+                             
+                             // Update localStorage to mark this notification as read
+                             const updatedReadIds = [...new Set([...readNotificationIds, parseInt(notificationId)])];
+                             localStorage.setItem('readNotifications', JSON.stringify(updatedReadIds));
+                             
+                             // Check if there are any notifications left
+                             const remainingNotifications = document.querySelectorAll('.notification-item');
+                             if (remainingNotifications.length === 0) {
+                                 document.querySelector('.notification-list').innerHTML = `
+                                     <div class="notification-empty">
+                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                         </svg>
+                                         <p>No notifications yet</p>
+                                     </div>
+                                 `;
+                                 
+                                 // Remove notification badge
+                                 notificationToggle.classList.remove('has-notifications');
+                                 if (notificationBadge) {
+                                     notificationBadge.style.display = 'none';
+                                 }
+                             }
+                         }, 300);
+                     }, 300);
+                 }
+             }).catch(error => {
+                 console.error('Error deleting notification:', error);
+             });
+         });
+     });
 
     // Close popups when clicking outside
     document.addEventListener('click', function (e) {

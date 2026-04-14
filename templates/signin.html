@@ -19,12 +19,20 @@
 				{% csrf_token %}
 				{% if login_error %}
 				<div class="form-errors">
-					<span class="error-icon">⚠️</span> {{ login_error }}
+					<svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg> {{ login_error }}
 				</div>
 				{% endif %}
 				{% if form.non_field_errors %}
 				<div class="form-errors">
-					<span class="error-icon">⚠️</span> {{ form.non_field_errors }}
+					<svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg> {{ form.non_field_errors }}
 				</div>
 				{% endif %}
 
@@ -40,7 +48,10 @@
 					<div class="input-wrapper">
 						<input type="password" name="password" id="id_password" placeholder="Enter your password" required autocomplete="off">
 						<button type="button" class="password-toggle" onclick="togglePassword('id_password', this)">
-							<span class="eye-icon">👁️</span>
+							<svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
 						</button>
 					</div>
 				</div>
@@ -73,7 +84,11 @@
 				{% csrf_token %}
 				{% if register_form.non_field_errors %}
 				<div class="form-errors">
-					<span class="error-icon">⚠️</span> {{ register_form.non_field_errors }}
+					<svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg> {{ register_form.non_field_errors }}
 				</div>
 				{% endif %}
 
@@ -177,7 +192,10 @@
 						<div class="input-wrapper">
 							<input type="password" name="password1" id="id_password1" placeholder="Create a password" required>
 							<button type="button" class="password-toggle" onclick="togglePassword('id_password1', this)">
-								<span class="eye-icon">👁️</span>
+								<svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
 							</button>
 						</div>
 						{% if register_form.password1.errors %}
@@ -195,7 +213,10 @@
 						<div class="input-wrapper">
 							<input type="password" name="password2" id="id_password2" placeholder="Confirm your password" required>
 							<button type="button" class="password-toggle" onclick="togglePassword('id_password2', this)">
-								<span class="eye-icon">👁️</span>
+								<svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
 							</button>
 						</div>
 						{% if register_form.password2.errors %}
@@ -267,7 +288,10 @@
                 <div class="input-wrapper">
                     <input type="password" id="newPassword" class="form-control" placeholder="Enter new password" required minlength="8">
                     <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">
-                        <span class="eye-icon">👁️</span>
+                        <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
                     </button>
                 </div>
                 <div class="password-strength">
@@ -282,7 +306,10 @@
                 <div class="input-wrapper">
                     <input type="password" id="confirmNewPassword" class="form-control" placeholder="Confirm new password" required minlength="8">
                     <button type="button" class="password-toggle" onclick="togglePassword('confirmNewPassword', this)">
-                        <span class="eye-icon">👁️</span>
+                        <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
                     </button>
                 </div>
                 <div id="resetPasswordMatchMessage" class="password-match-message"></div>

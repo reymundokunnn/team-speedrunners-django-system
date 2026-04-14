@@ -39,27 +39,27 @@
                     <div class="stat-card">
                         <div class="number pending">{{ total_users }}</div>
                         <span>Total Users</span>
-                        <img src="{% static 'img/dashboard/user.png' %}" alt="Users">
+                        <img src="{% static 'img/dashboard/user.svg' %}" alt="Users">
                     </div>
                     <div class="stat-card">
                         <div class="number pending">{{ total_requests }}</div>
                         <span>Total Requests</span>
-                        <img src="{% static 'img/dashboard/assign.png' %}" alt="Requests">
+                        <img src="{% static 'img/dashboard/assign.svg' %}" alt="Requests">
                     </div>
                     <div class="stat-card">
                         <div class="number wip">{{ in_progress }}</div>
                         <span>In Progress</span>
-                        <img src="{% static 'img/dashboard/wip.png' %}" alt="In progress">
+                        <img src="{% static 'img/dashboard/wip.svg' %}" alt="In progress">
                     </div>
                     <div class="stat-card">
                         <div class="number done">{{ completed }}</div>
                         <span>Completed</span>
-                        <img src="{% static 'img/dashboard/done.png' %}" alt="Completed">
+                        <img src="{% static 'img/dashboard/done.svg' %}" alt="Completed">
                     </div>
                     <div class="stat-card">
                         <div class="number pending">{{ pending_reports }}</div>
                         <span>Pending Reports</span>
-                        <img src="{% static 'img/dashboard/pending.png' %}" alt="Reports">
+                        <img src="{% static 'img/dashboard/pending.svg' %}" alt="Reports">
                     </div>
                 </div>
                 
@@ -542,7 +542,7 @@
                                                 {% if user.profile_picture %}
                                                 <img src="{{ user.profile_picture.url }}" alt="{{ user.first_name }}">
                                                 {% else %}
-                                                <img src="{% static 'img/default-avatar.png' %}" alt="{{ user.first_name }}">
+                                                <img src="{% static 'img/default-avatar.svg' %}" alt="{{ user.first_name }}">
                                                 {% endif %}
                                             </div>
                                             <div class="user-details">
@@ -702,7 +702,7 @@
                                                  {% if report.reporter.presenta_user.profile_picture %}
                                                  <img src="{{ report.reporter.presenta_user.profile_picture.url }}" alt="{{ report.reporter.presenta_user.first_name }}">
                                                  {% else %}
-                                                 <img src="{% static 'img/default-avatar.png' %}" alt="{{ report.reporter.presenta_user.first_name }}">
+                                                 <img src="{% static 'img/default-avatar.svg' %}" alt="{{ report.reporter.presenta_user.first_name }}">
                                                  {% endif %}
                                              </div>
                                              <div class="user-details">
@@ -717,7 +717,7 @@
                                                  {% if report.target_user.presenta_user.profile_picture %}
                                                  <img src="{{ report.target_user.presenta_user.profile_picture.url }}" alt="{{ report.target_user.presenta_user.first_name }}">
                                                  {% else %}
-                                                 <img src="{% static 'img/default-avatar.png' %}" alt="{{ report.target_user.presenta_user.first_name }}">
+                                                 <img src="{% static 'img/default-avatar.svg' %}" alt="{{ report.target_user.presenta_user.first_name }}">
                                                  {% endif %}
                                              </div>
                                              <div class="user-details">
@@ -1334,7 +1334,7 @@ function openReportModal(reportId) {
                             <h3>Reporter</h3>
                             <div class="user-info">
                                 <div class="user-avatar">
-                                    ${report.reporter.avatar ? `<img src="${report.reporter.avatar}" alt="${report.reporter.name}">` : '<img src="{% static "img/default-avatar.png" %}" alt="Default">'}
+                                    ${report.reporter.avatar ? `<img src="${report.reporter.avatar}" alt="${report.reporter.name}">` : '<img src="{% static "img/default-avatar.svg" %}" alt="Default">'}
                                 </div>
                                 <div class="user-details">
                                     <span class="user-name">${report.reporter.name}</span>
@@ -1347,7 +1347,7 @@ function openReportModal(reportId) {
                             <h3>Target User</h3>
                             <div class="user-info">
                                 <div class="user-avatar">
-                                    ${report.target_user.avatar ? `<img src="${report.target_user.avatar}" alt="${report.target_user.name}">` : '<img src="{% static "img/default-avatar.png" %}" alt="Default">'}
+                                    ${report.target_user.avatar ? `<img src="${report.target_user.avatar}" alt="${report.target_user.name}">` : '<img src="{% static "img/default-avatar.svg" %}" alt="Default">'}
                                 </div>
                                 <div class="user-details">
                                     <span class="user-name">${report.target_user.name}</span>

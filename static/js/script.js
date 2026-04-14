@@ -1,21 +1,15 @@
-const darkModeCheckbox = document.querySelector('.dark-toggle-switcher input[type="checkbox"]');
+const darkModeToggle = document.getElementById('darkModeToggle');
 const body = document.body;
 
 const darkModePreference = localStorage.getItem('darkMode');
 if (darkModePreference === 'enabled') {
     body.classList.add('dark-mode');
-    if (darkModeCheckbox) {
-        darkModeCheckbox.checked = true;
-    }
 } else {
     body.classList.remove('dark-mode');
-    if (darkModeCheckbox) {
-        darkModeCheckbox.checked = false;
-    }
 }
 
-if (darkModeCheckbox) {
-    darkModeCheckbox.addEventListener('change', function () {
+if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', function () {
         body.classList.toggle('dark-mode');
 
         if (body.classList.contains('dark-mode')) {
@@ -4448,7 +4442,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 
                 html += `
-                    <div class="notification-item">
+                    <div class="notification-item" data-notification-id="${notification.id}">
                         <div class="notification-icon">
                             ${icon}
                         </div>
@@ -4456,10 +4450,75 @@ document.addEventListener('DOMContentLoaded', function () {
                             <p class="notification-message">${notification.message}</p>
                             <span class="notification-time">${notification.time_ago}</span>
                         </div>
+                        <button class="notification-delete-btn" data-notification-id="${notification.id}" title="Delete notification">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
                     </div>
                 `;
             });
             notificationList.innerHTML = html;
+            
+            // Add click handlers for delete buttons
+            document.querySelectorAll('.notification-delete-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    
+                    const notificationId = this.getAttribute('data-notification-id');
+                    const notificationItem = this.closest('.notification-item');
+                    
+                    // Delete notification on the server
+                    fetch(`/api/notifications/${notificationId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(),
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => response.json()).then(data => {
+                        if (data.success) {
+                            // Add fade out animation
+                            notificationItem.style.transition = 'opacity 0.3s ease, height 0.3s ease';
+                            notificationItem.style.opacity = '0';
+                            notificationItem.style.height = notificationItem.offsetHeight + 'px';
+                            
+                            setTimeout(() => {
+                                notificationItem.style.height = '0';
+                                notificationItem.style.padding = '0';
+                                notificationItem.style.margin = '0';
+                                notificationItem.style.overflow = 'hidden';
+                                
+                                setTimeout(() => {
+                                    notificationItem.remove();
+                                    
+                                    // Check if there are any notifications left
+                                    const remainingNotifications = document.querySelectorAll('.notification-item');
+                                    if (remainingNotifications.length === 0) {
+                                        document.querySelector('.notification-list').innerHTML = `
+                                            <div class="notification-empty">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                </svg>
+                                                <p>No notifications yet</p>
+                                            </div>
+                                        `;
+                                        
+                                        // Remove notification badge
+                                        const notificationToggle = document.getElementById('notification-toggle');
+                                        const notificationBadge = document.getElementById('notification-badge');
+                                        if (notificationToggle) notificationToggle.classList.remove('has-notifications');
+                                        if (notificationBadge) notificationBadge.style.display = 'none';
+                                    }
+                                }, 300);
+                            }, 300);
+                        }
+                    }).catch(error => {
+                        console.error('Error deleting notification:', error);
+                    });
+                });
+            });
         }
     }
     
