@@ -28,6 +28,7 @@ class User(models.Model):
         ('online', 'Online'),
         ('idle', 'Idle'),
         ('do_not_disturb', 'Do Not Disturb'),
+        ('offline', 'Offline'),
     ]
 
     # Auth link
@@ -70,7 +71,7 @@ class User(models.Model):
 
     # Status
     online_status = models.CharField(
-        max_length=20, choices=ONLINE_STATUS_CHOICES, default='online')
+        max_length=20, choices=ONLINE_STATUS_CHOICES, default='offline')
 
     # Verification
     email_verified = models.BooleanField(default=False)

@@ -1923,7 +1923,7 @@ padding: 20px;
                 const statusElement = document.getElementById('chatUserStatus');
                 const statusIndicator = document.getElementById('chatUserStatusIndicator');
                 if (statusElement && data.user.online_status) {
-                    statusElement.textContent = formatUserStatus(data.user.online_status);
+                    statusElement.textContent = formatUserStatus(data.user.online_status, data.user.last_seen);
                     statusElement.className = `chat-user-status status-${data.user.online_status}`;
                 }
                 if (statusIndicator && data.user.online_status) {
@@ -2854,7 +2854,7 @@ padding: 20px;
     }
 
     // Format user status for display
-    function formatUserStatus(status) {
+    function formatUserStatus(status, lastSeen) {
         switch (status) {
             case 'online':
                 return 'Online';
@@ -2862,8 +2862,37 @@ padding: 20px;
                 return 'Idle';
             case 'do_not_disturb':
                 return 'Do Not Disturb';
+            case 'offline':
+                if (lastSeen) {
+                    return `Last seen ${formatTimeAgo(lastSeen)}`;
+                }
+                return 'Offline';
             default:
                 return 'Offline';
+        }
+    }
+
+    function formatTimeAgo(isoString) {
+        if (!isoString) return 'recently';
+
+        const now = new Date();
+        const past = new Date(isoString);
+        const diffMs = now - past;
+        const diffSeconds = Math.floor(diffMs / 1000);
+        const diffMinutes = Math.floor(diffSeconds / 60);
+        const diffHours = Math.floor(diffMinutes / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffSeconds < 60) {
+            return 'just now';
+        } else if (diffMinutes < 60) {
+            return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+        } else if (diffHours < 24) {
+            return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+        } else if (diffDays < 7) {
+            return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+        } else {
+            return past.toLocaleDateString();
         }
     }
 

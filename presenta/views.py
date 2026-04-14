@@ -329,6 +329,13 @@ def logout_view(request):
             activity_type='logout',
             message="User logged out."
         )
+        # Set user status to offline
+        try:
+            presenta_user = request.user.presenta_user
+            presenta_user.online_status = 'offline'
+            presenta_user.save()
+        except:
+            pass  # Ignore if presenta_user doesn't exist
     logout(request)
     return redirect('index')
 
@@ -398,6 +405,14 @@ def login_view(request):
                 activity_type='login',
                 message="User logged in."
             )
+
+            # Set user status to online
+            try:
+                presenta_user = user.presenta_user
+                presenta_user.online_status = 'online'
+                presenta_user.save()
+            except:
+                pass  # Ignore if presenta_user doesn't exist
 
             # Block pending admins (defense in depth, though backend should block)
             try:
@@ -3130,7 +3145,7 @@ def update_user_status(request):
         status = data.get('status')
 
         # Validate status
-        valid_statuses = ['online', 'idle', 'do_not_disturb']
+        valid_statuses = ['online', 'idle', 'do_not_disturb', 'offline']
         if status not in valid_statuses:
             return JsonResponse({
                 'success': False,
@@ -4226,6 +4241,7 @@ def api_chat_conversations(request):
                         'last_name': other_user.last_name,
                         'profile_picture': profile_picture_url,
                         'online_status': presenta_user.online_status if presenta_user else 'offline',
+                        'last_seen': presenta_user.updated_at.isoformat() if presenta_user else None,
                     },
                     'last_message': latest_message.message if latest_message else '',
                     'last_message_time': latest_message.created_at.isoformat() if latest_message else '',
@@ -4306,6 +4322,7 @@ def api_chat_messages(request, user_id):
                 'last_name': other_user.last_name,
                 'profile_picture': profile_picture_url,
                 'online_status': presenta_user.online_status if presenta_user else 'offline',
+                'last_seen': presenta_user.updated_at.isoformat() if presenta_user else None,
             }
         })
     except Exception as e:
