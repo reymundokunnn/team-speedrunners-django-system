@@ -568,14 +568,14 @@ header {
 
 header .left {
     margin-right: auto;
+    margin-left: 0%;
     flex-shrink: 0;
     display: flex;
     align-items: center;
 }
 
 header .left img {
-    width: auto;
-    flex-shrink: 0;
+    width: 30%;
 }
 
 header .left img.logo-dark {
@@ -2963,11 +2963,12 @@ body.dark-mode .dashboard-section .dashboard-container .side-panel {
 }
 
 .dashboard-stats .stat-card img {
-    width: clamp(80px, 5vw, 90px);
-    height: clamp(80px, 5vw, 90px);
+    width: 80px;
+    height: 80px;
     float: right;
-    margin-top: -100px;
+    margin-top: -120px;
     z-index: -1;
+    opacity: 0.15;
 }
 
 .dashboard-container {

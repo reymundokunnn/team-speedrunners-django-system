@@ -17,6 +17,7 @@ import uuid
 from PIL import Image
 from io import BytesIO
 import base64
+from .consumers import broadcast_status_update
 
 
 def get_presenta_user_safe(django_user):
@@ -334,6 +335,8 @@ def logout_view(request):
             presenta_user = request.user.presenta_user
             presenta_user.online_status = 'offline'
             presenta_user.save()
+            # Broadcast status update
+            broadcast_status_update(presenta_user.id, 'offline', presenta_user.updated_at)
         except:
             pass  # Ignore if presenta_user doesn't exist
     logout(request)
@@ -411,6 +414,8 @@ def login_view(request):
                 presenta_user = user.presenta_user
                 presenta_user.online_status = 'online'
                 presenta_user.save()
+                # Broadcast status update
+                broadcast_status_update(presenta_user.id, 'online', presenta_user.updated_at)
             except:
                 pass  # Ignore if presenta_user doesn't exist
 
@@ -3157,6 +3162,9 @@ def update_user_status(request):
         user.online_status = status
         user.save()
 
+        # Broadcast status update
+        broadcast_status_update(user.id, status, user.updated_at)
+
         # Log activity
         log_activity(
             user=request.user,
@@ -4427,6 +4435,74 @@ def api_chat_send(request, user_id):
         })
     except Exception as e:
         print(f"Error sending chat message: {e}")
+        return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_chat_forward(request, message_id):
+    """API endpoint to forward a chat message to another user."""
+    try:
+        from django.contrib.auth.models import User
+        from .models import ChatMessage
+
+        current_user = request.user
+
+        try:
+            original_message = ChatMessage.objects.get(id=message_id)
+        except ChatMessage.DoesNotExist:
+            return JsonResponse({'error': 'Message not found'}, status=404)
+
+        # Check if current user can forward this message
+        # User can forward if they are the sender or receiver of the original message
+        if original_message.sender != current_user and original_message.receiver != current_user:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        # Get target user
+        target_user_id = request.POST.get('target_user_id')
+        if not target_user_id:
+            return JsonResponse({'error': 'Target user ID required'}, status=400)
+
+        try:
+            target_user = User.objects.get(id=target_user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Target user not found'}, status=404)
+
+        if target_user == current_user:
+            return JsonResponse({'error': 'Cannot forward message to yourself'}, status=400)
+
+        # Check if target user blocked current user
+        from .models import Block
+        if Block.objects.filter(blocker=target_user, blocked_user=current_user).exists():
+            return JsonResponse({'error': 'Cannot forward message to this user'}, status=400)
+
+        # Create forwarded message
+        forwarded_message = ChatMessage.objects.create(
+            sender=current_user,
+            receiver=target_user,
+            message=original_message.message,
+            attachment=original_message.attachment,
+            attachment_type=original_message.attachment_type,
+            reply_to=None  # Forwarded messages don't maintain reply context
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': {
+                'id': forwarded_message.id,
+                'sender_id': forwarded_message.sender.id,
+                'sender_username': forwarded_message.sender.username,
+                'message': forwarded_message.message,
+                'is_read': forwarded_message.is_read,
+                'created_at': forwarded_message.created_at.isoformat(),
+                'attachment': forwarded_message.attachment.url if forwarded_message.attachment else None,
+                'attachment_type': forwarded_message.attachment_type,
+                'attachment_name': forwarded_message.attachment.name if forwarded_message.attachment else None,
+                'reply_to': None
+            }
+        })
+    except Exception as e:
+        print(f"Error forwarding chat message: {e}")
         return JsonResponse({'error': 'An error occurred'}, status=500)
 
 

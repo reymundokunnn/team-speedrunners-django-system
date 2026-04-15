@@ -1351,6 +1351,16 @@ padding: 20px;
     color: #9ca3af;
 }
 
+.forward-message-preview {
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-left: 3px solid #e87f14;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
 .message-attachment {
     margin-bottom: 8px;
 }
@@ -1582,7 +1592,7 @@ padding: 20px;
             <div class="chat-container">
     <div class="chat-sidebar">
         <div class="chat-sidebar-header">
-            <h2>Messages</h2>
+            <h2 style="font-size: 25pt">Presenta <span class="orange">Connect</span></h2>
         </div>
         <div class="chat-conversations-list" id="conversationsList">
             <!-- Conversations will be loaded here -->
@@ -1736,11 +1746,40 @@ padding: 20px;
         <div class="modal-body">
             <div class="form-group">
                 <label for="userSearch">Search for a user</label>
-                <input type="text" id="userSearch" placeholder="Search username or email..." 
-                     oninput="searchUsers(this.value)" 
-                     onkeydown="handleSearchKeydown(event)">
+                <input type="text" id="userSearch" placeholder="Search username or email..."
+                      oninput="searchUsers(this.value)"
+                      onkeydown="handleSearchKeydown(event)">
             </div>
             <div class="user-search-results" id="userSearchResults">
+                <!-- Search results will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forward Message Modal -->
+<div class="new-chat-modal" id="forwardModal">
+    <div class="new-chat-modal-content">
+        <div class="modal-header">
+            <h3>Forward Message</h3>
+            <button class="close-btn" onclick="hideForwardModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="forward-message-preview" id="forwardMessagePreview">
+                <!-- Message preview will be shown here -->
+            </div>
+            <div class="form-group">
+                <label for="forwardUserSearch">Search for a user to forward to</label>
+                <input type="text" id="forwardUserSearch" placeholder="Search username or email..."
+                      oninput="searchUsersForForward(this.value)"
+                      onkeydown="handleForwardSearchKeydown(event)">
+            </div>
+            <div class="user-search-results" id="forwardUserSearchResults">
                 <!-- Search results will appear here -->
             </div>
         </div>
@@ -2103,12 +2142,15 @@ padding: 20px;
         websocket.onmessage = function(e) {
             console.log('WebSocket message received:', e.data);
             const data = JSON.parse(e.data);
-            
+
             if (data.type === 'message') {
                 console.log('Appending message:', data);
                 appendMessage(data);
             } else if (data.type === 'typing') {
                 showTypingIndicator(data.username, data.is_typing);
+            } else if (data.type === 'status_update') {
+                console.log('Status update:', data);
+                updateUserStatus(data.user_id, data.online_status, data.last_seen);
             }
         };
 
@@ -2701,8 +2743,169 @@ padding: 20px;
         const menu = document.getElementById(`menu-${messageId}`);
         if (menu) menu.classList.remove('show');
 
-        // TODO: Implement forward functionality
-        alert('Forward functionality will be implemented');
+        // Get message content from the DOM
+        const messageElement = document.querySelector(`[onclick*="toggleMessageMenu(event, ${messageId})"]`).closest('.message');
+        const messageContent = messageElement.querySelector('.message-content p');
+        const attachmentElement = messageElement.querySelector('.message-attachment');
+
+        let messageText = messageContent ? messageContent.textContent : '';
+        let attachmentHtml = '';
+
+        if (attachmentElement) {
+            if (attachmentElement.querySelector('img')) {
+                attachmentHtml = '<div style="font-style: italic; color: #6b7280;">📎 Image attachment</div>';
+            } else {
+                attachmentHtml = '<div style="font-style: italic; color: #6b7280;">📎 File attachment</div>';
+            }
+        }
+
+        // Set message preview
+        const preview = document.getElementById('forwardMessagePreview');
+        preview.innerHTML = `
+            <div style="font-weight: 600; margin-bottom: 4px;">Forwarding message:</div>
+            <div>${messageText}</div>
+            ${attachmentHtml}
+        `;
+
+        // Store message ID for forwarding
+        preview.dataset.messageId = messageId;
+
+        // Clear previous search
+        document.getElementById('forwardUserSearch').value = '';
+        document.getElementById('forwardUserSearchResults').innerHTML = '';
+
+        // Show modal
+        document.getElementById('forwardModal').style.display = 'flex';
+        document.getElementById('forwardUserSearch').focus();
+    }
+
+    function hideForwardModal() {
+        document.getElementById('forwardModal').style.display = 'none';
+        document.getElementById('forwardUserSearch').value = '';
+        document.getElementById('forwardUserSearchResults').innerHTML = '';
+        document.getElementById('forwardMessagePreview').innerHTML = '';
+    }
+
+    // Forward user search variables
+    let forwardSearchTimeout = null;
+    let forwardSelectedIndex = -1;
+    let forwardSearchResults = [];
+
+    async function searchUsersForForward(query) {
+        // Clear previous timeout
+        if (forwardSearchTimeout) {
+            clearTimeout(forwardSearchTimeout);
+        }
+
+        // Clear selection
+        forwardSelectedIndex = -1;
+        forwardSearchResults = [];
+
+        if (query.length < 2) {
+            document.getElementById('forwardUserSearchResults').innerHTML = '';
+            return;
+        }
+
+        // Debounce search - wait 300ms after typing stops
+        forwardSearchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search-users/?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.users) {
+                    forwardSearchResults = data.users;
+                    renderForwardUserSearchResults(data.users, query);
+                }
+            } catch (error) {
+                console.error('Error searching users:', error);
+            }
+        }, 300);
+    }
+
+    function renderForwardUserSearchResults(users, query = '') {
+        const container = document.getElementById('forwardUserSearchResults');
+
+        if (users.length === 0) {
+            container.innerHTML = '<p class="no-results">No users found</p>';
+            return;
+        }
+
+        container.innerHTML = users.map((user, index) => `
+            <div class="user-search-item ${index === forwardSelectedIndex ? 'selected' : ''}"
+                 data-index="${index}"
+                 onclick="forwardMessageToUser(${user.id}, '${user.username}', '${user.first_name || ''}', '${user.last_name || ''}')">
+                <img src="{% static 'img/default-avatar.svg' %}" alt="${user.username}">
+                <div class="user-search-details">
+                    <h4>${highlightMatch(user.first_name || user.username, query)} ${user.last_name || ''}</h4>
+                    <p>${user.email}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function handleForwardSearchKeydown(event) {
+        const container = document.getElementById('forwardUserSearchResults');
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (forwardSelectedIndex < forwardSearchResults.length - 1) {
+                forwardSelectedIndex++;
+                updateForwardSelectedItem();
+            }
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (forwardSelectedIndex > 0) {
+                forwardSelectedIndex--;
+                updateForwardSelectedItem();
+            }
+        } else if (event.key === 'Enter' && forwardSelectedIndex >= 0) {
+            event.preventDefault();
+            const user = forwardSearchResults[forwardSelectedIndex];
+            if (user) {
+                forwardMessageToUser(user.id, user.username, user.first_name || '', user.last_name || '');
+            }
+        } else if (event.key === 'Escape') {
+            hideForwardModal();
+        }
+    }
+
+    function updateForwardSelectedItem() {
+        const items = document.querySelectorAll('#forwardUserSearchResults .user-search-item');
+        items.forEach((item, index) => {
+            if (index === forwardSelectedIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    async function forwardMessageToUser(userId, username, firstName, lastName) {
+        const messageId = document.getElementById('forwardMessagePreview').dataset.messageId;
+
+        try {
+            const response = await fetch(`/api/chat/forward/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ target_user_id: userId })
+            });
+
+            if (response.ok) {
+                hideForwardModal();
+                // Show success message
+                alert(`Message forwarded to ${firstName || username} ${lastName || ''}`);
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to forward message: ${errorData.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error forwarding message:', error);
+            alert('Failed to forward message');
+        }
     }
 
     function editMessage(messageId) {
@@ -2857,7 +3060,7 @@ padding: 20px;
     function formatUserStatus(status, lastSeen) {
         switch (status) {
             case 'online':
-                return 'Online';
+                return 'Active';
             case 'idle':
                 return 'Idle';
             case 'do_not_disturb':
@@ -2896,11 +3099,87 @@ padding: 20px;
         }
     }
 
+    // Update user status in UI
+    function updateUserStatus(userId, onlineStatus, lastSeen) {
+        // Update status in conversations list
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        conversationItems.forEach(item => {
+            const avatar = item.querySelector('.conversation-avatar');
+            const statusIndicator = avatar ? avatar.querySelector('.avatar-status-indicator') : null;
+            if (statusIndicator && item.onclick && item.getAttribute('onclick').includes(userId)) {
+                statusIndicator.className = `avatar-status-indicator status-${onlineStatus}`;
+            }
+        });
+
+        // Update status in chat header if it's the current conversation user
+        if (currentChatUserId && currentChatUserId == userId) {
+            const headerStatusIndicator = document.getElementById('chatUserStatusIndicator');
+            const headerStatusText = document.getElementById('chatUserStatus');
+
+            if (headerStatusIndicator) {
+                headerStatusIndicator.className = `avatar-status-indicator status-${onlineStatus}`;
+            }
+
+            if (headerStatusText) {
+                headerStatusText.textContent = formatUserStatus(onlineStatus, lastSeen);
+                headerStatusText.className = `chat-user-status status-${onlineStatus}`;
+            }
+        }
+    }
+
     // Escape HTML
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
+
+    // Poll for status updates in conversation list
+    let statusPollingInterval = null;
+
+    function startStatusPolling() {
+        if (statusPollingInterval) {
+            clearInterval(statusPollingInterval);
+        }
+
+        statusPollingInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/chat/conversations/');
+                const data = await response.json();
+
+                if (data.conversations) {
+                    updateConversationStatuses(data.conversations);
+                }
+            } catch (error) {
+                console.error('Error polling status updates:', error);
+            }
+        }, 500); // Poll every 0.5 seconds for status updates
+    }
+
+    function updateConversationStatuses(conversations) {
+        conversations.forEach(conv => {
+            const conversationItem = document.querySelector(`.conversation-item[onclick*="${conv.user.id}"]`);
+            if (conversationItem) {
+                const statusIndicator = conversationItem.querySelector('.avatar-status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = `avatar-status-indicator status-${conv.user.online_status || 'offline'}`;
+                }
+            }
+        });
+    }
+
+    // Start status polling when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadConversations().then(() => {
+            startStatusPolling();
+        });
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (statusPollingInterval) {
+            clearInterval(statusPollingInterval);
+        }
+    });
 </script>
 {% endblock %}

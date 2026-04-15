@@ -1,7 +1,9 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
 from django.utils import timezone
+from asgiref.sync import async_to_sync
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -35,10 +37,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Sort user IDs to ensure same room name regardless of who connects
         user_ids = sorted([str(self.user.id), str(self.other_user_id)])
         self.room_group_name = f'chat_{user_ids[0]}_{user_ids[1]}'
-        
+
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
+            self.channel_name
+        )
+
+        # Also join user-specific status groups for real-time status updates
+        await self.channel_layer.group_add(
+            f'status_{self.user.id}',
+            self.channel_name
+        )
+        await self.channel_layer.group_add(
+            f'status_{self.other_user_id}',
             self.channel_name
         )
         
@@ -54,6 +66,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+
+        # Leave status groups
+        if hasattr(self, 'user') and hasattr(self, 'other_user_id'):
+            await self.channel_layer.group_discard(
+                f'status_{self.user.id}',
+                self.channel_name
+            )
+            await self.channel_layer.group_discard(
+                f'status_{self.other_user_id}',
+                self.channel_name
+            )
     
     async def receive(self, text_data):
         """Receive message from WebSocket."""
@@ -100,6 +123,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'username': event['username'],
                 'is_typing': event['is_typing']
             }))
+
+    async def status_update(self, event):
+        """Send status update to WebSocket."""
+        # Send status update for the other user in this conversation
+        if event['user_id'] == self.other_user_id:
+            await self.send(text_data=json.dumps({
+                'type': 'status_update',
+                'user_id': event['user_id'],
+                'online_status': event['online_status'],
+                'last_seen': event['last_seen']
+            }))
     
     @database_sync_to_async
     def get_other_user(self):
@@ -118,9 +152,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def mark_messages_as_read(self):
         """Mark all messages from other user as read."""
         from .models import ChatMessage, User
-        
+
         try:
             other_user = User.objects.get(id=self.other_user_id)
             ChatMessage.mark_as_read(self.user, other_user)
         except User.DoesNotExist:
             pass
+
+
+def broadcast_status_update(user_id, online_status, last_seen=None):
+    """Broadcast status update to all WebSocket connections for this user."""
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f'status_{user_id}',
+                {
+                    'type': 'status_update',
+                    'user_id': user_id,
+                    'online_status': online_status,
+                    'last_seen': last_seen.isoformat() if last_seen else None
+                }
+            )
+    except Exception as e:
+        # Log the error but don't fail the status update
+        print(f"Failed to broadcast status update: {e}")

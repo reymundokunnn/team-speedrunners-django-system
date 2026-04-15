@@ -153,6 +153,8 @@ urlpatterns = [
          name='api_chat_messages'),
     path('api/chat/send/<int:user_id>/', views.api_chat_send,
          name='api_chat_send'),
+    path('api/chat/forward/<int:message_id>/', views.api_chat_forward,
+         name='api_chat_forward'),
     path('api/chat/edit/<int:message_id>/', views.api_chat_edit,
          name='api_chat_edit'),
     path('api/chat/delete/<int:message_id>/', views.api_chat_delete,
