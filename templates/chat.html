@@ -529,13 +529,13 @@
 .message.sent .message-content {
     background-color: #e87f14;
     color: white;
-    border-bottom-right-radius: 4px;
+    border-radius: 20px;
 }
 
 .message.received .message-content {
     background-color: #f3f4f6;
     color: #1f2937;
-    border-bottom-left-radius: 4px;
+    border-radius: 20px;
 }
 
 .typing-indicator {
@@ -725,6 +725,65 @@ body.dark-mode .message-menu-item.danger:hover {
     background-color: #451a1a;
 }
 
+body.dark-mode .forward-message-preview {
+    background-color: #2d3748;
+    border-left-color: #fbbf24;
+}
+
+body.dark-mode .forward-message-preview::before {
+    background: linear-gradient(to bottom, #fbbf24, #d97706);
+}
+
+body.dark-mode .form-group label {
+    color: #f9fafb;
+}
+
+body.dark-mode .form-group input[type="text"] {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+body.dark-mode .form-group input[type="text"]:focus {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+
+body.dark-mode .user-search-results {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+body.dark-mode .user-search-item:hover {
+    background-color: #374151;
+}
+
+body.dark-mode .user-search-item.selected {
+    background-color: #92400e;
+    border-left-color: #fbbf24;
+}
+
+body.dark-mode .user-search-name {
+    color: #f9fafb;
+}
+
+body.dark-mode .user-search-username {
+    color: #9ca3af;
+}
+
+body.dark-mode .modal-header {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-bottom-color: #374151;
+}
+
+body.dark-mode .modal-header h3 {
+    color: #f9fafb;
+}
+
+body.dark-mode .modal-body {
+    color: #d1d5db;
+}
+
 body.dark-mode .chat-welcome {
     color: #9ca3af;
 }
@@ -831,6 +890,139 @@ body.dark-mode .reply-text {
 
 body.dark-mode .reply-text i {
     color: #9ca3af;
+}
+
+.message-forwarded-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: grey;
+    font-weight: 500;
+    max-width: 65%;
+    position: relative;
+    font-weight: bold;
+}
+
+.message.has-forwarded {
+    flex-direction: column;
+}
+
+.message.has-forwarded.sent {
+    align-items: flex-end;
+}
+
+.message.has-forwarded.received {
+    align-items: flex-start;
+}
+
+.message.sent .message-forwarded-indicator {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.message.received .message-forwarded-indicator {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.message-forwarded-indicator svg {
+    flex-shrink: 0;
+}
+
+body.dark-mode .message-forwarded-indicator {
+    background-color: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+}
+
+.rules-content {
+    overflow-y: auto;
+}
+
+.rule-section {
+    margin-bottom: 24px;
+}
+
+.rule-section h4 {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rule-section ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.rule-section li {
+    margin-bottom: 6px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.rule-section p {
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.rule-footer {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    margin-top: 24px;
+}
+
+.rule-footer p {
+    color: #374151;
+    font-style: italic;
+    text-align: center;
+}
+
+body.dark-mode .rule-section h4 {
+    color: #f9fafb;
+}
+
+body.dark-mode .rule-section li,
+body.dark-mode .rule-section p {
+    color: #d1d5db;
+}
+
+body.dark-mode .rule-footer {
+    border-top-color: #374151;
+}
+
+body.dark-mode .rule-footer p {
+    color: #f9fafb;
+}
+
+.message-row {
+    display: flex;
+    width: 100%;
+}
+
+.message.sent .message-row {
+    justify-content: flex-end;
+}
+
+.message.received .message-row {
+    justify-content: flex-start;
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: 8px;
+    align-self: flex-end;
 }
 
 body.dark-mode .image-preview img {
@@ -1336,29 +1528,156 @@ body.dark-mode .image-preview img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px;
+    padding: 24px 24px 16px;
     border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
 }
 
 .modal-header h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
     margin: 0;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-header h3::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e87f14' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v16l16-8L4 4z'/%3E%3C/svg%3E") no-repeat center;
+    background-size: contain;
+    flex-shrink: 0;
 }
 
 .modal-body {
-padding: 20px;
-    color: #9ca3af;
+    padding: 24px;
+    color: #374151;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .forward-message-preview {
-    background-color: #f3f4f6;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 16px;
-    border-left: 3px solid #e87f14;
+    background-color: #fefefe;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border-left: 4px solid #e87f14;
     font-size: 0.875rem;
     color: #374151;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.forward-message-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #e87f14, #d97706);
+}
+
+.forward-message-preview .message-content {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+    line-height: 1.4;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #374151;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #e87f14;
+    box-shadow: 0 0 0 3px rgba(232, 127, 20, 0.1);
+}
+
+.user-search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #ffffff;
+    margin-top: 8px;
+}
+
+.user-search-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.user-search-item:last-child {
+    border-bottom: none;
+}
+
+.user-search-item:hover {
+    background-color: #f9fafb;
+}
+
+.user-search-item.selected {
+    background-color: #fef3e2;
+    border-left: 3px solid #e87f14;
+}
+
+.user-search-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.user-search-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-search-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.user-search-username {
+    font-size: 0.75rem;
+    color: #6b7280;
 }
 
 .message-attachment {
@@ -1572,6 +1891,33 @@ padding: 20px;
     .chat-info-panel {
         display: none;
     }
+
+    .new-chat-modal-content {
+        width: 95%;
+        max-width: none;
+        max-height: 85vh;
+    }
+
+    .modal-header {
+        padding: 20px 20px 12px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .user-search-results {
+        max-height: 150px;
+    }
+
+    .form-group input[type="text"] {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
 }
 </style>
 {% endblock %}
@@ -1632,6 +1978,14 @@ padding: 20px;
                 </div>
                 <h3>Communicate with clients or designers</h3>
                 <p>Begin by selecting a conversation from the sidebar or start a new one.</p>
+                <p>Always keep the chat professional and respectful. <a href="#" onclick="showChatRulesModal(); return false;">Read the rules here.</a></p>
+                <button class="btn-view-profile" onclick="showNewChatModal()" style="margin-top: 16px; display: inline-block;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Start New Chat
+                </button>
             </div>
         </div>
         
@@ -1781,6 +2135,80 @@ padding: 20px;
             </div>
             <div class="user-search-results" id="forwardUserSearchResults">
                 <!-- Search results will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Rules Modal -->
+<div class="new-chat-modal" id="chatRulesModal">
+    <div class="new-chat-modal-content">
+        <div class="modal-header">
+            <h3>Chat Rules & Guidelines</h3>
+            <button class="close-btn" onclick="hideChatRulesModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="rules-content">
+                <div class="rule-section">
+                    <h4>🎯 Professional Communication</h4>
+                    <ul>
+                        <li>Maintain a professional tone in all conversations</li>
+                        <li>Use clear and respectful language</li>
+                        <li>Avoid slang or informal abbreviations that may be misunderstood</li>
+                        <li>Be punctual in your responses when discussing project timelines</li>
+                        <li><h2 class="orange">bawal tumawid, nakamamatay</h2></li>
+                    </ul>
+                </div>
+
+                <div class="rule-section">
+                    <h4>🤝 Respect & Collaboration</h4>
+                    <ul>
+                        <li>Treat all users with respect regardless of their role</li>
+                        <li>Listen actively and acknowledge others' viewpoints</li>
+                        <li>Provide constructive feedback when discussing work</li>
+                        <li>Celebrate collaborative successes</li>
+                    </ul>
+                </div>
+
+                <div class="rule-section">
+                    <h4>🔒 Privacy & Security</h4>
+                    <ul>
+                        <li>Never share sensitive personal information</li>
+                        <li>Do not discuss confidential project details publicly</li>
+                        <li>Report any suspicious behavior to administrators</li>
+                        <li>Use the platform's reporting features for inappropriate content</li>
+                    </ul>
+                </div>
+
+                <div class="rule-section">
+                    <h4>🚫 Prohibited Content</h4>
+                    <ul>
+                        <li>No harassment, bullying, or discriminatory language</li>
+                        <li>No spam, promotional content, or unsolicited advertising</li>
+                        <li>No sharing of illegal or copyrighted materials</li>
+                        <li>No offensive, violent, or inappropriate content</li>
+                    </ul>
+                </div>
+
+                <div class="rule-section">
+                    <h4>⚖️ Consequences</h4>
+                    <p>Violations of these rules may result in:</p>
+                    <ul>
+                        <li>Warnings from administrators</li>
+                        <li>Temporary suspension of chat privileges</li>
+                        <li>Permanent account restrictions in severe cases</li>
+                        <li>Legal action for serious violations</li>
+                    </ul>
+                </div>
+
+                <div class="rule-footer">
+                    <p><strong>Remember:</strong> This platform exists to foster positive professional relationships. Let's keep our community respectful and productive!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -2032,8 +2460,21 @@ padding: 20px;
                 const messageText = msg.message ? `<p>${escapeHtml(msg.message)}</p>` : '';
                 
                 return `
-                    <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'}">
-                        <div class="message-content">
+                    <div class="message ${msg.sender_id === {{ request.user.id }} ? 'sent' : 'received'} ${msg.forwarded_from ? 'has-forwarded' : ''}">
+                        ${msg.forwarded_from ? `
+                        <div class="message-forwarded-indicator">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 14 20 9 15 4"></polyline>
+                                <path d="M4 20v-7a4 4 0 0 1 4-4h12"></path>
+                            </svg>
+                            <span>Forwarded from ${msg.forwarded_from.sender_username}</span>
+                        </div>
+                        ` : ''}
+                        <div class="message-row">
+                            ${msg.sender_id !== {{ request.user.id }} ? `
+                            <img class="message-avatar" src="${msg.sender_profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${msg.sender_username}">
+                            ` : ''}
+                            <div class="message-content">
                             <button class="message-menu-btn" onclick="toggleMessageMenu(event, ${msg.id})">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="1"></circle>
@@ -2098,6 +2539,7 @@ padding: 20px;
                             ${attachmentHtml}
                             ${messageText}
                             <span class="message-time">${formatTime(msg.created_at)}</span>
+                        </div>
                         </div>
                     </div>
                 `;
@@ -2618,13 +3060,13 @@ padding: 20px;
         }
 
         container.innerHTML = users.map((user, index) => `
-            <div class="user-search-item ${index === selectedIndex ? 'selected' : ''}" 
+            <div class="user-search-item ${index === selectedIndex ? 'selected' : ''}"
                  data-index="${index}"
-                 onclick="startNewConversation(${user.id}, '${user.username}', '${user.first_name || ''}', '${user.last_name || ''}')">
-                <img src="{% static 'img/default-avatar.svg' %}" alt="${user.username}">
+                 onclick="startNewConversation(${user.id}, '${user.username}', '${user.name.split(' ')[0] || ''}', '${user.name.split(' ').slice(1).join(' ') || ''}')">
+                <img src="${user.profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${user.username}" class="user-search-avatar">
                 <div class="user-search-details">
-                    <h4>${highlightMatch(user.first_name || user.username, query)} ${user.last_name || ''}</h4>
-                    <p>${user.email}</p>
+                    <div class="user-search-name">${highlightMatch(user.name, query)}</div>
+                    <div class="user-search-username">@${user.username}</div>
                 </div>
             </div>
         `).join('');
@@ -2786,6 +3228,14 @@ padding: 20px;
         document.getElementById('forwardMessagePreview').innerHTML = '';
     }
 
+    function showChatRulesModal() {
+        document.getElementById('chatRulesModal').style.display = 'flex';
+    }
+
+    function hideChatRulesModal() {
+        document.getElementById('chatRulesModal').style.display = 'none';
+    }
+
     // Forward user search variables
     let forwardSearchTimeout = null;
     let forwardSelectedIndex = -1;
@@ -2833,11 +3283,11 @@ padding: 20px;
         container.innerHTML = users.map((user, index) => `
             <div class="user-search-item ${index === forwardSelectedIndex ? 'selected' : ''}"
                  data-index="${index}"
-                 onclick="forwardMessageToUser(${user.id}, '${user.username}', '${user.first_name || ''}', '${user.last_name || ''}')">
-                <img src="{% static 'img/default-avatar.svg' %}" alt="${user.username}">
+                 onclick="forwardMessageToUser(${user.id}, '${user.username}', '${user.name.split(' ')[0] || ''}', '${user.name.split(' ').slice(1).join(' ') || ''}')">
+                <img src="${user.profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${user.username}" class="user-search-avatar">
                 <div class="user-search-details">
-                    <h4>${highlightMatch(user.first_name || user.username, query)} ${user.last_name || ''}</h4>
-                    <p>${user.email}</p>
+                    <div class="user-search-name">${highlightMatch(user.name, query)}</div>
+                    <div class="user-search-username">@${user.username}</div>
                 </div>
             </div>
         `).join('');

@@ -4296,10 +4296,20 @@ def api_chat_messages(request, user_id):
         # Serialize messages
         message_list = []
         for msg in messages:
+            # Get sender's profile picture
+            sender_profile_picture = None
+            try:
+                presenta_sender = PresentaUser.objects.get(auth_user=msg.sender)
+                if presenta_sender.profile_picture:
+                    sender_profile_picture = presenta_sender.profile_picture.url
+            except PresentaUser.DoesNotExist:
+                pass
+
             message_list.append({
                 'id': msg.id,
                 'sender_id': msg.sender.id,
                 'sender_username': msg.sender.username,
+                'sender_profile_picture': sender_profile_picture,
                 'message': msg.message,
                 'is_read': msg.is_read,
                 'created_at': msg.created_at.isoformat(),
@@ -4311,7 +4321,13 @@ def api_chat_messages(request, user_id):
                     'sender_username': msg.reply_to.sender.username if msg.reply_to else None,
                     'message': msg.reply_to.message if msg.reply_to else None,
                     'attachment_type': msg.reply_to.attachment_type if msg.reply_to else None,
-                } if msg.reply_to else None
+                } if msg.reply_to else None,
+                'forwarded_from': {
+                    'id': msg.forwarded_from.id if msg.forwarded_from else None,
+                    'sender_username': msg.forwarded_from.sender.username if msg.forwarded_from else None,
+                    'message': msg.forwarded_from.message if msg.forwarded_from else None,
+                    'attachment_type': msg.forwarded_from.attachment_type if msg.forwarded_from else None,
+                } if msg.forwarded_from else None
             })
         
         # Get presenta user profile for profile picture
@@ -4459,7 +4475,13 @@ def api_chat_forward(request, message_id):
             return JsonResponse({'error': 'Permission denied'}, status=403)
 
         # Get target user
-        target_user_id = request.POST.get('target_user_id')
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+            target_user_id = data.get('target_user_id')
+        else:
+            target_user_id = request.POST.get('target_user_id')
+
         if not target_user_id:
             return JsonResponse({'error': 'Target user ID required'}, status=400)
 
@@ -4483,7 +4505,8 @@ def api_chat_forward(request, message_id):
             message=original_message.message,
             attachment=original_message.attachment,
             attachment_type=original_message.attachment_type,
-            reply_to=None  # Forwarded messages don't maintain reply context
+            reply_to=None,  # Forwarded messages don't maintain reply context
+            forwarded_from=original_message
         )
 
         return JsonResponse({
