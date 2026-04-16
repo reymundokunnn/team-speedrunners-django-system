@@ -3067,7 +3067,7 @@ padding: 20px;
                 return 'Do Not Disturb';
             case 'offline':
                 if (lastSeen) {
-                    return `Last seen ${formatTimeAgo(lastSeen)}`;
+                    return `Active ${formatTimeAgo(lastSeen)}`;
                 }
                 return 'Offline';
             default:
