@@ -17,3 +17,4 @@ main_site/settings.py
 staticfiles/
 requirements.txt
 TODO.md
+.kilo/

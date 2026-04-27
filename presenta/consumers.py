@@ -1,4 +1,5 @@
 import json
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
@@ -55,7 +56,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         
         await self.accept()
-        
+
+        # Set user online status when they connect to chat
+        await self.set_user_online()
+
         # Mark messages as read when user connects
         if self.other_user_id:
             await self.mark_messages_as_read()
@@ -77,6 +81,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 f'status_{self.other_user_id}',
                 self.channel_name
             )
+
+        # Set user offline status when they disconnect from chat
+        await self.set_user_offline()
     
     async def receive(self, text_data):
         """Receive message from WebSocket."""
@@ -157,6 +164,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
             other_user = User.objects.get(id=self.other_user_id)
             ChatMessage.mark_as_read(self.user, other_user)
         except User.DoesNotExist:
+            pass
+
+    @database_sync_to_async
+    def set_user_online(self):
+        """Set the user as online when they connect to chat."""
+        try:
+            presenta_user = self.user.presenta_user
+            # Only set online if not already online (to avoid unnecessary saves)
+            if presenta_user.online_status != 'online':
+                presenta_user.online_status = 'online'
+                presenta_user.save(update_fields=['online_status'])
+                # Broadcast the status update
+                broadcast_status_update(presenta_user.id, 'online', presenta_user.updated_at)
+        except AttributeError:
+            # User might not have presenta_user profile
+            pass
+
+
+
+    @database_sync_to_async
+    def set_user_offline(self):
+        """Set the user as offline when they disconnect from chat."""
+        try:
+            presenta_user = self.user.presenta_user
+            # Only set offline if currently online
+            if presenta_user.online_status == 'online':
+                presenta_user.online_status = 'offline'
+                presenta_user.save(update_fields=['online_status'])
+                # Broadcast the status update
+                broadcast_status_update(presenta_user.id, 'offline', presenta_user.updated_at)
+        except AttributeError:
+            # User might not have presenta_user profile
             pass
 
 

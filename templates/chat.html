@@ -3508,23 +3508,23 @@ body.dark-mode .image-preview img {
     }
 
     // Format user status for display
-    function formatUserStatus(status, lastSeen) {
-        switch (status) {
-            case 'online':
-                return 'Active';
-            case 'idle':
-                return 'Idle';
-            case 'do_not_disturb':
-                return 'Do Not Disturb';
-            case 'offline':
-                if (lastSeen) {
-                    return `Active ${formatTimeAgo(lastSeen)}`;
-                }
-                return 'Offline';
-            default:
-                return 'Offline';
-        }
+function formatUserStatus(status, lastSeen) {
+    switch (status) {
+        case 'online':
+            return 'Active';
+        case 'idle':
+            return 'Idle';
+        case 'do_not_disturb':
+            return 'Do Not Disturb';
+        case 'offline':
+            if (lastSeen) {
+                return `Last seen ${formatTimeAgo(lastSeen)}`;
+            }
+            return 'Offline';
+        default:
+            return 'Offline';
     }
+}
 
     function formatTimeAgo(isoString) {
         if (!isoString) return 'recently';
