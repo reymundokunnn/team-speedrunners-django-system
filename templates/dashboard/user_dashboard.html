@@ -635,71 +635,192 @@
             </svg>
         </button>
         <h2>Request a New Design</h2>
-        <form method="post" action="{% url 'request_design' %}" class="design-request-form"
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-label">Design Type</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-label">Designer</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-label">Details</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="step-number">4</span>
+                <span class="step-label">Files</span>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'request_design' %}" class="design-request-form multi-step"
             enctype="multipart/form-data">
             {% csrf_token %}
-            <label for="design_type">Design Type *</label>
-            <select id="design_type" name="design_type" required>
-                <option value="">Select a design type</option>
-                <option value="presentation">Presentation</option>
-                <option value="infographic">Infographic</option>
-                <option value="poster">Poster</option>
-            </select>
 
-            <label for="preferred_designer">Designer Assignment</label>
-            <select id="preferred_designer" name="preferred_designer" class="preferred-designer-select">
-                <option value="" selected>Open to all designers</option>
-                {% if favorite_designers %}
-                <option value="manual" disabled>──────────</option>
-                {% for designer in favorite_designers %}
-                <option value="{{ designer.designer__id }}">{{ designer.designer__first_name|default:designer.designer__username }} {{ designer.designer__last_name|default:"" }} ★</option>
-                {% endfor %}
-                {% endif %}
-            </select>
-            <small class="form-hint">Leave as "Open to all designers" to post to their Available Requests, or choose a favorite to assign directly.</small>
-
-            <label for="project_title">Project Title/Topic *</label>
-            <input type="text" id="project_title" name="title" placeholder="Enter your project title or topic" required>
-
-            <label for="description">Description and Instructions *</label>
-            <textarea id="description" name="description"
-                placeholder="How should we design your content? Should we use a specific color theme, layout, etc.?"
-                required></textarea>
-
-            <label for="budget">Budget (Optional)</label>
-            <div class="budget-currency-inline">
-                <select id="currency" name="currency" class="currency-select">
-                    <option value="USD">US Dollar ($)</option>
-                    <option value="EUR">Euro (€)</option>
-                    <option value="GBP">British Pound (£)</option>
-                    <option value="PHP">Philippine Peso (₱)</option>
-                    <option value="JPY">Japanese Yen (¥)</option>
-                    <option value="AUD">Australian Dollar (A$)</option>
-                    <option value="CAD">Canadian Dollar (C$)</option>
-                </select>
-                <input type="number" id="budget" name="budget" placeholder="Enter amount" step="0.01">
-            </div>
-
-            <label for="deadline">Deadline (Optional)</label>
-            <input type="date" id="deadline" name="deadline">
-
-            <label for="reference_files">Reference Files</label>
-            <div class="file-upload-area" id="fileUploadArea">
-                <input type="file" id="reference_files" name="reference_files" multiple accept="*/*"
-                    style="display: none;">
-                <div class="file-upload-area-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p>Drag and drop files here, or click to select</p>
-                    <small>Upload reference files for your design request</small>
+            <!-- Step 1: Design Type -->
+            <div class="form-step active" data-step="1">
+                <div class="step-header">
+                    <h3>Choose Design Type</h3>
+                    <p>Select the type of design you need</p>
                 </div>
-                <div id="fileList" class="file-list"></div>
+                <div class="design-type-buttons">
+                    <button type="button" class="design-type-btn" data-value="presentation">
+                        <div class="design-type-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </div>
+                        <span class="design-type-label">Presentation</span>
+                        <span class="design-type-desc">Slides, decks, business presentations</span>
+                    </button>
+                    <button type="button" class="design-type-btn" data-value="infographic">
+                        <div class="design-type-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <span class="design-type-label">Infographic</span>
+                        <span class="design-type-desc">Visual data, charts, information graphics</span>
+                    </button>
+                    <button type="button" class="design-type-btn" data-value="poster">
+                        <div class="design-type-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        </div>
+                        <span class="design-type-label">Poster</span>
+                        <span class="design-type-desc">Flyers, banners, promotional materials</span>
+                    </button>
+                </div>
+                <input type="hidden" id="design_type" name="design_type" required>
+                <div class="step-actions">
+                    <button type="button" class="btn btn-next" disabled>Next</button>
+                </div>
             </div>
 
-            <button type="submit" class="btn">Submit Request</button>
+            <!-- Step 2: Designer Assignment -->
+            <div class="form-step" data-step="2">
+                <div class="step-header">
+                    <h3>Choose Designer</h3>
+                    <p>Assign to all designers or pick a favorite</p>
+                </div>
+                <div class="designer-assignment-options">
+                    <button type="button" class="designer-option-btn active" data-assignment="open">
+                        <div class="assignment-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <div class="assignment-info">
+                            <span class="assignment-label">Open to All Designers</span>
+                            <span class="assignment-desc">Post to available requests pool</span>
+                        </div>
+                    </button>
+                    {% if favorite_designers %}
+                    <button type="button" class="designer-option-btn" data-assignment="favorite">
+                        <div class="assignment-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </div>
+                        <div class="assignment-info">
+                            <span class="assignment-label">Assign to Favorite</span>
+                            <span class="assignment-desc">Choose from your favorite designers</span>
+                        </div>
+                    </button>
+                    {% endif %}
+                </div>
+
+                {% if favorite_designers %}
+                <div class="favorite-designers-section">
+                    <span class="section-label">Choose a favorite designer:</span>
+                    <div class="favorite-designers-grid">
+                        {% for fav in favorite_designers %}
+                        <button type="button" class="designer-option-btn favorite-designer-btn" data-assignment="{{ fav.designer.id }}">
+                            <div class="designer-avatar">
+                                {% if fav.designer.profile.presenta_user.profile_picture %}
+                                <img src="{{ fav.designer.profile.presenta_user.profile_picture.url }}" alt="{{ fav.designer.first_name }} {{ fav.designer.last_name }}">
+                                {% else %}
+                                <div class="default-avatar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="assignment-info">
+                                <span class="assignment-label">{{ fav.designer.first_name|default:fav.designer.username }} {{ fav.designer.last_name|default:"" }}</span>
+                                <span class="assignment-desc">Favorite Designer</span>
+                            </div>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <input type="hidden" id="preferred_designer" name="preferred_designer">
+                <div class="step-actions">
+                    <button type="button" class="btn btn-prev">Back</button>
+                    <button type="button" class="btn btn-next">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Project Details -->
+            <div class="form-step" data-step="3">
+                <div class="step-header">
+                    <h3>Project Details</h3>
+                    <p>Tell us about your project</p>
+                </div>
+                <div class="form-fields">
+                    <label for="project_title">Project Title/Topic *</label>
+                    <input type="text" id="project_title" name="title" placeholder="Enter your project title or topic" required>
+
+                    <label for="description">Description and Instructions *</label>
+                    <textarea id="description" name="description"
+                        placeholder="How should we design your content? Should we use a specific color theme, layout, etc.?"
+                        required></textarea>
+
+                    <label for="budget">Budget (Optional)</label>
+                    <div class="budget-currency-inline">
+                        <select id="currency" name="currency" class="currency-select">
+                            <option value="USD">US Dollar ($)</option>
+                            <option value="EUR">Euro (€)</option>
+                            <option value="GBP">British Pound (£)</option>
+                            <option value="PHP">Philippine Peso (₱)</option>
+                            <option value="JPY">Japanese Yen (¥)</option>
+                            <option value="AUD">Australian Dollar (A$)</option>
+                            <option value="CAD">Canadian Dollar (C$)</option>
+                        </select>
+                        <input type="number" id="budget" name="budget" placeholder="Enter amount" step="0.01">
+                    </div>
+
+                    <label for="deadline">Deadline (Optional)</label>
+                    <input type="date" id="deadline" name="deadline">
+                </div>
+                <div class="step-actions">
+                    <button type="button" class="btn btn-prev">Back</button>
+                    <button type="button" class="btn btn-next">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Reference Files -->
+            <div class="form-step" data-step="4">
+                <div class="step-header">
+                    <h3>Reference Files</h3>
+                    <p>Upload any files to help with your design</p>
+                </div>
+                <div class="file-upload-section">
+                    <label for="reference_files">Reference Files (Optional)</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="reference_files" name="reference_files" multiple accept="*/*"
+                            style="display: none;">
+                        <div class="file-upload-area-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag and drop files here, or click to select</p>
+                            <small>Upload reference files for your design request</small>
+                        </div>
+                        <div id="fileList" class="file-list"></div>
+                    </div>
+                </div>
+                <div class="step-actions">
+                    <button type="button" class="btn btn-prev">Back</button>
+                    <button type="submit" class="btn btn-submit">Submit Request</button>
+                </div>
+            </div>
         </form>
     </div>
 </div>
@@ -946,13 +1067,197 @@
 </div>
 
 <script>
+// Multi-step form functionality
+let currentStep = 1;
+const totalSteps = 4;
+
+function updateStepIndicator() {
+    const stepIndicator = document.querySelector('.step-indicator');
+
+    // Remove all progress classes
+    for (let i = 1; i <= totalSteps; i++) {
+        stepIndicator.classList.remove(`progress-${i}`);
+    }
+
+    // Add current progress class
+    stepIndicator.classList.add(`progress-${currentStep}`);
+
+    document.querySelectorAll('.step').forEach(step => {
+        step.classList.remove('active');
+        if (parseInt(step.dataset.step) === currentStep) {
+            step.classList.add('active');
+        }
+    });
+}
+
+function showStep(step, direction = 'forward') {
+    const currentFormStep = document.querySelector('.form-step.active');
+    const nextFormStep = document.querySelector(`.form-step[data-step="${step}"]`);
+
+    if (currentFormStep) {
+        // Add exit animation
+        currentFormStep.style.transform = direction === 'forward' ? 'translateX(-20px)' : 'translateX(20px)';
+        currentFormStep.style.opacity = '0';
+
+        setTimeout(() => {
+            currentFormStep.classList.remove('active');
+            currentFormStep.style.transform = '';
+            currentFormStep.style.opacity = '';
+        }, 150);
+    }
+
+    if (nextFormStep) {
+        // Prepare for entry animation
+        nextFormStep.style.transform = direction === 'forward' ? 'translateX(20px)' : 'translateX(-20px)';
+        nextFormStep.style.opacity = '0';
+
+        setTimeout(() => {
+            nextFormStep.classList.add('active');
+            // Trigger entry animation
+            nextFormStep.style.transform = 'translateX(0)';
+            nextFormStep.style.opacity = '1';
+        }, currentFormStep ? 150 : 0);
+    }
+
+    currentStep = step;
+    updateStepIndicator();
+}
+
+function nextStep() {
+    if (currentStep < totalSteps) {
+        showStep(currentStep + 1, 'forward');
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        showStep(currentStep - 1, 'backward');
+    }
+}
+
+function resetMultiStepForm() {
+    currentStep = 1;
+    showStep(1);
+
+    // Reset design type selection
+    document.querySelectorAll('.design-type-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById('design_type').value = '';
+    document.querySelector('.btn-next').disabled = true;
+
+    // Reset designer selection
+    document.querySelectorAll('.designer-option-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const openBtn = document.querySelector('.designer-option-btn[data-assignment="open"]');
+    if (openBtn) {
+        openBtn.classList.add('active');
+    }
+    document.getElementById('preferred_designer').value = '';
+
+    // Hide favorite designers section
+    const favoriteSection = document.querySelector('.favorite-designers-section');
+    if (favoriteSection) {
+        favoriteSection.classList.remove('show');
+    }
+
+    // Clear form fields
+    const titleField = document.getElementById('project_title');
+    if (titleField) titleField.value = '';
+
+    const descField = document.getElementById('description');
+    if (descField) descField.value = '';
+
+    const budgetField = document.getElementById('budget');
+    if (budgetField) budgetField.value = '';
+
+    const deadlineField = document.getElementById('deadline');
+    if (deadlineField) deadlineField.value = '';
+
+    const currencyField = document.getElementById('currency');
+    if (currencyField) currencyField.value = 'USD';
+
+    // Clear file list
+    const fileList = document.getElementById('fileList');
+    if (fileList) {
+        fileList.innerHTML = '';
+    }
+    const fileInput = document.getElementById('reference_files');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+}
+
+// Design type selection
+document.querySelectorAll('.design-type-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.design-type-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('design_type').value = this.dataset.value;
+        document.querySelector('.btn-next').disabled = false;
+    });
+});
+
+// Designer assignment selection
+document.querySelectorAll('.designer-option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Only handle main assignment buttons (not favorite designer buttons)
+        if (!this.classList.contains('favorite-designer-btn')) {
+            document.querySelectorAll('.designer-option-btn:not(.favorite-designer-btn)').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const assignment = this.dataset.assignment;
+
+            // Show/hide favorite designers section
+            const favoriteSection = document.querySelector('.favorite-designers-section');
+            if (favoriteSection) {
+                if (assignment === 'favorite') {
+                    favoriteSection.classList.add('show');
+                    // Reset any selected favorite designer
+                    document.querySelectorAll('.favorite-designer-btn').forEach(b => b.classList.remove('active'));
+                    document.getElementById('preferred_designer').value = '';
+                } else {
+                    favoriteSection.classList.remove('show');
+                    document.getElementById('preferred_designer').value = '';
+                }
+            }
+        } else {
+            // Handle favorite designer selection
+            document.querySelectorAll('.favorite-designer-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('preferred_designer').value = this.dataset.assignment;
+        }
+    });
+});
+
+// Step navigation
+document.querySelectorAll('.btn-next').forEach(btn => {
+    btn.addEventListener('click', nextStep);
+});
+
+document.querySelectorAll('.btn-prev').forEach(btn => {
+    btn.addEventListener('click', prevStep);
+});
+
+// Override openModal to reset form
+const originalOpenModal = window.openModal;
+window.openModal = function(modalType) {
+    if (originalOpenModal) {
+        originalOpenModal(modalType);
+    }
+    if (modalType === 'modal') {
+        setTimeout(resetMultiStepForm, 100); // Small delay to ensure modal is visible
+    }
+};
+
 // Pay Now button functionality
 document.querySelectorAll('.btn-pay-now').forEach(button => {
     button.addEventListener('click', function() {
         const row = this.closest('tr');
         const projectName = row.querySelector('.project-name').textContent;
         const budget = row.querySelector('.budget-amount').textContent;
-        
+
         // Show payment modal or redirect to payment gateway
         alert(`Payment functionality for "${projectName}" - Amount: ${budget}\n\nThis would integrate with your payment gateway (e.g., Stripe, PayPal, etc.)`);
     });

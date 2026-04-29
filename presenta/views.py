@@ -567,13 +567,10 @@ def user_dashboard(request):
     except Exception:
         user_tz = 'UTC'
 
-    # Get user's favorite designers as a list and set of IDs
-    favorite_designers_list = list(FavoriteDesigner.objects.filter(client=user).select_related('designer').values(
-        'designer__id', 'designer__username', 'designer__first_name', 'designer__last_name'
-    ))
-    favorited_designer_ids = set(fav['designer__id']
-                                 for fav in favorite_designers_list)
-    favorite_count = len(favorite_designers_list)
+    # Get user's favorite designers
+    favorite_designers = FavoriteDesigner.objects.filter(client=user).select_related('designer__profile')
+    favorited_designer_ids = set(fav.designer.id for fav in favorite_designers)
+    favorite_count = favorite_designers.count()
 
     context = {
         'profile': user.profile,
@@ -584,7 +581,7 @@ def user_dashboard(request):
         'for_payment': design_requests.filter(status='for_payment').count(),
         'completed': design_requests.filter(status='completed').count(),
         'user_timezone': user_tz,
-        'favorite_designers': favorite_designers_list,
+        'favorite_designers': favorite_designers,
         'favorited_designer_ids': list(favorited_designer_ids),
         'favorite_count': favorite_count,
         'show_search_bar': True,
