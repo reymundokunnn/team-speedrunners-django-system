@@ -1056,32 +1056,30 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     border-top-color: #444;
 }
 
-/* Modal Fade In Animation */
+/* ========================================================================
+   UNIFIED MODAL SYSTEM - Consolidated Design Language
+   Applies to all modals: .modal, .modal-wrapper, .modal-content, etc.
+   ======================================================================== */
+
+/* Modal Animations */
 @keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
     from {
         opacity: 0;
+        transform: translateY(30px);
     }
-
     to {
         opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* Unified Modal Backdrop */
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 1999;
-    animation: modalFadeIn 0.3s ease-out forwards;
-}
-
-/* Unified Modal Overlay (for existing code that uses .modal-overlay) */
+/* Unified Modal Backdrop/Overlay */
+.modal-backdrop,
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1091,12 +1089,28 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    z-index: -1;
     animation: modalFadeIn 0.3s ease-out forwards;
 }
 
-/* Unified Modal Wrapper */
-.modal-wrapper {
+.modal-backdrop {
+    z-index: 1999;
+}
+
+.modal-overlay {
+    z-index: -1;
+}
+
+/* Unified Modal Containers */
+.modal-wrapper,
+.modal,
+.add-new-design-modal,
+.edit-modal,
+.cropper-modal,
+.project-modal,
+.confirm-modal,
+.new-chat-modal,
+.change-password-modal,
+.social-media-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -1110,12 +1124,25 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     box-sizing: border-box;
 }
 
-.modal-wrapper.active {
+.modal-wrapper.active,
+.modal.active,
+.add-new-design-modal.show,
+.edit-modal.show,
+.cropper-modal.show,
+.project-modal.active,
+.confirm-modal.active,
+.new-chat-modal.show,
+.change-password-modal.show,
+.social-media-modal.show {
     display: flex;
 }
 
-/* Unified Modal Container */
-.modal-container {
+/* Unified Modal Content Container */
+.modal-container,
+.modal-content,
+.cropper-modal-content,
+.new-chat-modal-content,
+.social-media-modal-content {
     background-color: #ffffff;
     border-radius: 16px;
     width: 90%;
@@ -1129,21 +1156,26 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     animation: modalSlideIn 0.3s ease-out forwards;
 }
 
-/* Unified Modal Slide In Animation */
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
+/* Modal Size Variants */
+.modal-container.modal-sm,
+.modal-content.modal-sm {
+    max-width: 400px;
+}
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.modal-container.modal-md,
+.modal-content.modal-md {
+    max-width: 500px;
+}
+
+.modal-container.modal-lg,
+.modal-content.modal-lg {
+    max-width: 700px;
 }
 
 /* Unified Modal Header */
-.modal-header {
+.modal-header,
+.cropper-modal-header,
+.social-media-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1152,8 +1184,20 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     flex-shrink: 0;
 }
 
+.modal-header h2,
+.modal-header h3,
+.cropper-modal-header h3,
+.social-media-modal-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #333;
+    font-weight: 600;
+}
+
 /* Unified Modal Close Button */
-.modal-close {
+.modal-close,
+.close-btn,
+.modal-close-btn {
     position: absolute;
     top: 15px;
     right: 15px;
@@ -1169,23 +1213,29 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     font-size: 20px;
     color: #666;
     transition: all 0.2s ease;
+    padding: 0;
     line-height: 1;
     z-index: 10;
 }
 
-.modal-close:hover {
-    color: #e87f14;
+.modal-close:hover,
+.close-btn:hover,
+.modal-close-btn:hover {
     background-color: #f5f5f5;
+    color: #e87f14;
     transform: rotate(90deg);
 }
 
-.modal-close svg {
+.modal-close svg,
+.close-btn svg,
+.modal-close-btn svg {
     width: 20px;
     height: 20px;
 }
 
 /* Unified Modal Body */
-.modal-body {
+.modal-body,
+.cropper-modal-body {
     padding: 20px 24px;
     overflow-y: auto;
     flex: 1;
@@ -1199,56 +1249,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     margin-top: 20px;
 }
 
-/* Unified Modal Content (for modals using .modal-content) */
-.modal-content {
-    background-color: #ffffff;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: modalSlideIn 0.3s ease-out forwards;
-}
-
-/* Unified Modal Content Close Button */
-.modal-content .close-btn,
-.modal-content .modal-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    transition: all 0.2s ease;
-    z-index: 10;
-    width: 32px;
-    height: 32px;
-}
-
-.modal-content .close-btn:hover,
-.modal-content .modal-close-btn:hover {
-    background-color: #f0f0f0;
-    color: #e87f14;
-    transform: rotate(90deg);
-}
-
-.modal-content .close-btn svg,
-.modal-content .modal-close-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* Unified Modal Title */
+/* Unified Modal Title in Content */
 .modal-content h2,
 .modal-content h3 {
     margin-top: 0;
@@ -1259,71 +1260,62 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     padding-right: 40px;
 }
 
-/* Unified Modal Responsive */
-@media (max-width: 540px) {
-
-    .modal-container,
-    .modal-content {
-        padding: 20px;
-        width: 95%;
-        max-height: 85vh;
-        border-radius: 12px;
-    }
-
-    .modal-header {
-        padding: 16px 20px;
-    }
-
-    .modal-body {
-        padding: 16px 20px;
-    }
-
-    .modal-actions {
-        padding: 12px 20px 20px;
-        flex-direction: column;
-    }
-
-    .modal-actions .btn {
-        width: 100%;
-    }
+/* Status Modal Special Positioning */
+#status-modal.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    max-width: 90vw;
+    padding: 0;
 }
 
-/* Dark Mode Unified Modal Styles */
-body.dark-mode .modal-backdrop,
-body.dark-mode .modal-overlay {
-    background-color: rgba(0, 0, 0, 0.6);
+#status-modal.modal.active {
+    display: block;
 }
 
-body.dark-mode .modal-container,
-body.dark-mode .modal-content {
-    background-color: #2d2d2d;
+#status-modal-overlay.modal-overlay {
+    display: none;
+    z-index: 1999;
 }
 
-body.dark-mode .modal-header {
-    border-bottom-color: #404040;
+#status-modal-overlay.modal-overlay.active {
+    display: block;
 }
 
-body.dark-mode .modal-header h2,
-body.dark-mode .modal-content h2,
-body.dark-mode .modal-content h3 {
-    color: #ffffff;
+.status-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-body.dark-mode .modal-close,
-body.dark-mode .modal-content .close-btn,
-body.dark-mode .modal-content .modal-close-btn {
-    color: #aaa;
+.status-option {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-body.dark-mode .modal-close:hover,
-body.dark-mode .modal-content .close-btn:hover,
-body.dark-mode .modal-content .modal-close-btn:hover {
-    background-color: #404040;
-    color: #e87f14;
+.status-option:hover {
+    border-color: #ddd;
+    background-color: #f9f9f9;
 }
 
-body.dark-mode .modal-body {
-    color: #e0e0e0;
+.status-option.selected {
+    border-color: #e87f14;
+    background-color: #ffedda;
+}
+
+.status-indicator {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
 }
 
 /* Status Modal Styles */
@@ -1445,17 +1437,122 @@ body.dark-mode .modal-body {
     color: #666;
 }
 
-/* Dark mode modal styles */
-body.dark-mode .modal-header {
-    border-bottom-color: #444;
+/* ========================================================================
+   DARK MODE - Unified Modal System
+   ======================================================================== */
+
+body.dark-mode .modal-backdrop,
+body.dark-mode .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.85);
 }
 
-body.dark-mode .modal-header h2 {
+body.dark-mode .modal-container,
+body.dark-mode .modal-content,
+body.dark-mode .cropper-modal-content,
+body.dark-mode .new-chat-modal-content,
+body.dark-mode .social-media-modal-content {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .cropper-modal-header,
+body.dark-mode .social-media-modal-header {
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .modal-header h2,
+body.dark-mode .modal-header h3,
+body.dark-mode .cropper-modal-header h3,
+body.dark-mode .social-media-modal-header h3 {
+    color: #ffffff;
+}
+
+body.dark-mode .modal-close,
+body.dark-mode .close-btn,
+body.dark-mode .modal-close-btn {
+    color: #aaa;
+}
+
+body.dark-mode .modal-close:hover,
+body.dark-mode .close-btn:hover,
+body.dark-mode .modal-close-btn:hover {
+    background-color: #404040;
+    color: #e87f14;
+}
+
+body.dark-mode .modal-body,
+body.dark-mode .cropper-modal-body {
     color: #e0e0e0;
 }
 
 body.dark-mode .status-option {
-    border-color: #444;
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+body.dark-mode .status-option:hover {
+    border-color: #555;
+    background-color: #3a3a3a;
+}
+
+body.dark-mode .status-option.selected {
+    border-color: #e87f14;
+    background-color: rgba(232, 127, 20, 0.2);
+}
+
+body.dark-mode .status-text h3 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .status-text p {
+    color: #aaa;
+}
+
+/* ========================================================================
+   RESPONSIVE - Unified Modal System
+   ======================================================================== */
+
+@media (max-width: 540px) {
+    .modal-container,
+    .modal-content,
+    .cropper-modal-content,
+    .new-chat-modal-content,
+    .social-media-modal-content {
+        width: 95%;
+        max-height: 85vh;
+        border-radius: 12px;
+    }
+
+    .modal-header,
+    .cropper-modal-header,
+    .social-media-modal-header {
+        padding: 16px 20px;
+    }
+
+    .modal-body,
+    .cropper-modal-body {
+        padding: 16px 20px;
+    }
+
+    .modal-actions {
+        padding: 12px 20px 20px;
+        flex-direction: column;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+    }
+
+    .modal-container.modal-lg,
+    .modal-content.modal-lg {
+        max-width: 95%;
+    }
+}
+
+/* ========================================================================
+   END UNIFIED MODAL SYSTEM
+   ======================================================================== */
 }
 
 body.dark-mode .status-option:hover {
@@ -3394,93 +3491,14 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     border: 4px dotted #c5c5c5;
 }
 
-.add-new-design-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    padding: 20px;
-    box-sizing: border-box;
-    animation: modalFadeIn 0.3s ease-out;
-}
-
-.add-new-design-modal.show {
-    display: flex;
-}
-
+/* Add New Design Modal - Uses unified modal system */
 .add-new-design-modal .modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 16px;
-    width: 90%;
     max-width: 600px;
     max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: slideUp 0.3s ease-out;
-}
-
-.add-new-design-modal .modal-content::-webkit-scrollbar {
-    display: none;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(30px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.add-new-design-modal .modal-content .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    transition: all 0.2s ease;
-    z-index: 10;
-}
-
-.add-new-design-modal .modal-content .close-btn:hover {
-    background-color: #f0f0f0;
-    color: #e87f14;
-    transform: rotate(90deg);
-}
-
-.add-new-design-modal .modal-content .close-btn svg {
-    width: 20px;
-    height: 20px;
 }
 
 .add-new-design-modal .modal-content h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
     color: #e87f14;
-    font-size: 1.5rem;
-    font-weight: 700;
-    padding-right: 40px;
 }
 
 .design-request-form {
@@ -4325,97 +4343,13 @@ body.dark-mode .confirm-note {
     margin: 0;
 }
 
-/* Edit Modal Styles */
-.edit-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    padding: 20px;
-    box-sizing: border-box;
-    animation: modalFadeIn 0.3s ease-out;
-}
-
-.edit-modal.show {
-    display: flex;
-}
-
-.edit-modal .modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: modalSlideIn 0.3s ease-out;
-}
-
-body.dark-mode .edit-modal .modal-content {
-    background-color: #2d2d2d;
-    color: #ffffff;
-}
-
+/* Edit Modal Styles - Uses unified modal system (see line 1051+) */
 .edit-modal .modal-content h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 1.5rem;
-    font-weight: 700;
-    padding-right: 40px;
+    color: #e87f14;
 }
 
 body.dark-mode .edit-modal .modal-content h2 {
-    color: #e87f14;
-}
-
-.edit-modal .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    transition: all 0.2s ease;
-    z-index: 10;
-}
-
-.edit-modal .close-btn:hover {
-    background-color: #f0f0f0;
-    color: #e87f14;
-    transform: rotate(90deg);
-}
-
-body.dark-mode .edit-modal .close-btn {
-    color: #aaa;
-}
-
-body.dark-mode .edit-modal .close-btn:hover {
-    background-color: #404040;
-    color: #e87f14;
-}
-
-.edit-modal .close-btn svg {
-    width: 20px;
-    height: 20px;
+    color: #ffffff;
 }
 
 .edit-form {
@@ -16480,67 +16414,326 @@ body.dark-mode .social-link:hover {
 }
 
 /* Report Details Modal Content Styles */
+/* ===== Report Details Modal Styling ===== */
 .report-details {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 20px;
 }
 
 .report-section {
-    padding: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background: #f9f9f9;
+    padding: 20px;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    transition: all 0.3s ease;
+}
+
+.report-section:hover {
+    border-color: #e87f14;
+    box-shadow: 0 4px 12px rgba(232, 127, 20, 0.08);
 }
 
 body.dark-mode .report-section {
-    border-color: #444;
-    background: #2a2a2a;
+    border-color: #3a3a3a;
+    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
 }
 
-.report-section h3 {
-    margin: 0 0 1rem 0;
+body.dark-mode .report-section:hover {
+    border-color: #e87f14;
+    box-shadow: 0 4px 12px rgba(232, 127, 20, 0.15);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e87f14;
+}
+
+.section-header h3 {
+    margin: 0;
     color: #333;
     font-size: 1.1rem;
     font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
-body.dark-mode .report-section h3 {
+body.dark-mode .section-header h3 {
     color: #e0e0e0;
 }
 
-.report-info p {
-    margin: 0.5rem 0;
-    line-height: 1.5;
-    color: #555;
-}
-
-body.dark-mode .report-info p {
-    color: #ccc;
-}
-
-.report-info strong {
-    color: #333;
+.user-status-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-body.dark-mode .report-info strong {
-    color: #e0e0e0;
+.user-status-inline.active {
+    background: #d4edda;
+    color: #155724;
 }
 
-.status-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
+.user-status-inline.banned {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+body.dark-mode .user-status-inline.active {
+    background: rgba(129, 199, 132, 0.15);
+    color: #81c784;
+}
+
+body.dark-mode .user-status-inline.banned {
+    background: rgba(239, 83, 80, 0.15);
+    color: #ef5350;
+}
+
+/* User Info Card Styling */
+.user-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.user-avatar-large {
+    flex-shrink: 0;
+}
+
+.user-avatar-large img {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    border: 2px solid #e87f14;
+    object-fit: cover;
+}
+
+body.dark-mode .user-avatar-large img {
+    border-color: #e87f14;
+}
+
+.user-info-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.user-info-content .user-name {
+    margin: 0;
+    color: #333;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+body.dark-mode .user-info-content .user-name {
+    color: #f0f0f0;
+}
+
+.user-info-content .user-username {
+    margin: 0;
+    color: #999;
+    font-size: 0.95rem;
     font-weight: 500;
 }
 
-.status-pending { background: #fff3cd; color: #856404; }
-.status-under_review { background: #cce5ff; color: #004085; }
-.status-resolved { background: #d4edda; color: #155724; }
-.status-dismissed { background: #f8d7da; color: #721c24; }
+body.dark-mode .user-info-content .user-username {
+    color: #b0b0b0;
+}
 
-body.dark-mode .status-pending { background: #4d3c0a; color: #ffeb3b; }
-body.dark-mode .status-under_review { background: #0a2a4d; color: #90caf9; }
-body.dark-mode .status-resolved { background: #1b4d1b; color: #81c784; }
-body.dark-mode .status-dismissed { background: #4d1b1b; color: #ef5350; }
+.user-info-content .user-email {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+body.dark-mode .user-info-content .user-email {
+    color: #a0a0a0;
+}
+
+/* Report Information Styling */
+.report-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.info-row.full-width {
+    flex-direction: column;
+}
+
+.info-label {
+    display: inline-flex;
+    min-width: 120px;
+    color: #666;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: capitalize;
+}
+
+body.dark-mode .info-label {
+    color: #a0a0a0;
+}
+
+.info-value {
+    flex: 1;
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+body.dark-mode .info-value {
+    color: #e0e0e0;
+}
+
+.reason-text {
+    padding: 12px;
+    background: #f9f9f9;
+    border-left: 3px solid #e87f14;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+body.dark-mode .reason-text {
+    background: #333333;
+    border-left-color: #e87f14;
+}
+
+/* Status Badge Styling */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+/* Status Badge Variants */
+.status-badge.status-pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid rgba(133, 100, 4, 0.2);
+}
+
+.status-badge.status-under_review {
+    background: #cce5ff;
+    color: #004085;
+    border: 1px solid rgba(0, 64, 133, 0.2);
+}
+
+.status-badge.status-resolved {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid rgba(21, 87, 36, 0.2);
+}
+
+.status-badge.status-dismissed {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid rgba(114, 28, 36, 0.2);
+}
+
+/* Dark Mode Status Badge */
+body.dark-mode .status-badge {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .status-badge.status-pending {
+    background: rgba(255, 235, 59, 0.15);
+    color: #ffeb3b;
+}
+
+body.dark-mode .status-badge.status-under_review {
+    background: rgba(144, 202, 249, 0.15);
+    color: #90caf9;
+}
+
+body.dark-mode .status-badge.status-resolved {
+    background: rgba(129, 199, 132, 0.15);
+    color: #81c784;
+}
+
+/* Responsive Report Modal */
+@media (max-width: 768px) {
+    .report-section {
+        padding: 16px;
+    }
+
+    .user-info-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .user-avatar-large img {
+        width: 72px;
+        height: 72px;
+    }
+
+    .info-row {
+        flex-direction: column;
+    }
+
+    .info-label {
+        min-width: auto;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .user-status-inline {
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 540px) {
+    .report-details {
+        gap: 16px;
+    }
+
+    .report-section {
+        padding: 12px;
+    }
+
+    .section-header h3 {
+        font-size: 1rem;
+    }
+
+    .user-avatar-large img {
+        width: 56px;
+        height: 56px;
+    }
+
+    .user-info-content .user-name {
+        font-size: 0.95rem;
+    }
+
+    .info-value {
+        font-size: 0.85rem;
+    }
+}
