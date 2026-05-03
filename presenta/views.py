@@ -64,7 +64,11 @@ def log_activity(user, activity_type, message, related_request=None, target_user
 
 @login_required(login_url='signin')
 def api_notifications(request):
-    """API endpoint to fetch notifications dynamically."""
+    """API endpoint to fetch notifications dynamically.
+    
+    Notifications are activities where the user is the TARGET,
+    representing actions that happened TO the user, not things they did themselves.
+    """
     try:
         from .models import Activity, User as PresentaUser
 
@@ -78,34 +82,35 @@ def api_notifications(request):
         if not presenta_user:
             return JsonResponse({'notifications': []})
 
-        # Get user role
-        user_role = getattr(presenta_user, 'user_role', 'user')
-
         # Use auth_user for Activity queries
         auth_user = getattr(presenta_user, 'auth_user', None)
 
         if not auth_user:
             return JsonResponse({'notifications': []})
 
-        # Get recent activities (last 10)
-        if user_role == 'designer':
-            from django.db.models import Q
-            activities = Activity.objects.filter(
-                Q(user=auth_user, activity_type__in=['assigned', 'revision_requested']) |
-                Q(activity_type='request_submitted'),
-                is_cleared=False
-            ).order_by('-created_at')[:10]
-        else:
-            activities = Activity.objects.filter(
-                user=auth_user,
-                activity_type__in=['designer_assigned', 'status_changed',
-                                   'completed', 'payment_received', 'payment_confirmed'],
-                is_cleared=False
-            ).order_by('-created_at')[:10]
+        # Notification activity types - things that happen TO the user
+        NOTIFICATION_TYPES = [
+            'designer_assigned',    # For clients: designer accepted their request
+            'revision_requested',   # For designers: client requested revision on their work
+            'status_changed',       # For clients: designer changed status
+            'completed',            # For clients: designer marked completed
+            'request_rejected',     # For clients: designer rejected request
+            'request_cancelled',    # For clients: designer cancelled request
+            'assigned',             # For designers: admin assigned request to them
+            'payment_received',     # For designers: payment received
+            'payment_confirmed',    # For designers: payment confirmed
+        ]
+
+        # Get notifications where the user is the target
+        notifications = Activity.objects.filter(
+            target_user=auth_user,
+            activity_type__in=NOTIFICATION_TYPES,
+            is_cleared=False
+        ).order_by('-created_at')[:10]
 
         # Format notifications
-        notifications = []
-        for activity in activities:
+        formatted_notifications = []
+        for activity in notifications:
             notification = {
                 'id': activity.id,
                 'message': activity.message,
@@ -113,9 +118,9 @@ def api_notifications(request):
                 'created_at': activity.created_at.isoformat(),
                 'time_ago': _get_time_ago(activity.created_at),
             }
-            notifications.append(notification)
+            formatted_notifications.append(notification)
 
-        return JsonResponse({'notifications': notifications})
+        return JsonResponse({'notifications': formatted_notifications})
     except Exception as e:
         import sys
         print(f"API notifications error: {e}", file=sys.stderr)
@@ -130,8 +135,8 @@ def delete_notification(request, notification_id):
     
     notification = get_object_or_404(Activity, id=notification_id)
     
-    # Verify the notification belongs to the current user
-    if notification.user != request.user:
+    # Verify the notification is for the current user (target_user or user check)
+    if notification.target_user != request.user and notification.user != request.user:
         return JsonResponse({'error': 'Access denied.'}, status=403)
     
     # Mark as cleared instead of deleting to preserve audit trail
@@ -875,7 +880,8 @@ def accept_design_request(request, request_id):
                 user=design_request.requester,
                 activity_type='designer_assigned',
                 message=f"Designer <b>{designer_name}</b> accepted your design request '{design_request.title}'.",
-                related_request=design_request
+                related_request=design_request,
+                target_user=design_request.requester
             )
 
     return redirect('designer_dashboard')
@@ -903,13 +909,14 @@ def complete_design_request(request, request_id):
                 related_request=design_request
             )
 
-        # Log activity for requester
+        # Log notification for requester (this is a notification for them)
         if design_request.requester:
             log_activity(
                 user=design_request.requester,
                 activity_type='completed',
                 message=f"'{design_request.title}' marked as Completed.",
-                related_request=design_request
+                related_request=design_request,
+                target_user=design_request.requester
             )
 
     return redirect('designer_dashboard')
@@ -948,7 +955,8 @@ def request_revision(request, request_id):
             user=design_request.designer,
             activity_type='revision_requested',
             message=f"Revision requested for '{design_request.title}' by client.",
-            related_request=design_request
+            related_request=design_request,
+            target_user=design_request.designer
         )
 
     return JsonResponse({
@@ -975,7 +983,8 @@ def reject_design_request(request, request_id):
                 user=design_request.requester,
                 activity_type='request_rejected',
                 message=f"'{design_request.title}' was rejected.",
-                related_request=design_request
+                related_request=design_request,
+                target_user=design_request.requester
             )
 
     return redirect('designer_dashboard')
@@ -999,7 +1008,8 @@ def cancel_design_request(request, request_id):
                 user=design_request.requester,
                 activity_type='request_cancelled',
                 message=f"'{design_request.title}' was cancelled.",
-                related_request=design_request
+                related_request=design_request,
+                target_user=design_request.requester
             )
 
     return redirect('designer_dashboard')
@@ -1193,6 +1203,7 @@ def save_designer_rating(request, request_id):
     try:
         data = json.loads(request.body)
         rating_value = data.get('rating')
+        comment = data.get('comment', '').strip()
 
         if rating_value is None:
             return JsonResponse({'error': 'Rating is required'}, status=400)
@@ -1206,7 +1217,7 @@ def save_designer_rating(request, request_id):
             designer=design_request.designer,
             rater=request.user,
             design_request=design_request,
-            defaults={'rating': rating_value}
+            defaults={'rating': rating_value, 'comment': comment}
         )
 
         # Get updated average rating
@@ -2825,6 +2836,47 @@ def profile_view(request, username=None):
         'favorite_count': stats.get('favorite_count', 0) if is_self and target_presenta.user_role == 'user' else 0,
     }
     return render(request, 'profile.html', context)
+
+
+def designer_testimonials_api(request, designer_id):
+    """API endpoint to fetch designer testimonials/ratings."""
+    from django.http import JsonResponse
+    from .models import DesignerRating, User
+
+    try:
+        designer = User.objects.get(id=designer_id)
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Designer not found'}, status=404)
+
+    testimonials = []
+    ratings = DesignerRating.objects.filter(designer=designer).select_related('rater')[:20]
+
+    for rating in ratings:
+        rater = rating.rater
+        rater_initials = ''
+        rater_avatar = None
+
+        if rater.first_name and rater.last_name:
+            rater_initials = (rater.first_name[0] + rater.last_name[0]).upper()
+        elif rater.username:
+            rater_initials = rater.username[0].upper()
+
+        if hasattr(rater, 'profile') and rater.profile.profile_picture:
+            rater_avatar = rater.profile.profile_picture.url
+
+        testimonials.append({
+            'rater_name': f"{rater.first_name or ''} {rater.last_name or ''}".strip() or rater.username,
+            'rater_initials': rater_initials,
+            'rater_avatar': rater_avatar,
+            'rating': rating.rating,
+            'comment': rating.comment,
+            'date': rating.created_at.strftime('%b %d, %Y')
+        })
+
+    return JsonResponse({
+        'success': True,
+        'testimonials': testimonials
+    })
 
 
 def block_user(request):

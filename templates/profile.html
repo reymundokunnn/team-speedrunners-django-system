@@ -141,21 +141,21 @@
                                     {{ target.get_user_role_display }}
                                 </span>
                                 {% endif %}
-                                {% if target.user_role == 'designer' and stats.average_rating > 0 %}
-                                <span class="designer-rating-badge">
-                                    <span class="rating-stars">
-                                        {% for i in "12345" %}
-                                        {% if forloop.counter <= stats.average_rating %} <span class="star filled">
-                                            ★</span>
-                                    {% else %}
-                                    <span class="star">★</span>
-                                    {% endif %}
-                                    {% endfor %}
-                                </span>
-                                <span class="rating-value">{{ stats.average_rating }}</span>
-                                <span class="rating-count">({{ stats.rating_count }})</span>
-                                </span>
-                                {% else %}
+{% if target.user_role == 'designer' and stats.average_rating > 0 %}
+                                 <span class="designer-rating-badge" id="ratingModalTrigger" style="cursor: pointer;" data-designer-id="{{ target_django.id }}">
+                                     <span class="rating-stars">
+                                         {% for i in "12345" %}
+                                         {% if forloop.counter <= stats.average_rating %} <span class="star filled">
+                                             ★</span>
+                                     {% else %}
+                                     <span class="star">★</span>
+                                     {% endif %}
+                                     {% endfor %}
+                                 </span>
+                                     <span class="rating-value">{{ stats.average_rating }}</span>
+                                     <span class="rating-count">({{ stats.rating_count }})</span>
+                                 </span>
+                                 {% else %}
                                 <span class="join-date">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -408,10 +408,33 @@
                         <div class="recent-works-grid">
                             {% for work in recent_works %}
                             <div class="work-card">
-                                <div class="work-header">
-                                    <span class="work-type-badge work-type-{{ work.design_type }}">
-                                        {{ work.get_design_type_display }}
-                                    </span>
+<div class="work-header">
+                                     <span class="work-type">
+                                         {% if work.design_type == 'presentation' %}
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <path d="M2 3h20c1.1 0 2 .9 2 2v13c0 1.1-.9 2-2 2H2c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2z"></path>
+                                             <path d="M8 2v4"></path>
+                                             <path d="M16 2v4"></path>
+                                             <path d="M2 10h20"></path>
+                                         </svg>
+                                         {% elif work.design_type == 'infographic' %}
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                             <rect x="7" y="7" width="4" height="4"></rect>
+                                             <rect x="13" y="7" width="4" height="4"></rect>
+                                             <rect x="7" y="13" width="4" height="4"></rect>
+                                             <rect x="13" y="13" width="4" height="4"></rect>
+                                         </svg>
+                                         {% elif work.design_type == 'poster' %}
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                             <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
+                                             <line x1="2" y1="9" x2="22" y2="9"></line>
+                                             <line x1="2" y1="15" x2="22" y2="15"></line>
+                                             <line x1="12" y1="3" x2="12" y2="21"></line>
+                                         </svg>
+                                         {% endif %}
+                                         {{ work.get_design_type_display }}
+                                     </span>
                                     <span class="work-status work-status-{{ work.status }}">
                                         {{ work.get_status_display }}
                                     </span>
@@ -757,10 +780,37 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+</div>
+             </div>
 
-    <!-- Cover Photo Cropper Modal -->
+             <!-- Testimonials Modal -->
+             <div id="testimonialsModal" class="modal">
+                 <div class="modal-overlay"></div>
+                 <div class="modal-content">
+                     <div class="modal-header">
+                         <h2>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                             </svg>
+                             Client Testimonials
+                         </h2>
+                         <button class="modal-close">&times;</button>
+                     </div>
+                     <div class="modal-body">
+                         <div id="testimonialsContainer">
+                             <div class="testimonials-loading">
+                                 <div class="spinner"></div>
+                                 <p>Loading testimonials...</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Cover Photo Cropper Modal -->
     <div id="coverCropperModal" class="cropper-modal">
         <div class="cropper-modal-content">
             <div class="cropper-modal-header">
@@ -1323,6 +1373,68 @@
                     });
             });
         });
+
+        // Testimonials Modal functionality
+        const ratingModalTrigger = document.getElementById('ratingModalTrigger');
+        const testimonialsModal = document.getElementById('testimonialsModal');
+        const testimonialsContainer = document.getElementById('testimonialsContainer');
+
+        if (ratingModalTrigger && testimonialsModal) {
+            ratingModalTrigger.addEventListener('click', function() {
+                testimonialsModal.classList.add('active');
+                const designerId = this.dataset.designerId;
+                loadTestimonials(designerId);
+            });
+        }
+
+        function loadTestimonials(designerId) {
+            if (!testimonialsContainer || !designerId) return;
+
+            fetch('/api/designer-testimonials/' + designerId + '/')
+                .then(response => response.json())
+                .then(data => {
+                    testimonialsContainer.innerHTML = renderTestimonials(data);
+                })
+                .catch(error => {
+                    console.error('Error loading testimonials:', error);
+                    testimonialsContainer.innerHTML = '<p class="error-message">Failed to load testimonials.</p>';
+                });
+        }
+
+        function renderTestimonials(data) {
+            if (!data || !data.testimonials || data.testimonials.length === 0) {
+                return '<p class="no-testimonials">No testimonials available yet.</p>';
+            }
+
+            let html = '<div class="testimonials-list">';
+            data.testimonials.forEach(function(t) {
+                html += '<div class="testimonial-item">';
+                html += '<div class="testimonial-header">';
+                html += '<div class="testimonial-avatar">';
+                if (t.rater_avatar) {
+                    html += '<img src="' + t.rater_avatar + '" alt="' + t.rater_name + '">';
+                } else {
+                    html += '<div class="avatar-placeholder">' + t.rater_initials + '</div>';
+                }
+                html += '</div>';
+                html += '<div class="testimonial-meta">';
+                html += '<span class="testimonial-name">' + t.rater_name + '</span>';
+                html += '<span class="testimonial-rating">';
+                for (let i = 1; i <= 5; i++) {
+                    html += '<span class="star ' + (i <= t.rating ? 'filled' : '') + '">★</span>';
+                }
+                html += '</span>';
+                html += '</div>';
+                html += '</div>';
+                if (t.comment) {
+                    html += '<p class="testimonial-comment">' + t.comment + '</p>';
+                }
+                html += '<span class="testimonial-date">' + t.date + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+            return html;
+        }
     });
 </script>
 {% endblock %}
@@ -2055,6 +2167,137 @@
 
     .status-offline {
         background-color: #6b7280;
+    }
+
+    /* Testimonials Modal Styles */
+    .testimonials-loading {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .testimonials-loading .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #f59e0b;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .testimonials-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .testimonial-item {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .testimonial-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .testimonial-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .testimonial-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .testimonial-avatar .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #f59e0b;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .testimonial-meta {
+        flex: 1;
+    }
+
+    .testimonial-name {
+        font-weight: 600;
+        color: #1f2937;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .testimonial-rating {
+        color: #f59e0b;
+        font-size: 14px;
+    }
+
+    .testimonial-rating .star {
+        opacity: 0.3;
+    }
+
+    .testimonial-rating .star.filled {
+        opacity: 1;
+    }
+
+    .testimonial-comment {
+        color: #4b5563;
+        line-height: 1.6;
+        margin: 12px 0;
+        font-style: italic;
+    }
+
+    .testimonial-date {
+        color: #9ca3af;
+        font-size: 12px;
+    }
+
+    .no-testimonials {
+        text-align: center;
+        color: #6b7280;
+        padding: 40px 20px;
+    }
+
+    .error-message {
+        text-align: center;
+        color: #ef4444;
+        padding: 20px;
+    }
+
+    body.dark-mode .testimonial-item {
+        background: #374151;
+        border-color: #4b5563;
+    }
+
+    body.dark-mode .testimonial-name {
+        color: #f9fafb;
+    }
+
+    body.dark-mode .testimonial-comment {
+        color: #d1d5db;
+    }
+
+    body.dark-mode .testimonial-date {
+        color: #9ca3af;
     }
 </style>
 {% endblock %}

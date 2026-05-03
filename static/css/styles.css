@@ -787,13 +787,6 @@ body.dark-mode header .right .user-info-wrapper .user-dropdown-menu {
     width: 100%;
 }
 
-.header-search {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
 .header-search .search-icon {
     position: absolute;
     left: 16px;
@@ -1203,6 +1196,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+    margin-top: 20px;
 }
 
 /* Unified Modal Content (for modals using .modal-content) */
@@ -1390,6 +1384,8 @@ body.dark-mode .modal-body {
 
 .modal-body {
     padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .status-options {
@@ -3925,17 +3921,19 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .request-d
     gap: 15px;
 }
 
-.btn {
+.step-actions .btn {
     padding: 12px 24px;
     border: none;
     border-radius: 8px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.95rem;
+    background-color: #e87f14;
+    color: white;
 }
 
-.btn:disabled {
+.step-actions .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -4310,13 +4308,6 @@ body.dark-mode .file-upload-area-content small {
 
 .btn-danger:hover {
     background-color: #a71d2a;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 20px;
 }
 
 .confirm-note {
@@ -5126,10 +5117,6 @@ body.dark-mode .modal-header {
 
 body.dark-mode .modal-header h2 {
     color: #fff;
-}
-
-.modal-body {
-    padding: 20px 24px;
 }
 
 .project-info {
@@ -6884,8 +6871,64 @@ body.dark-mode .download-link:hover {
 }
 
 .rating-actions .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(232, 127, 20, 0.3);
+    background-color: #a15509;
+}
+
+.rating-comment-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rating-comment-section label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    text-align: left;
+    width: 100%;
+}
+
+.rating-comment-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s ease;
+}
+
+.rating-comment-input:focus {
+    outline: none;
+    border-color: #e87f14;
+    box-shadow: 0 0 0 3px rgba(232, 127, 20, 0.1);
+}
+
+.rating-comment-help {
+    font-size: 12px;
+    color: #6b7280;
+    text-align: left;
+}
+
+body.dark-mode .rating-comment-section label {
+    color: #e5e7eb;
+}
+
+body.dark-mode .rating-comment-input {
+    background-color: #2d2d2d;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+body.dark-mode .rating-comment-input:focus {
+    border-color: #e87f14;
+}
+
+body.dark-mode .rating-comment-help {
+    color: #9ca3af;
 }
 
 .rating-actions .btn-primary:disabled {
@@ -13179,29 +13222,24 @@ body.dark-mode .work-card:hover {
     margin-bottom: 12px;
 }
 
-.work-type-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
+.work-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 8px;
     font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    border: 1px solid;
+    background-color: rgba(107, 114, 128, 0.1);
+    border-color: rgba(107, 114, 128, 0.3);
+    color: #6b7280;
 }
 
-.work-type-presentation {
-    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-    color: white;
-}
-
-.work-type-infographic {
-    background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
-    color: white;
-}
-
-.work-type-poster {
-    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-    color: white;
+body.dark-mode .work-type {
+    background-color: rgba(156, 163, 175, 0.15);
+    border-color: rgba(156, 163, 175, 0.4);
+    color: #9ca3af;
 }
 
 .work-status {

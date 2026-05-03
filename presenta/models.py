@@ -590,6 +590,7 @@ class DesignerRating(models.Model):
     design_request = models.ForeignKey(
         DesignRequest, on_delete=models.CASCADE, related_name='ratings', null=True, blank=True)
     rating = models.IntegerField(help_text="Rating from 1 to 5 stars")
+    comment = models.TextField(blank=True, help_text="Optional testimonial comment")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -2759,6 +2759,7 @@ function submitRating() {
     }
     
     const submitBtn = document.getElementById('submitRatingBtn');
+    const ratingComment = document.getElementById('ratingComment').value.trim();
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
     
@@ -2768,7 +2769,7 @@ function submitRating() {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({ rating: selectedRating })
+        body: JSON.stringify({ rating: selectedRating, comment: ratingComment })
     })
     .then(response => response.json())
     .then(data => {
