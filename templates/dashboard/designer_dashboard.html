@@ -52,8 +52,8 @@
                         <img src="{% static 'img/dashboard/wip.svg' %}" alt="In progress">
                     </div>
                     <div class="stat-card">
-                        <div class="number payment">{{ for_payment }}</div>
-                        <span>For Payment</span>
+                        <div class="number payment">{{ payment_required }}</div>
+                        <span>Payment Required</span>
                         <img src="{% static 'img/dashboard/payment.svg' %}" alt="For payment">
                     </div>
                     <div class="stat-card">
@@ -107,8 +107,8 @@
                             <div class="widget-card attention-card">
                                 <div class="widget-header">
                                     <h3>Needs Attention</h3>
-                                    {% if pending > 0 or in_progress > 0 or for_payment > 0 %}
-                                    <span class="badge">{{ pending|add:in_progress|add:for_payment }}</span>
+                                    {% if pending > 0 or in_progress > 0 or payment_required > 0 %}
+                                    <span class="badge">{{ pending|add:in_progress|add:payment_required }}</span>
                                     {% endif %}
                                 </div>
                                 <div class="widget-content">
@@ -136,18 +136,18 @@
                                             <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                         </div>
                                     {% endif %}
-                                    {% if for_payment > 0 %}
+                                    {% if payment_required > 0 %}
                                         <div class="attention-item warning">
                                             <div class="attention-icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                                             </div>
                                             <div class="attention-content">
-                                                <span class="attention-title">{{ for_payment }} ready for payment</span>
+                                                <span class="attention-title">{{ payment_required }} ready for payment</span>
                                                 <span class="attention-desc">Awaiting client payment</span>
                                             </div>
                                         </div>
                                     {% endif %}
-                                    {% if pending == 0 and in_progress == 0 and for_payment == 0 %}
+                                    {% if pending == 0 and in_progress == 0 and payment_required == 0 %}
                                         <div class="all-caught-up">
                                             <div class="success-icon">✓</div>
                                             <span class="caught-up-title">All caught up!</span>
@@ -304,7 +304,7 @@
                             <button class="filter-tab" data-filter="assigned">Assigned</button>
                             <button class="filter-tab" data-filter="in_progress">In Progress</button>
                             <button class="filter-tab" data-filter="review">Review</button>
-                            <button class="filter-tab" data-filter="for_payment">For Payment</button>
+                            <button class="filter-tab" data-filter="payment_required">Payment Required</button>
                             <button class="filter-tab" data-filter="completed">Completed</button>
                         </div>
                         <table class="recent-designs-table">
@@ -462,9 +462,11 @@
                     <select name="status" id="status_select" onchange="handleStatusChange(this.value)">
                         <option value="pending">Pending</option>
                         <option value="in_progress">In Progress</option>
-                        <option value="for_payment">For Payment</option>
                         <option value="completed">Completed</option>
                     </select>
+                    <div class="status-note warning-message" id="paymentWarningMessage" style="display: none;">
+                        Finished files will be locked until the client completes payment.
+                    </div>
                 </div>
                 <div class="form-group file-upload-group" id="fileUploadGroup" style="display: none;">
                     <label for="finished_file">Upload Finished File</label>
@@ -507,7 +509,7 @@
         </svg>
         <h3>Confirm Completion</h3>
         <p>Are you sure you want to mark this project as <strong>Completed</strong>?</p>
-        <p class="confirm-note">This action cannot be undone. Once marked as completed, you won't be able to make changes.</p>
+        <p class="confirm-note">Finished files will be locked until the client completes payment.</p>
         <div class="confirm-actions">
             <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
             <button class="btn btn-danger" onclick="confirmCompletion()">Yes, Complete</button>
@@ -569,8 +571,8 @@ document.querySelectorAll('.assignment-filter-tabs .filter-tab').forEach(tab => 
                 case 'review':
                     show = status === 'review';
                     break;
-                case 'for_payment':
-                    show = status === 'for_payment';
+                case 'payment_required':
+                    show = status === 'payment_required';
                     break;
                 case 'completed':
                     show = status === 'completed';

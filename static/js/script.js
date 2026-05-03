@@ -999,8 +999,24 @@ function openProjectModal(id, title, description, status, requester, deadline, b
     }
 
     var statusBadge = document.getElementById('modalProjectStatus');
-    statusBadge.className = 'status-badge status-' + status;
-    statusBadge.textContent = status.replace('_', ' ');
+    var paymentWarningMessage = document.getElementById('paymentWarningMessage');
+
+    if (status === 'payment_required') {
+        statusBadge.className = 'status-badge status-completed';
+        statusBadge.textContent = 'Completed (Payment Required)';
+        status = 'completed';
+
+        if (paymentWarningMessage) {
+            paymentWarningMessage.style.display = 'block';
+            paymentWarningMessage.textContent = 'Finished files are locked until the client completes payment.';
+        }
+    } else {
+        statusBadge.className = 'status-badge status-' + status;
+        statusBadge.textContent = status.replace('_', ' ');
+        if (paymentWarningMessage) {
+            paymentWarningMessage.style.display = 'none';
+        }
+    }
 
     var statusSelect = document.getElementById('status_select');
     statusSelect.value = status;

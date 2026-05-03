@@ -10,7 +10,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import models
 from .forms import RegistrationForm, EditProfileForm
-from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner, Report
+from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestFile, Activity, UserSettings, SampleCategory, SampleItem, DesignerRating, FavoriteDesigner, Report, Payment
 from django.utils import timezone
 import datetime
 import uuid
@@ -583,7 +583,7 @@ def user_dashboard(request):
         'activities': activities,
         'pending_requests': design_requests.filter(status='pending').count(),
         'in_progress': design_requests.filter(status='in_progress').count(),
-        'for_payment': design_requests.filter(status='for_payment').count(),
+        'payment_required': design_requests.filter(status='payment_required').count(),
         'completed': design_requests.filter(status='completed').count(),
         'user_timezone': user_tz,
         'favorite_designers': favorite_designers,
@@ -675,7 +675,7 @@ def designer_dashboard(request):
         'activities': activities,
         'total_assigned': assigned_designs.exclude(status='completed').count(),
         'in_progress': assigned_designs.filter(status='in_progress').count(),
-        'for_payment': assigned_designs.filter(status='for_payment').count(),
+        'payment_required': assigned_designs.filter(status='payment_required').count(),
         'completed': assigned_designs.filter(status='completed').count(),
         'pending': assigned_designs.filter(status='pending').count(),
         'user_timezone': user_tz,
@@ -890,22 +890,21 @@ def accept_design_request(request, request_id):
 @login_required(login_url='signin')
 @require_http_methods(["POST"])
 def complete_design_request(request, request_id):
-    # minarkahan ni designer yung design as completed
+    # designer marks design as ready for payment
     user = request.user
     design_request = get_object_or_404(DesignRequest, id=request_id)
 
     if user == design_request.designer or user.profile.user_role == 'admin':
         from django.utils import timezone
-        design_request.status = 'completed'
-        design_request.completed_at = timezone.now()
+        design_request.status = 'payment_required'
         design_request.save()
 
         # Log activity for designer
         if user == design_request.designer:
             log_activity(
                 user=user,
-                activity_type='completed',
-                message=f"'{design_request.title}' marked as Completed.",
+                activity_type='status_changed',
+                message=f"'{design_request.title}' marked as ready for payment.",
                 related_request=design_request
             )
 
@@ -913,8 +912,8 @@ def complete_design_request(request, request_id):
         if design_request.requester:
             log_activity(
                 user=design_request.requester,
-                activity_type='completed',
-                message=f"'{design_request.title}' marked as Completed.",
+                activity_type='status_changed',
+                message=f"'{design_request.title}' is ready for payment.",
                 related_request=design_request,
                 target_user=design_request.requester
             )
@@ -1029,12 +1028,23 @@ def update_design_status(request, request_id):
     status = request.POST.get('status')
     old_status = design_request.status
 
-    if status in ['pending', 'in_progress', 'for_payment', 'completed']:
-        design_request.status = status
-
+    if status in ['pending', 'in_progress', 'completed']:
         if status == 'completed':
-            from django.utils import timezone
-            design_request.completed_at = timezone.now()
+            # If the client hasn't paid yet, lock the finished files and mark the request as ready for payment.
+            completed_payment = Payment.objects.filter(
+                design_request=design_request,
+                status='completed'
+            ).exists()
+
+            if completed_payment:
+                from django.utils import timezone
+                design_request.status = 'completed'
+                design_request.completed_at = timezone.now()
+            else:
+                design_request.status = 'payment_required'
+                design_request.completed_at = None
+        else:
+            design_request.status = status
 
         design_request.save()
 
@@ -1313,6 +1323,7 @@ def get_reference_files(request, request_id):
 def get_finished_files(request, request_id):
     # API endpoint to get finished files for a design request.
     from django.http import JsonResponse
+    from .models import Payment
 
     design_request = get_object_or_404(DesignRequest, id=request_id)
 
@@ -1329,18 +1340,36 @@ def get_finished_files(request, request_id):
 
     finished_files = design_request.get_finished_files()
 
+    # Check if payment is required and completed
+    payment_required = design_request.status == 'payment_required'
+    payment_completed = Payment.objects.filter(
+        design_request=design_request,
+        status='completed'
+    ).exists()
+
     files_data = []
     for f in finished_files:
-        files_data.append({
+        file_data = {
             'id': f.id,
             'filename': f.file.name.split('/')[-1],
-            'url': f.file.url,
             'uploaded_at': f.uploaded_at.strftime('%Y-%m-%d %H:%M')
-        })
+        }
+
+        # Lock files if payment is required but not completed
+        if payment_required and not payment_completed:
+            file_data['locked'] = True
+            file_data['url'] = None  # Don't provide download URL
+        else:
+            file_data['locked'] = False
+            file_data['url'] = f.file.url
+
+        files_data.append(file_data)
 
     return JsonResponse({
         'title': design_request.title,
-        'files': files_data
+        'files': files_data,
+        'payment_required': payment_required,
+        'payment_completed': payment_completed
     })
 
 
@@ -4676,3 +4705,189 @@ def api_chat_unread_count(request):
     except Exception as e:
         print(f"Error getting unread count: {e}")
         return JsonResponse({'error': 'An error occurred'}, status=500)
+
+
+# =================== PAYMENT VIEWS ===================
+
+@login_required(login_url='signin')
+@require_http_methods(["GET"])
+def initiate_payment(request, request_id):
+    """View to initiate payment for a design request."""
+    design_request = get_object_or_404(DesignRequest, id=request_id)
+
+    # Check if user is the requester
+    if design_request.requester != request.user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Check if design is in payment_required status
+    if design_request.status != 'payment_required':
+        return JsonResponse({'error': 'Payment not required for this request'}, status=400)
+
+    # Check if payment already exists
+    existing_payment = Payment.objects.filter(
+        design_request=design_request,
+        status__in=['pending', 'processing', 'completed']
+    ).first()
+
+    if existing_payment:
+        if existing_payment.status == 'completed':
+            return JsonResponse({'error': 'Payment already completed'}, status=400)
+        # Return existing payment info
+        return JsonResponse({
+            'payment_id': existing_payment.id,
+            'status': existing_payment.status,
+            'amount': str(existing_payment.amount),
+            'currency': existing_payment.currency,
+            'payment_method': existing_payment.payment_method,
+        })
+
+    # For now, return payment options - in real implementation, this would integrate with payment gateways
+    context = {
+        'design_request': design_request,
+        'payment_methods': [
+            {'value': 'paypal', 'label': 'PayPal'},
+            {'value': 'gcash', 'label': 'GCash'},
+            {'value': 'paymaya', 'label': 'PayMaya'},
+            {'value': 'bank_transfer', 'label': 'Bank Transfer'},
+        ]
+    }
+
+    return render(request, 'payments/initiate_payment.html', context)
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def create_payment(request, request_id):
+    """API endpoint to create a payment record."""
+    design_request = get_object_or_404(DesignRequest, id=request_id)
+
+    # Check if user is the requester
+    if design_request.requester != request.user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Check if design is in payment_required status
+    if design_request.status != 'payment_required':
+        return JsonResponse({'error': 'Payment not required for this request'}, status=400)
+
+    # Check if payment already exists
+    existing_payment = Payment.objects.filter(
+        design_request=design_request,
+        status__in=['pending', 'processing', 'completed']
+    ).first()
+
+    if existing_payment:
+        return JsonResponse({'error': 'Payment already initiated'}, status=400)
+
+    # Get payment details
+    payment_method = request.POST.get('payment_method')
+    amount = request.POST.get('amount')
+
+    if not payment_method or not amount:
+        return JsonResponse({'error': 'Payment method and amount required'}, status=400)
+
+    # Validate payment method
+    valid_methods = ['paypal', 'gcash', 'paymaya', 'bank_transfer']
+    if payment_method not in valid_methods:
+        return JsonResponse({'error': 'Invalid payment method'}, status=400)
+
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({'error': 'Invalid amount'}, status=400)
+
+    # Create payment record
+    payment = Payment.objects.create(
+        design_request=design_request,
+        requester=request.user,
+        designer=design_request.designer,
+        amount=amount,
+        currency=design_request.currency or 'USD',
+        payment_method=payment_method,
+        status='pending'
+    )
+
+    # Log activity
+    log_activity(
+        user=request.user,
+        activity_type='payment_received',
+        message=f"Payment initiated for '{design_request.title}' - {payment_method}",
+        related_request=design_request,
+        target_user=design_request.designer
+    )
+
+    return JsonResponse({
+        'success': True,
+        'payment_id': payment.id,
+        'message': 'Payment initiated successfully'
+    })
+
+
+@login_required(login_url='signin')
+@require_http_methods(["POST"])
+def process_payment(request, payment_id):
+    """API endpoint to process/complete a payment (simplified for demo)."""
+    payment = get_object_or_404(Payment, id=payment_id)
+
+    # Check if user is the requester
+    if payment.requester != request.user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if payment.status == 'completed':
+        return JsonResponse({'error': 'Payment already completed'}, status=400)
+
+    # For demo purposes, we'll mark as completed
+    # In real implementation, this would handle webhook/callback from payment gateway
+    payment.status = 'completed'
+    payment.completed_at = timezone.now()
+    payment.save()
+
+    # Update design request status to completed
+    design_request = payment.design_request
+    design_request.status = 'completed'
+    design_request.completed_at = timezone.now()
+    design_request.save()
+
+    # Log activities
+    log_activity(
+        user=payment.requester,
+        activity_type='payment_confirmed',
+        message=f"Payment completed for '{design_request.title}'",
+        related_request=design_request
+    )
+
+    log_activity(
+        user=payment.designer,
+        activity_type='payment_confirmed',
+        message=f"Payment received for '{design_request.title}'",
+        related_request=design_request,
+        target_user=payment.designer
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Payment completed successfully'
+    })
+
+
+@login_required(login_url='signin')
+@require_http_methods(["GET"])
+def payment_status(request, payment_id):
+    """API endpoint to check payment status."""
+    payment = get_object_or_404(Payment, id=payment_id)
+
+    # Check if user has access to this payment
+    if payment.requester != request.user and payment.designer != request.user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    return JsonResponse({
+        'payment_id': payment.id,
+        'status': payment.status,
+        'amount': str(payment.amount),
+        'currency': payment.currency,
+        'payment_method': payment.payment_method,
+        'created_at': payment.created_at.isoformat(),
+        'completed_at': payment.completed_at.isoformat() if payment.completed_at else None,
+        'transaction_id': payment.transaction_id,
+    })

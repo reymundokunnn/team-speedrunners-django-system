@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Initiate Payment - Presenta{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <div class="payment-header">
+        <h1>Complete Payment</h1>
+        <p>Payment required for design request: <strong>{{ design_request.title }}</strong></p>
+    </div>
+
+    <div class="payment-details">
+        <div class="request-summary">
+            <h3>Request Details</h3>
+            <div class="summary-item">
+                <span class="label">Design Type:</span>
+                <span class="value">{{ design_request.get_design_type_display }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Budget:</span>
+                <span class="value">
+                    {% if design_request.budget %}
+                        {{ design_request.currency }} {{ design_request.budget }}
+                    {% else %}
+                        Not specified
+                    {% endif %}
+                </span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Designer:</span>
+                <span class="value">
+                    {% if design_request.designer %}
+                        {{ design_request.designer.first_name }} {{ design_request.designer.last_name }}
+                    {% else %}
+                        Not assigned
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="payment-form">
+            <h3>Payment Information</h3>
+            <form id="payment-form" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="payment_method">Payment Method</label>
+                    <select id="payment_method" name="payment_method" required>
+                        <option value="">Select payment method</option>
+                        {% for method in payment_methods %}
+                        <option value="{{ method.value }}">{{ method.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0"
+                           value="{{ design_request.budget|default:'' }}" required>
+                    <small>Enter the amount to pay ({{ design_request.currency }})</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Initiate Payment</button>
+                    <a href="{% url 'user_dashboard' %}" class="btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch('{% url "create_payment" design_request.id %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // For demo purposes, immediately process the payment
+            return fetch(`/api/payment/${data.payment_id}/process/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+        } else {
+            throw new Error(data.error || 'Payment initiation failed');
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment completed successfully!');
+            window.location.href = '{% url "user_dashboard" %}';
+        } else {
+            throw new Error(data.error || 'Payment processing failed');
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+});
+</script>
+
+<style>
+.payment-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.payment-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.request-summary, .payment-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.label {
+    font-weight: 500;
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+@media (max-width: 768px) {
+    .payment-details {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

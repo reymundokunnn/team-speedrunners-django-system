@@ -184,7 +184,7 @@ class DesignRequest(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
         ('in_progress', 'In Progress'),
-        ('for_payment', 'For Payment'),
+        ('payment_required', 'Payment Required'),
         ('completed', 'Completed'),
         ('rejected', 'Rejected'),
         ('cancelled', 'Cancelled'),
@@ -646,6 +646,52 @@ class FavoriteDesigner(models.Model):
     def is_favorited(cls, client, designer):
         """Check if a client has favorited a designer."""
         return cls.objects.filter(client=client, designer=designer).exists()
+
+class Payment(models.Model):
+    """Model for tracking payments for design requests."""
+
+    PAYMENT_METHOD_CHOICES = [
+        ('paypal', 'PayPal'),
+        ('gcash', 'GCash'),
+        ('paymaya', 'PayMaya'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('cash', 'Cash'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    design_request = models.ForeignKey(
+        DesignRequest, on_delete=models.CASCADE, related_name='payments')
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments_made')
+    designer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments_received')
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='USD')
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Payment {self.id} for {self.design_request.title} - {self.status}"
+
 
 # chat system
 

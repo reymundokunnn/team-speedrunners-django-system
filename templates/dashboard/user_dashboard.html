@@ -47,7 +47,7 @@
                         <img src="{% static 'img/dashboard/wip.svg' %}" alt="In progress">
                     </div>
                     <div class="stat-card">
-                        <div class="number payment">{{ for_payment }}</div>
+                        <div class="number payment">{{ payment_required }}</div>
                         <span>For Payment</span>
                         <img src="{% static 'img/dashboard/payment.svg' %}" alt="For payment">
                     </div>
@@ -102,18 +102,18 @@
                             <div class="widget-card attention-card">
                                 <div class="widget-header">
                                     <h3>Needs Attention</h3>
-                                    {% if for_payment > 0 or pending_requests > 0 %}
-                                    <span class="badge">{{ for_payment|add:pending_requests }}</span>
+                                    {% if payment_required > 0 or pending_requests > 0 %}
+                                    <span class="badge">{{ payment_required|add:pending_requests }}</span>
                                     {% endif %}
                                 </div>
                                 <div class="widget-content">
-                                    {% if for_payment > 0 %}
+                                    {% if payment_required > 0 %}
                                         <div class="attention-item urgent" onclick="showDashboardSection('payments')" style="cursor: pointer;">
                                             <div class="attention-icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                                             </div>
                                             <div class="attention-content">
-                                                <span class="attention-title">{{ for_payment }} payment{{ for_payment|pluralize }} required</span>
+                                                <span class="attention-title">{{ payment_required }} payment{{ payment_required|pluralize }} required</span>
                                                 <span class="attention-desc">Click to view payment details</span>
                                             </div>
                                             <svg class="attention-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -130,7 +130,7 @@
                                             </div>
                                         </div>
                                     {% endif %}
-                                    {% if for_payment == 0 and pending_requests == 0 %}
+                                    {% if payment_required == 0 and pending_requests == 0 %}
                                         <div class="all-caught-up">
                                             <div class="success-icon">✓</div>
                                             <span class="caught-up-title">All caught up!</span>
@@ -229,7 +229,7 @@
                             <button class="filter-tab active" data-filter="all">All</button>
                             <button class="filter-tab" data-filter="pending">Pending</button>
                             <button class="filter-tab" data-filter="in_progress">In Progress</button>
-                            <button class="filter-tab" data-filter="for_payment">For Payment</button>
+                            <button class="filter-tab" data-filter="payment_required">Payment Required</button>
                             <button class="filter-tab" data-filter="completed">Completed</button>
                         </div>
                         <div class="bulk-actions-bar" id="designRequestsBulkActions">
@@ -373,7 +373,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                         </div>
                         <div class="summary-info">
-                            <span class="summary-count">{{ for_payment }}</span>
+                            <span class="summary-count">{{ payment_required }}</span>
                             <span class="summary-label">For Payment</span>
                         </div>
                     </div>
@@ -434,7 +434,7 @@
                                                 <div class="progress-bar" style="width: 75%;">
                                                     <span class="progress-label">75%</span>
                                                 </div>
-                                                {% elif request.status == 'for_payment' %}
+                                                {% elif request.status == 'payment_required' %}
                                                 <div class="progress-bar" style="width: 90%;">
                                                     <span class="progress-label">90%</span>
                                                 </div>
@@ -529,7 +529,7 @@
                 <!-- Filter Tabs -->
                 <div class="payment-filter-tabs">
                     <button class="filter-tab active" data-filter="all">All</button>
-                    <button class="filter-tab" data-filter="for_payment">Pending Payment</button>
+                    <button class="filter-tab" data-filter="payment_required">Payment Required</button>
                     <button class="filter-tab" data-filter="completed">Completed</button>
                     <button class="filter-tab" data-filter="other">Other</button>
                 </div>
@@ -581,12 +581,12 @@
                                                 <span class="no-budget">Not set</span>
                                             {% endif %}
                                         </td>
-                                        <td>
-                                            {% if request.status == 'for_payment' %}
-                                                <span class="payment-status-badge pending">
-                                                    <span class="status-dot"></span>
-                                                    Payment Required
-                                                </span>
+                                         <td>
+                                             {% if request.status == 'payment_required' %}
+                                                 <span class="payment-status-badge pending">
+                                                     <span class="status-dot"></span>
+                                                     Payment Required
+                                                 </span>
                                             {% elif request.status == 'completed' %}
                                                 <span class="payment-status-badge completed">
                                                     <span class="status-dot"></span>
@@ -599,9 +599,9 @@
                                                 </span>
                                             {% endif %}
                                         </td>
-                                        <td class="action-cell">
-                                            {% if request.status == 'for_payment' %}
-                                                <button class="btn-pay-now">Pay Now</button>
+                                         <td class="action-cell">
+                                             {% if request.status == 'payment_required' %}
+                                                 <button class="btn-pay-now">Pay Now</button>
                                             {% elif request.status == 'completed' %}
                                                 <a href="{% url 'download_receipt' request.id %}" class="btn-view-receipt" target="_blank">Receipt</a>
                                             {% else %}
@@ -1296,14 +1296,14 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
                 case 'all':
                     show = true;
                     break;
-                case 'for_payment':
-                    show = status === 'for_payment';
+                case 'payment_required':
+                    show = status === 'payment_required';
                     break;
                 case 'completed':
                     show = status === 'completed';
                     break;
                 case 'other':
-                    show = status !== 'for_payment' && status !== 'completed';
+                    show = status !== 'payment_required' && status !== 'completed';
                     break;
             }
             
@@ -1373,8 +1373,8 @@ document.querySelectorAll('.design-request-filter-tabs .filter-tab').forEach(tab
                 case 'in_progress':
                     show = status === 'in_progress';
                     break;
-                case 'for_payment':
-                    show = status === 'for_payment';
+                case 'payment_required':
+                    show = status === 'payment_required';
                     break;
                 case 'completed':
                     show = status === 'completed';

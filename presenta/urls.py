@@ -39,6 +39,12 @@ urlpatterns = [
     path('design-request/<int:request_id>/edit/',
          views.edit_design_request, name='edit_design_request'),
 
+    # Payment actions
+    path('design-request/<int:request_id>/payment/', views.initiate_payment, name='initiate_payment'),
+    path('api/payment/<int:request_id>/create/', views.create_payment, name='create_payment'),
+    path('api/payment/<int:payment_id>/process/', views.process_payment, name='process_payment'),
+    path('api/payment/<int:payment_id>/status/', views.payment_status, name='payment_status'),
+
     # Profile
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
