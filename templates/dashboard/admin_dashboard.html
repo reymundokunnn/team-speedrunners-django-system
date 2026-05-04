@@ -744,25 +744,25 @@
         </div>
         </div>
 
-        <!-- Report Details Modal -->
-        <div id="reportModal" class="modal" role="dialog" aria-labelledby="reportModalTitle" aria-hidden="true">
-            <div class="modal-overlay" onclick="closeReportModal()"></div>
-            <div class="modal-content modal-lg">
-                <div class="modal-header">
-                    <h2 id="reportModalTitle">Report Details</h2>
-                    <button class="modal-close" onclick="closeReportModal()" aria-label="Close modal">&times;</button>
-                </div>
-                <div class="modal-body" id="reportModalBody">
-                    <!-- Report details will be loaded here -->
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-secondary" onclick="closeReportModal()">Close</button>
-                    <button class="btn btn-primary" id="banUnbanBtn" onclick="handleBanUnban()">Ban User</button>
-                    <button class="btn btn-primary" onclick="markAsReviewed()">Mark as Reviewed</button>
-                    <button class="btn btn-danger" onclick="deleteReport()">Delete Report</button>
-                </div>
-            </div>
+<!-- Report Details Modal -->
+<div id="reportModal" class="modal" tabindex="-1" aria-labelledby="reportModalTitle" aria-hidden="true">
+    <div class="modal-overlay" onclick="closeReportModal()"></div>
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h2 id="reportModalTitle">Report Details</h2>
+            <button class="modal-close-btn" onclick="closeReportModal()" aria-label="Close modal">&times;</button>
         </div>
+        <div class="modal-body" id="reportModalBody">
+            <!-- Report details will be loaded here -->
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeReportModal()">Close</button>
+            <button class="btn btn-primary" id="banUnbanBtn" onclick="handleBanUnban()">Ban User</button>
+            <button class="btn btn-primary" onclick="markAsReviewed()">Mark as Reviewed</button>
+            <button class="btn btn-danger" onclick="deleteReport()">Delete Report</button>
+        </div>
+    </div>
+</div>
 
         <!-- Pending Admin Approvals Section -->
         <div id="pending-admins-section" class="dashboard-section-content">
@@ -887,6 +887,7 @@
 
 <!-- View User Modal -->
 <div class="add-new-design-modal" id="viewUserModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal('viewUserModal')" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -934,6 +935,7 @@
 
 <!-- Edit User Modal -->
 <div class="add-new-design-modal" id="editUserModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal('editUserModal')" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -1019,6 +1021,7 @@
 
 <!-- Delete User Confirmation Modal -->
 <div class="add-new-design-modal" id="deleteUserModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal('deleteUserModal')" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -1041,6 +1044,7 @@
 
 <!-- Bulk Delete Confirmation Modal -->
 <div class="add-new-design-modal" id="bulkDeleteUserModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal('bulkDeleteUserModal')" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -1062,6 +1066,7 @@
 
 <!-- Add User Modal -->
 <div class="add-new-design-modal" id="addUserModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal('addUserModal')" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -1306,11 +1311,25 @@ let currentReportId = null;
 let currentTargetUserId = null;
 let isTargetUserBanned = false;
 
+function getReportStatusDisplay(status) {
+    const statusMap = {
+        'pending': 'Pending Review',
+        'under_review': 'Under Review',
+        'resolved': 'Resolved',
+        'dismissed': 'Dismissed'
+    };
+    return statusMap[status] || status;
+}
+
 function openReportModal(reportId) {
     currentReportId = reportId;
     const modal = document.getElementById('reportModal');
     const modalBody = document.getElementById('reportModalBody');
     const banUnbanBtn = document.getElementById('banUnbanBtn');
+
+    // Show modal
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
 
     // Fetch report details
     fetch(`/manage/report/${reportId}/`)
@@ -1325,7 +1344,7 @@ function openReportModal(reportId) {
                     <div class="report-details">
                         <!-- Reporter Section -->
                         <div class="report-section reporter-section">
-                            <div class="section-header">
+                            <div class="report-section-header">
                                 <h3>Reporter</h3>
                             </div>
                             <div class="user-info-card">
@@ -1342,7 +1361,7 @@ function openReportModal(reportId) {
 
                         <!-- Target User Section -->
                         <div class="report-section target-section">
-                            <div class="section-header">
+                            <div class="report-section-header">
                                 <h3>Reported User</h3>
                                 <span class="user-status-inline ${isTargetUserBanned ? 'banned' : 'active'}">${isTargetUserBanned ? '🚫 Banned' : '✓ Active'}</span>
                             </div>
@@ -1358,60 +1377,39 @@ function openReportModal(reportId) {
                             </div>
                         </div>
 
-                        <!-- Report Information Section -->
-                        <div class="report-section info-section">
-                            <div class="section-header">
-                                <h3>Report Information</h3>
-                                <span class="status-badge status-${report.status}">${report.status_display}</span>
+                        <!-- Report Details Section -->
+                        <div class="report-section details-section">
+                            <div class="report-section-header">
+                                <h3>Report Details</h3>
                             </div>
                             <div class="report-info">
-                                <div class="info-row">
-                                    <span class="info-label">Report ID:</span>
-                                    <span class="info-value">${report.uid}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Category:</span>
-                                    <span class="info-value">${report.category || 'Not specified'}</span>
-                                </div>
-                                <div class="info-row full-width">
-                                    <span class="info-label">Reason:</span>
-                                    <p class="info-value reason-text">${report.reason}</p>
-                                </div>
-                                ${report.content ? `<div class="info-row full-width">
-                                    <span class="info-label">Additional Details:</span>
-                                    <p class="info-value reason-text">${report.content}</p>
-                                </div>` : ''}
-                                <div class="info-row">
-                                    <span class="info-label">Submitted:</span>
-                                    <span class="info-value">${report.created_at}</span>
-                                </div>
-                                ${report.updated_at ? `<div class="info-row">
-                                    <span class="info-label">Last Updated:</span>
-                                    <span class="info-value">${report.updated_at}</span>
-                                </div>` : ''}
+                                <p class="info-item"><strong>Report ID:</strong> <span>#${report.id}</span></p>
+                                <p class="info-item reason-item"><strong>Reason:</strong> <span>${report.reason}</span></p>
+                                <p class="info-item description-item"><strong>Description:</strong> <span>${report.description || '<em>No additional details provided.</em>'}</span></p>
+                                <p class="info-item"><strong>Reported At:</strong> <span>${new Date(report.created_at).toLocaleString()}</span></p>
+                                <p class="info-item status-item"><strong>Status:</strong> <span class="status-badge status-${report.status}">${getReportStatusDisplay(report.status)}</span></p>
                             </div>
                         </div>
                     </div>
                 `;
 
-                // Update ban/unban button
-                banUnbanBtn.textContent = isTargetUserBanned ? 'Unban User' : 'Ban User';
-                banUnbanBtn.className = isTargetUserBanned ? 'btn btn-secondary' : 'btn btn-danger';
-
-                // Show modal
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-                modal.focus();
-
-                // Focus management
-                trapFocus(modal);
+                // Update Ban/Unban button
+                if (banUnbanBtn) {
+                    banUnbanBtn.textContent = isTargetUserBanned ? 'Unban User' : 'Ban User';
+                    banUnbanBtn.classList.remove('btn-danger', 'btn-primary');
+                    if (isTargetUserBanned) {
+                        banUnbanBtn.classList.add('btn-primary');
+                    } else {
+                        banUnbanBtn.classList.add('btn-danger');
+                    }
+                }
             } else {
-                alert('Could not load report details');
+                modalBody.innerHTML = `<p class="error-message">Error loading report details: ${data.error || 'Unknown error'}</p>`;
             }
         })
         .catch(err => {
-            console.error('Failed to load report', err);
-            alert('Error loading report details');
+            console.error('Error fetching report:', err);
+            modalBody.innerHTML = `<p class="error-message">Error loading report details. Please try again.</p>`;
         });
 }
 

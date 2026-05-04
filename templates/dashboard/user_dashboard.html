@@ -288,12 +288,19 @@
                                 <td>{{ request.created_at|date:"M d, Y" }}</td>
                                 <td class="files-cell">
                                     {% if finished_files %}
-                                    <button type="button" onclick="return openCompletionModal({{ request.id }}); event.stopPropagation();" class="btn-icon btn-download-icon" title="Download ({{ finished_files|length }} files)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                        <span class="file-count">{{ finished_files|length }}</span>
-                                    </button>
+                                        {% if request.status == 'completed' %}
+                                            <button type="button" onclick="return openCompletionModal({{ request.id }}); event.stopPropagation();" class="btn-icon btn-download-icon" title="Download ({{ finished_files|length }} files)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                <span class="file-count">{{ finished_files|length }}</span>
+                                            </button>
+                                        {% else %}
+                                            <button type="button" class="btn-icon btn-download-icon" title="Payment required before download" disabled>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="11" width="10" height="7" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+                                                <span class="file-count">{{ finished_files|length }}</span>
+                                            </button>
+                                        {% endif %}
                                     {% else %}
-                                    <span class="no-files">-</span>
+                                        <span class="no-files">-</span>
                                     {% endif %}
                                 </td>
                                 {% endwith %}
@@ -626,36 +633,37 @@
     </div>
 </section>
 <div class="add-new-design-modal" id="modal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('modal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Request a New Design</h2>
-
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-            <div class="step active" data-step="1">
-                <span class="step-number">1</span>
-                <span class="step-label">Design Type</span>
-            </div>
-            <div class="step" data-step="2">
-                <span class="step-number">2</span>
-                <span class="step-label">Designer</span>
-            </div>
-            <div class="step" data-step="3">
-                <span class="step-number">3</span>
-                <span class="step-label">Details</span>
-            </div>
-            <div class="step" data-step="4">
-                <span class="step-number">4</span>
-                <span class="step-label">Files</span>
+        <div class="modal-header">
+            <button class="modal-close" onclick="closeModal('modal')" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Design Type</span>
+                </div>
+                <div class="step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Designer</span>
+                </div>
+                <div class="step" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-label">Details</span>
+                </div>
+                <div class="step" data-step="4">
+                    <span class="step-number">4</span>
+                    <span class="step-label">Files</span>
+                </div>
             </div>
         </div>
-
+        <div class="modal-body">
         <form method="post" action="{% url 'request_design' %}" class="design-request-form multi-step"
             enctype="multipart/form-data">
             {% csrf_token %}
@@ -822,21 +830,26 @@
                 </div>
             </div>
         </form>
+        </div> <!-- modal-body -->
     </div>
 </div>
 
 <!-- Edit Design Request Modal -->
 <div class="add-new-design-modal" id="editModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeEditModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Edit Design Request</h2>
-        <form method="post" id="editForm" action="" class="design-request-form" enctype="multipart/form-data">
+        <div class="modal-header">
+            <h2>Edit Design Request</h2>
+            <button class="modal-close" onclick="closeEditModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="post" id="editForm" action="" class="design-request-form" enctype="multipart/form-data">
             {% csrf_token %}
             <label for="edit_design_type">Design Type *</label>
             <select id="edit_design_type" name="design_type" required>
@@ -889,11 +902,13 @@
 
             <button type="submit" class="btn">Update Request</button>
         </form>
+        </div> <!-- modal-body -->
     </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
 <div class="add-new-design-modal" id="deleteModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeDeleteModal()" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -917,6 +932,7 @@
 
 <!-- Revision Request Modal -->
 <div class="add-new-design-modal" id="revisionModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeRevisionModal()" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -943,6 +959,7 @@
 
 <!-- Bulk Delete Confirmation Modal -->
 <div class="add-new-design-modal" id="bulkDeleteModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeBulkDeleteModal()" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -966,6 +983,7 @@
 
 <!-- Completion Details Modal -->
 <div class="add-new-design-modal" id="completionModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content">
         <button class="close-btn" onclick="closeCompletionModal()" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -1036,6 +1054,7 @@
 
 <!-- Rating Modal -->
 <div class="add-new-design-modal" id="ratingModal">
+    <div class="modal-overlay"></div>
     <div class="modal-content rating-modal-content">
         <button class="close-btn" onclick="closeRatingModal()" aria-label="Close modal">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"

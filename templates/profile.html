@@ -408,7 +408,7 @@
                         <div class="recent-works-grid">
                             {% for work in recent_works %}
                             <div class="work-card">
-<div class="work-header">
+                                <div class="work-header">
                                      <span class="work-type">
                                          {% if work.design_type == 'presentation' %}
                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -515,7 +515,7 @@
                         <div class="favorite-designers-grid">
                             {% for fav in my_favorite_designers %}
                             <div class="favorite-designer-card">
-<div class="favorite-designer-header">
+                                <div class="favorite-designer-header">
                                      {% if fav.designer.profile.presenta_user.profile_picture %}
                                      <img src="{{ fav.designer.profile.presenta_user.profile_picture.url }}"
                                          alt="{{ fav.designer.profile.presenta_user.first_name|default:fav.designer.username }}"
@@ -728,7 +728,6 @@
                 </div>
             </div>
 
-            <!-- Ban/Delete Modals (Admin) -->
             <div id="banModal" class="modal">
                 <div class="modal-overlay"></div>
                 <div class="modal-content">
