@@ -1253,6 +1253,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     gap: 12px;
     justify-content: flex-end;
     padding: 20px;
+    flex-shrink: 0;
 }
 
 /* Unified Modal Title in Content */

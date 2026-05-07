@@ -910,16 +910,20 @@
 <div class="add-new-design-modal" id="deleteModal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeDeleteModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Delete Design Request</h2>
-        <p>Are you sure you want to delete the design request: <strong id="deleteRequestTitle"></strong>?</p>
-        <p class="confirm-note">This action cannot be undone.</p>
+        <div class="modal-header">
+            <h2>Delete Design Request</h2>
+            <button class="modal-close" onclick="closeDeleteModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete the design request: <strong id="deleteRequestTitle"></strong>?</p>
+            <p class="confirm-note">This action cannot be undone.</p>
+        </div>
         <form method="post" id="deleteForm" action="" onsubmit="return confirmDelete(this);">
             {% csrf_token %}
             <div class="modal-actions">
@@ -934,26 +938,30 @@
 <div class="add-new-design-modal" id="revisionModal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeRevisionModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Request Revision</h2>
-        <p>Request a revision for: <strong id="revisionRequestTitle"></strong></p>
-        <form method="post" id="revisionForm" action="" onsubmit="return confirmRevision(this);">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="revision_notes">Revision Notes</label>
-                <textarea id="revision_notes" name="revision_notes" rows="4" placeholder="Please describe what changes you need..." required></textarea>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeRevisionModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="confirmRevision(this)">Submit Revision Request</button>
-            </div>
-        </form>
+        <div class="modal-header">
+            <h2>Request Revision</h2>
+            <button class="modal-close" onclick="closeRevisionModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Request a revision for: <strong id="revisionRequestTitle"></strong></p>
+            <form method="post" id="revisionForm" action="" onsubmit="return confirmRevision(this);">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="revision_notes">Revision Notes</label>
+                    <textarea id="revision_notes" name="revision_notes" rows="4" placeholder="Please describe what changes you need..." required></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeRevisionModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="confirmRevision(this)">Submit Revision Request</button>
+        </div>
     </div>
 </div>
 
@@ -961,16 +969,20 @@
 <div class="add-new-design-modal" id="bulkDeleteModal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeBulkDeleteModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Delete Multiple Design Requests</h2>
-        <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> design request(s)?</p>
-        <p class="confirm-note">This action cannot be undone.</p>
+        <div class="modal-header">
+            <h2>Delete Multiple Design Requests</h2>
+            <button class="modal-close" onclick="closeBulkDeleteModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> design request(s)?</p>
+            <p class="confirm-note">This action cannot be undone.</p>
+        </div>
         <form method="post" id="bulkDeleteForm" action="" onsubmit="return confirmBulkDelete(this);">
             {% csrf_token %}
             <div class="modal-actions">
@@ -985,15 +997,18 @@
 <div class="add-new-design-modal" id="completionModal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="close-btn" onclick="closeCompletionModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Project Completed!</h2>
-        <div id="completionDetails" class="completion-details">
+        <div class="modal-header">
+            <h2>Project Completed!</h2>
+            <button class="modal-close" onclick="closeCompletionModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="completionDetails" class="completion-details">
             <div class="completion-project-info">
                 <div class="info-row">
                     <span class="info-label">Project</span>
@@ -1040,14 +1055,13 @@
                 </h3>
                 <ul id="finishedFilesList" class="file-list-modal"></ul>
             </div>
-            
-            <div class="completion-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeCompletionModal()">Close</button>
-                <button type="button" class="btn btn-primary" id="completionRevisionBtn" onclick="requestRevisionFromModal()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    Request Revision
-                </button>
-            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeCompletionModal()">Close</button>
+            <button type="button" class="btn btn-primary" id="completionRevisionBtn" onclick="requestRevisionFromModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                Request Revision
+            </button>
         </div>
     </div>
 </div>
@@ -1056,15 +1070,18 @@
 <div class="add-new-design-modal" id="ratingModal">
     <div class="modal-overlay"></div>
     <div class="modal-content rating-modal-content">
-        <button class="close-btn" onclick="closeRatingModal()" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Rate Designer</h2>
-        <div class="rating-modal-body">
+        <div class="modal-header">
+            <h2>Rate Designer</h2>
+            <button class="modal-close" onclick="closeRatingModal()" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="rating-modal-body">
             <div class="rating-designer-info">
                 <div class="rating-designer-avatar" id="ratingDesignerAvatar"></div>
                 <span class="rating-designer-name" id="ratingDesignerName"></span>
@@ -1082,10 +1099,10 @@
                 <textarea id="ratingComment" class="rating-comment-input" placeholder="Share your experience with this designer..." rows="3" maxlength="500"></textarea>
                 <span class="rating-comment-help">This testimonial can be displayed on the designer's profile.</span>
             </div>
-            <div class="rating-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeRatingModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()">Submit Rating</button>
-            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeRatingModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()">Submit Rating</button>
         </div>
     </div>
 </div>
