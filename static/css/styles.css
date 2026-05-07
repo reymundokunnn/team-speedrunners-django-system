@@ -1,7 +1,6 @@
 /* Hide work-in-progress modals on profile page */
 #blockModal,
-#banModal,
-#deleteUserModal {
+#banModal {
     display: none !important;
 }
 
@@ -1055,12 +1054,6 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     border-top-color: #444;
 }
 
-/* ========================================================================
-   UNIFIED MODAL SYSTEM - Consolidated Design Language
-   Applies to all modals: .modal, .modal-wrapper, .modal-content, etc.
-   ======================================================================== */
-
-/* Modal Animations */
 @keyframes modalFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -1077,7 +1070,6 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     }
 }
 
-/* Unified Modal Backdrop/Overlay */
 .modal-backdrop,
 .modal-overlay {
     position: fixed;
@@ -1092,10 +1084,6 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
 }
 
 .modal-backdrop {
-    z-index: 1999;
-}
-
-.modal-overlay {
     z-index: 1999;
 }
 
@@ -1170,6 +1158,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
 .modal-container.modal-lg,
 .modal-content.modal-lg {
     max-width: 700px;
+    z-index: 2000;
 }
 
 /* Unified Modal Header */

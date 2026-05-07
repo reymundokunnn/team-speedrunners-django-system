@@ -886,155 +886,149 @@
 </section>
 
 <!-- View User Modal -->
-<div class="add-new-design-modal" id="viewUserModal">
+<div class="modal" id="viewUserModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('viewUserModal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>User Details</h2>
-        <div class="user-profile-header">
-            <div class="user-avatar-large">
-                <img id="viewUserProfilePic" src="" alt="Profile Picture" style="display: none;">
-                <div class="avatar-placeholder" id="viewUserAvatarPlaceholder"></div>
-            </div>
-            <div class="user-basic-info">
-                <h4 id="viewUserName"></h4>
-                <span id="viewUserUsername" class="username"></span>
-                <span id="viewUserRole" class="role-badge"></span>
-            </div>
+    <div class="modal-container modal-lg">
+        <div class="modal-header">
+            <h2>User Details</h2>
+            <button class="modal-close" onclick="closeModal('viewUserModal')" aria-label="Close modal">&times;</button>
         </div>
-        <div class="user-details-grid">
-            <div class="detail-item">
-                <label>Email</label>
-                <span id="viewUserEmail"></span>
+        <div class="modal-body">
+            <div class="user-profile-header">
+                <div class="user-avatar-large">
+                    <img id="viewUserProfilePic" src="" alt="Profile Picture" style="display: none;">
+                    <div class="avatar-placeholder" id="viewUserAvatarPlaceholder"></div>
+                </div>
+                <div class="user-basic-info">
+                    <h4 id="viewUserName"></h4>
+                    <span id="viewUserUsername" class="username"></span>
+                    <span id="viewUserRole" class="role-badge"></span>
+                </div>
             </div>
-            <div class="detail-item">
-                <label>Company</label>
-                <span id="viewUserCompany"></span>
-            </div>
-            <div class="detail-item">
-                <label>Location</label>
-                <span id="viewUserLocation"></span>
-            </div>
-            <div class="detail-item">
-                <label>Joined Date</label>
-                <span id="viewUserJoined"></span>
-            </div>
-            <div class="detail-item">
-                <label>Design Requests</label>
-                <span id="viewUserRequests">0</span>
+            <div class="user-details-grid">
+                <div class="detail-item">
+                    <label>Email</label>
+                    <span id="viewUserEmail"></span>
+                </div>
+                <div class="detail-item">
+                    <label>Company</label>
+                    <span id="viewUserCompany"></span>
+                </div>
+                <div class="detail-item">
+                    <label>Location</label>
+                    <span id="viewUserLocation"></span>
+                </div>
+                <div class="detail-item">
+                    <label>Joined Date</label>
+                    <span id="viewUserJoined"></span>
+                </div>
+                <div class="detail-item">
+                    <label>Design Requests</label>
+                    <span id="viewUserRequests">0</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Edit User Modal -->
-<div class="add-new-design-modal" id="editUserModal">
+<div class="modal" id="editUserModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('editUserModal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Edit User</h2>
+    <div class="modal-container modal-lg">
+        <div class="modal-header">
+            <h2>Edit User</h2>
+            <button class="modal-close" onclick="closeModal('editUserModal')" aria-label="Close modal">&times;</button>
+        </div>
         <form id="editUserForm" onsubmit="event.preventDefault(); saveUser();">
             <input type="hidden" id="editUserId">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editUsername">Username</label>
-                    <input type="text" id="editUsername" class="form-control" readonly>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editUsername">Username</label>
+                        <input type="text" id="editUsername" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editFirstName">First Name</label>
+                        <input type="text" id="editFirstName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editLastName">Last Name</label>
+                        <input type="text" id="editLastName" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editUserRole">Role</label>
+                        <select id="editUserRole" class="form-control">
+                            <option value="user">Client</option>
+                            <option value="designer">Designer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGender">Gender</label>
+                        <select id="editGender" class="form-control">
+                            <option value="">-- Select Gender --</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                            <option value="P">Prefer not to say</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editPhone">Phone Number</label>
+                        <input type="text" id="editPhone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDOB">Date of Birth</label>
+                        <input type="date" id="editDOB" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCompany">Company</label>
+                        <input type="text" id="editCompany" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editLocation">Location</label>
+                        <input type="text" id="editLocation" class="form-control">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="editEmail">Email</label>
-                    <input type="email" id="editEmail" class="form-control" required>
+                    <label for="editBio">Bio</label>
+                    <textarea id="editBio" class="form-control" rows="3"></textarea>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editFirstName">First Name</label>
-                    <input type="text" id="editFirstName" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="editLastName">Last Name</label>
-                    <input type="text" id="editLastName" class="form-control">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editUserRole">Role</label>
-                    <select id="editUserRole" class="form-control">
-                        <option value="user">Client</option>
-                        <option value="designer">Designer</option>
-                        <option value="admin">Administrator</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editGender">Gender</label>
-                    <select id="editGender" class="form-control">
-                        <option value="">-- Select Gender --</option>
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="O">Other</option>
-                        <option value="P">Prefer not to say</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editPhone">Phone Number</label>
-                    <input type="text" id="editPhone" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="editDOB">Date of Birth</label>
-                    <input type="date" id="editDOB" class="form-control">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editCompany">Company</label>
-                    <input type="text" id="editCompany" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="editLocation">Location</label>
-                    <input type="text" id="editLocation" class="form-control">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="editBio">Bio</label>
-                <textarea id="editBio" class="form-control" rows="3"></textarea>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
-                <button type="button" class="btn" onclick="saveUser()">Save Changes</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Delete User Confirmation Modal -->
-<div class="add-new-design-modal" id="deleteUserModal">
+<div class="modal" id="deleteUserModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('deleteUserModal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Delete User</h2>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2>Delete User</h2>
+            <button class="modal-close" onclick="closeModal('deleteUserModal')" aria-label="Close modal">&times;</button>
+        </div>
         <input type="hidden" id="deleteUserId">
-        <p>Are you sure you want to delete this user?</p>
-        <p class="user-to-delete"><strong id="deleteUserName"></strong></p>
-        <p class="warning-text">This action cannot be undone. All user data will be permanently deleted.</p>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this user?</p>
+            <p class="user-to-delete"><strong id="deleteUserName"></strong></p>
+            <p class="warning-text">This action cannot be undone. All user data will be permanently deleted.</p>
+        </div>
         <div class="modal-actions">
             <button type="button" class="btn btn-secondary" onclick="closeModal('deleteUserModal')">Cancel</button>
             <button type="button" class="btn btn-danger" onclick="confirmDeleteUser()">Delete User</button>
@@ -1043,20 +1037,18 @@
 </div>
 
 <!-- Bulk Delete Confirmation Modal -->
-<div class="add-new-design-modal" id="bulkDeleteUserModal">
+<div class="modal" id="bulkDeleteUserModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('bulkDeleteUserModal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Delete Multiple Users</h2>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2>Delete Multiple Users</h2>
+            <button class="modal-close" onclick="closeModal('bulkDeleteUserModal')" aria-label="Close modal">&times;</button>
+        </div>
         <input type="hidden" id="bulkDeleteUserIds">
-        <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> users?</p>
-        <p class="warning-text">This action cannot be undone. All selected user data will be permanently deleted.</p>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> users?</p>
+            <p class="warning-text">This action cannot be undone. All selected user data will be permanently deleted.</p>
+        </div>
         <div class="modal-actions">
             <button type="button" class="btn btn-secondary" onclick="closeModal('bulkDeleteUserModal')">Cancel</button>
             <button type="button" class="btn btn-danger" onclick="confirmBulkDeleteUsers()">Delete Users</button>
@@ -1065,77 +1057,74 @@
 </div>
 
 <!-- Add User Modal -->
-<div class="add-new-design-modal" id="addUserModal">
+<div class="modal" id="addUserModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('addUserModal')" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <h2>Add New User</h2>
+    <div class="modal-container modal-lg">
+        <div class="modal-header">
+            <h2>Add New User</h2>
+            <button class="modal-close" onclick="closeModal('addUserModal')" aria-label="Close modal">&times;</button>
+        </div>
         <form id="addUserForm" onsubmit="event.preventDefault(); saveNewUser();">
-            <input type="hidden" id="addUserId">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="addUsername">Username <span class="required">*</span></label>
-                    <input type="text" id="addUsername" class="form-control" required>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addUsername">Username <span class="required">*</span></label>
+                        <input type="text" id="addUsername" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addEmail">Email <span class="required">*</span></label>
+                        <input type="email" id="addEmail" class="form-control" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="addEmail">Email <span class="required">*</span></label>
-                    <input type="email" id="addEmail" class="form-control" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addPassword">Password <span class="required">*</span></label>
+                        <input type="password" id="addPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserRole">Role <span class="required">*</span></label>
+                        <select id="addUserRole" class="form-control" required>
+                            <option value="user">Client</option>
+                            <option value="designer">Designer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="addPassword">Password <span class="required">*</span></label>
-                    <input type="password" id="addPassword" class="form-control" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addFirstName">First Name <span class="required">*</span></label>
+                        <input type="text" id="addFirstName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addLastName">Last Name <span class="required">*</span></label>
+                        <input type="text" id="addLastName" class="form-control" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="addUserRole">Role <span class="required">*</span></label>
-                    <select id="addUserRole" class="form-control" required>
-                        <option value="user">Client</option>
-                        <option value="designer">Designer</option>
-                        <option value="admin">Administrator</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addGender">Gender</label>
+                        <select id="addGender" class="form-control">
+                            <option value="">-- Select Gender --</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                            <option value="P">Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPhone">Phone Number</label>
+                        <input type="text" id="addPhone" class="form-control">
+                    </div>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="addFirstName">First Name <span class="required">*</span></label>
-                    <input type="text" id="addFirstName" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="addLastName">Last Name <span class="required">*</span></label>
-                    <input type="text" id="addLastName" class="form-control" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="addGender">Gender</label>
-                    <select id="addGender" class="form-control">
-                        <option value="">-- Select Gender --</option>
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="O">Other</option>
-                        <option value="P">Prefer not to say</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="addPhone">Phone Number</label>
-                    <input type="text" id="addPhone" class="form-control">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="addCompany">Company</label>
-                    <input type="text" id="addCompany" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="addLocation">Location</label>
-                    <input type="text" id="addLocation" class="form-control">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="addCompany">Company</label>
+                        <input type="text" id="addCompany" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="addLocation">Location</label>
+                        <input type="text" id="addLocation" class="form-control">
+                    </div>
                 </div>
             </div>
             <div class="modal-actions">
@@ -1508,13 +1497,47 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Stop updates when page is hidden (to save resources)
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        clearInterval(systemStatusInterval);
-    } else {
-        fetchSystemStatus();
-        systemStatusInterval = setInterval(fetchSystemStatus, 1000);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(systemStatusInterval);
+        } else {
+            fetchSystemStatus();
+            systemStatusInterval = setInterval(fetchSystemStatus, 1000);
+        }
+    });
+
+    // Unified modal close function
+    function closeModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+        }
     }
-});
+
+    // Attach click handlers to close buttons and overlays for unified modals
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close button handlers for all modals
+        document.querySelectorAll('.modal-close, .close-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var modal = this.closest('.modal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Overlay click handlers for all modals
+        document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+            overlay.addEventListener('click', function() {
+                var modal = this.closest('.modal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}

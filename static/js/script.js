@@ -1199,20 +1199,44 @@ document.addEventListener('click', function(e) {
 
 // User Dashboard - Edit and Delete button global handler
 document.addEventListener('DOMContentLoaded', function() {
-    // Use event delegation for edit buttons
+    // Use event delegation for action buttons
     document.addEventListener('click', function(e) {
-        var editBtn = e.target.closest('.btn-edit');
+        // First check for admin dashboard action buttons using closest
+        var adminBtn = e.target.closest('button[data-user-id][data-action]');
+        if (adminBtn) {
+            console.log('Admin action button clicked, action:', adminBtn.getAttribute('data-action'));
+            var userId = adminBtn.getAttribute('data-user-id');
+            var action = adminBtn.getAttribute('data-action');
+
+            if (action === 'view') {
+                console.log('Calling viewUser with ID:', userId);
+                viewUser(userId);
+            } else if (action === 'edit') {
+                console.log('Calling editUser with ID:', userId);
+                editUser(userId);
+            } else if (action === 'delete') {
+                console.log('Calling deleteUser with ID:', userId);
+                deleteUser(userId);
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        // Check for design request edit button
+        var editBtn = e.target.closest('button[data-request-id][data-action="edit"]');
         if (editBtn) {
-            console.log('Edit button clicked via delegation');
+            console.log('Edit request button clicked');
             openEditModal(editBtn);
             e.preventDefault();
             e.stopPropagation();
             return false;
         }
         
-        var deleteBtn = e.target.closest('.btn-delete');
+        // Check for design request delete button
+        var deleteBtn = e.target.closest('button[data-request-id][data-action="delete"]');
         if (deleteBtn) {
-            console.log('Delete button clicked via delegation');
+            console.log('Delete request button clicked');
             openDeleteModal(deleteBtn);
             e.preventDefault();
             e.stopPropagation();
@@ -3272,12 +3296,14 @@ function saveUser() {
 }
 
 function deleteUser(userId) {
+    console.log('deleteUser called with userId:', userId);
     fetch('/manage/user/' + userId + '/view/', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
         .then(function (response) {
+            console.log('View response status:', response.status);
             if (!response.ok) {
                 if (response.status === 403) {
                     alert('Access denied. You must be an admin to delete users.');
@@ -3288,6 +3314,7 @@ function deleteUser(userId) {
             return response.json();
         })
         .then(function (data) {
+            console.log('User data received:', data);
             if (data.error) {
                 alert('Error: ' + data.error);
                 return;
@@ -3296,6 +3323,7 @@ function deleteUser(userId) {
             document.getElementById('deleteUserId').value = userId;
             document.getElementById('deleteUserName').textContent = (data.first_name + ' ' + data.last_name).trim() || data.username || 'Unknown';
 
+            console.log('Opening deleteUserModal');
             // Show confirmation modal
             openModal('deleteUserModal');
         })
@@ -3675,23 +3703,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 dropdown.classList.remove('show');
             }
         }
-    });
-
-    // Handle user action buttons in admin dashboard (view/edit/delete)
-    // Only target buttons that have data-user-id attribute (admin dashboard)
-    document.querySelectorAll('.action-buttons button[data-user-id]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            var userId = this.getAttribute('data-user-id');
-            var action = this.getAttribute('data-action');
-
-            if (action === 'view') {
-                viewUser(userId);
-            } else if (action === 'edit') {
-                editUser(userId);
-            } else if (action === 'delete') {
-                deleteUser(userId);
-            }
-        });
     });
 });
 
