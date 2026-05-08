@@ -1252,7 +1252,7 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
-    padding: 20px;
+    padding: 12px;
     flex-shrink: 0;
 }
 
@@ -3446,12 +3446,6 @@ body.dark-mode .dashboard-section .dashboard-container .main .designs .tip {
     text-align: center;
 }
 
-.design-request-form button {
-    padding: 14px 24px;
-    font-size: 1rem;
-    margin-top: 10px;
-}
-
 /* Logo sizing classes */
 .logo-full-width {
     width: 100%;
@@ -5252,7 +5246,6 @@ body.dark-mode .confirm-dialog p {
 }
 
 .modal-actions .btn {
-    flex: 1;
     padding: 12px 20px;
 }
 
