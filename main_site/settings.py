@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,9 +32,18 @@ DEBUG = not IS_PRODUCTION
 
 # Allow hosts based on environment
 if IS_PRODUCTION:
-    ALLOWED_HOSTS = ['.vercel.app']
+    ALLOWED_HOSTS = ['.vercel.app', 'youromain.com']  # Replace with your actual domain
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+
+# Security settings for production
+if IS_PRODUCTION:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 
 # Increase max upload size for cover photos (10 MB)
@@ -84,12 +94,21 @@ TEMPLATES = [
                 'presenta.context_processors.user_notifications',
             ],
         },
-    },
-]
-
-WSGI_APPLICATION = 'main_site.wsgi.application'
-
-
+if IS_PRODUCTION and os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
