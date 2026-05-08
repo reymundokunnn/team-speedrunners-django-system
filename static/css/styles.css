@@ -1254,6 +1254,10 @@ body.dark-mode .user-dropdown-menu .dropdown-divider {
     justify-content: flex-end;
     padding: 12px;
     flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    background-color: #ffffff;
+    border-top: 1px solid #eee;
 }
 
 /* Unified Modal Title in Content */
@@ -4282,6 +4286,11 @@ body.dark-mode .design-request-form select {
 body.dark-mode .file-upload-area {
     background: #2d2d2d;
     border-color: #555;
+}
+
+body.dark-mode .modal-actions {
+    background-color: #2d2d2d;
+    border-top-color: #444;
 }
 
 body.dark-mode .file-upload-area:hover {

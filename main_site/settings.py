@@ -23,11 +23,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 
+# Determine if running in production or development
+IS_PRODUCTION = os.environ.get('ENVIRONMENT') == 'production'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = not IS_PRODUCTION
 
-ALLOWED_HOSTS = []
+# Allow hosts based on environment
+if IS_PRODUCTION:
+    ALLOWED_HOSTS = ['.vercel.app']
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
 
 # Increase max upload size for cover photos (10 MB)
@@ -50,6 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -132,6 +139,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
  
 # Media files (user-uploaded)
