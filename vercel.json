@@ -1,7 +1,18 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "main_site/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.11" }
+    }
+  ],
   "routes": [
     { "src": "/static/(.*)", "dest": "/static/$1" },
     { "src": "/(.*)", "dest": "main_site/wsgi.py" }
-  ]
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "main_site.settings",
+    "ENVIRONMENT": "production"
+  }
 }
