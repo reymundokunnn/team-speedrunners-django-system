@@ -35,6 +35,13 @@ if IS_PRODUCTION:
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
+# For Vercel serverless, ensure sessions work with domain
+if IS_PRODUCTION:
+    SESSION_COOKIE_DOMAIN = None  # Allow cookie on all subdomains
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+    # Trust the X-Forwarded-Proto header from Vercel's proxy
+    SECURE_PROXY_SSL_HEADER = ('X-Forwarded-Proto', 'https')
+
 
 # Increase max upload size for cover photos (10 MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
@@ -166,6 +173,27 @@ LOGIN_REDIRECT_URL = '/'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Session engine selection:
+# - signed_cookies: Works on serverless (data encoded in cookie, no DB needed)
+# - db (default): Requires persistent database connection (PostgreSQL recommended)
+SESSION_ENGINE = os.environ.get('SESSION_ENGINE', 'django.contrib.sessions.backends.signed_cookies')
+
+# Use JSON serializer for better compatibility with signed cookies
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+
+# Cookie settings for production (Vercel requires secure cookies)
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+
+# Ensure session cookie works across subdomains on Vercel
+if IS_PRODUCTION:
+    SESSION_COOKIE_DOMAIN = None
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+    SECURE_PROXY_SSL_HEADER = ('X-Forwarded-Proto', 'https')
+    SECURE_SSL_REDIRECT = True
 
 # ASGI/Channels configuration
 ASGI_APPLICATION = 'main_site.asgi.application'
