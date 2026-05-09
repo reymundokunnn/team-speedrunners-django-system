@@ -6,8 +6,7 @@
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "main_site.settings",
-    "ENVIRONMENT": "production",
-    "SESSION_ENGINE": "django.contrib.sessions.backends.db"
+    "ENVIRONMENT": "production"
   },
   "git": {
     "deploymentEnabled": false

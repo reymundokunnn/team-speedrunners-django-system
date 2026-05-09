@@ -37,7 +37,7 @@ else:
 
 # For Vercel serverless, ensure sessions work with domain
 if IS_PRODUCTION:
-    SESSION_COOKIE_DOMAIN = None  # Allow cookie on all subdomains
+    SESSION_COOKIE_DOMAIN = '.vercel.app'  # Allow cookie on all Vercel subdomains
     CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
     # Trust the X-Forwarded-Proto header from Vercel's proxy
     SECURE_PROXY_SSL_HEADER = ('X-Forwarded-Proto', 'https')
@@ -190,7 +190,7 @@ CSRF_COOKIE_SECURE = IS_PRODUCTION
 
 # Ensure session cookie works across subdomains on Vercel
 if IS_PRODUCTION:
-    SESSION_COOKIE_DOMAIN = None
+    SESSION_COOKIE_DOMAIN = '.vercel.app'
     CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
     SECURE_PROXY_SSL_HEADER = ('X-Forwarded-Proto', 'https')
     SECURE_SSL_REDIRECT = True

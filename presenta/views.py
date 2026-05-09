@@ -2476,7 +2476,7 @@ def account_settings(request):
             confirm_password = form.cleaned_data.get('confirm_password')
 
             if new_password:
-                if not presenta_user.check_password(current_password):
+                if not user.check_password(current_password):
                     form.add_error('current_password',
                                    'Current password is incorrect.')
                 elif new_password != confirm_password:
@@ -2695,13 +2695,13 @@ def change_password_ajax(request):
         errors['confirm_password'] = 'Passwords do not match'
 
     # Check current password
-    if current_password and not presenta_user.check_password(current_password):
+    if current_password and not user.check_password(current_password):
         errors['current_password'] = 'Current password is incorrect'
 
     if errors:
         return JsonResponse({
             'success': False,
-            'error': 'Please fix the errors below',
+            'error': 'Something is wrong. Please resolve it above.',
             'errors': errors
         })
 
