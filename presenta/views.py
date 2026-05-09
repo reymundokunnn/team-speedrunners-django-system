@@ -14,10 +14,33 @@ from .models import Profile, DesignRequest, User as PresentaUser, DesignRequestF
 from django.utils import timezone
 import datetime
 import uuid
+import random
 from PIL import Image
 from io import BytesIO
 import base64
 from .consumers import broadcast_status_update
+
+ADMIN_RESET_MESSAGES = [
+    "Nice try. Even admins have trust issues.",
+    "This account is too powerful to 'forget' its password.",
+    "Reset denied. The boss doesn't get locked out... theoretically.",
+    "You're trying to reset that account? Bold move.",
+    "Admins don't reset passwords. They pretend they remember them.",
+    "Access denied. Even we're scared to touch this account.",
+    "That's an admin account. We don't just hit 'reset' and hope for the best.",
+    "Error: You're poking the dragon. Please stop.",
+    "Superuser detected. Password reset button has left the chat.",
+    "If this password is lost, we all have bigger problems.",
+    "Reset blocked. Have you tried... not being an admin?",
+    "Admins are expected to remember everything. Especially passwords.",
+    "Nope. That account comes with consequences.",
+    "This is above our pay grade.",
+    "Resetting an admin password? That sounds like a meeting.",
+]
+
+
+def get_random_admin_reset_message():
+    return random.choice(ADMIN_RESET_MESSAGES)
 
 
 def get_presenta_user_safe(django_user):
@@ -1866,13 +1889,13 @@ def password_reset_lookup(request):
     if user:
         # Block superusers
         if user.is_superuser:
-            return JsonResponse({'found': False, 'error': 'Password reset is not available for superuser accounts.'})
+            return JsonResponse({'found': False, 'error': get_random_admin_reset_message()})
         
         # Block admins (check Presenta user role)
         try:
             presenta_user = user.presenta_user
             if presenta_user and presenta_user.user_role == 'admin':
-                return JsonResponse({'found': False, 'error': 'Password reset is not available for admin accounts.'})
+                return JsonResponse({'found': False, 'error': get_random_admin_reset_message()})
         except (User.DoesNotExist, AttributeError):
             pass
 
@@ -1898,15 +1921,14 @@ def password_reset_form(request, user_id):
     # Block superusers and admins as additional security check
     if user.is_superuser:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'error': 'Password reset is not available for superuser accounts.'})
+            return JsonResponse({'success': False, 'error': get_random_admin_reset_message()})
         else:
             return redirect('signin')
-    
     try:
         presenta_user = user.presenta_user
         if presenta_user and presenta_user.user_role == 'admin':
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': 'Password reset is not available for admin accounts.'})
+                return JsonResponse({'success': False, 'error': get_random_admin_reset_message()})
             else:
                 return redirect('signin')
     except (User.DoesNotExist, AttributeError):
@@ -1969,12 +1991,12 @@ def password_reset_confirm(request, user_id):
 
     # Block superusers and admins as additional security check
     if user.is_superuser:
-        return JsonResponse({'success': False, 'error': 'Password reset is not available for superuser accounts.'})
+        return JsonResponse({'success': False, 'error': get_random_admin_reset_message()})
     
     try:
         presenta_user = user.presenta_user
         if presenta_user and presenta_user.user_role == 'admin':
-            return JsonResponse({'success': False, 'error': 'Password reset is not available for admin accounts.'})
+            return JsonResponse({'success': False, 'error': get_random_admin_reset_message()})
     except (User.DoesNotExist, AttributeError):
         pass
 
