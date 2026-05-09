@@ -1862,6 +1862,20 @@ def password_reset_lookup(request):
         except Exception:
             pass
 
+    # Check if user is superuser or admin - block password reset for these roles
+    if user:
+        # Block superusers
+        if user.is_superuser:
+            return JsonResponse({'found': False, 'error': 'Password reset is not available for superuser accounts.'})
+        
+        # Block admins (check Presenta user role)
+        try:
+            presenta_user = user.presenta_user
+            if presenta_user and presenta_user.user_role == 'admin':
+                return JsonResponse({'found': False, 'error': 'Password reset is not available for admin accounts.'})
+        except (User.DoesNotExist, AttributeError):
+            pass
+
     if user:
         return JsonResponse({
             'found': True,
@@ -1880,6 +1894,23 @@ def password_reset_form(request, user_id):
 
     # Get the user
     user = get_object_or_404(DjangoUser, id=user_id)
+
+    # Block superusers and admins as additional security check
+    if user.is_superuser:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Password reset is not available for superuser accounts.'})
+        else:
+            return redirect('signin')
+    
+    try:
+        presenta_user = user.presenta_user
+        if presenta_user and presenta_user.user_role == 'admin':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Password reset is not available for admin accounts.'})
+            else:
+                return redirect('signin')
+    except (User.DoesNotExist, AttributeError):
+        pass
 
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         new_password = request.POST.get('new_password', '')
@@ -1933,7 +1964,19 @@ def password_reset_confirm(request, user_id):
     """Process password reset confirmation (alternative endpoint)."""
     from django.http import JsonResponse
 
+    # Get the user
     user = get_object_or_404(DjangoUser, id=user_id)
+
+    # Block superusers and admins as additional security check
+    if user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Password reset is not available for superuser accounts.'})
+    
+    try:
+        presenta_user = user.presenta_user
+        if presenta_user and presenta_user.user_role == 'admin':
+            return JsonResponse({'success': False, 'error': 'Password reset is not available for admin accounts.'})
+    except (User.DoesNotExist, AttributeError):
+        pass
 
     new_password = request.POST.get('new_password', '')
     confirm_password = request.POST.get('confirm_password', '')
