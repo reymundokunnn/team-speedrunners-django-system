@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!registerForm) return;
 
     const hasRegisterErrors = registerForm.querySelector('.form-errors') !== null;
-    const hasFilledFields = registerForm.querySelector('input[type="text"][value!=""]') !== null;
+    const hasFilledFields = Array.from(registerForm.querySelectorAll('input[type="text"]')).some(input => input.value !== '');
 
     if (hasRegisterErrors || hasFilledFields) {
         const loginForm = document.getElementById('login-form');
