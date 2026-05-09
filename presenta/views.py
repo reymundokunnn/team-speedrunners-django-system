@@ -401,8 +401,12 @@ def login_view(request):
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me') == 'on'
 
+        # Debug logging
+        print(f"DEBUG: Login attempt for username: {username}", file=sys.stderr)
+
         # Try to authenticate the user
         user = authenticate(request, username=username, password=password)
+        print(f"DEBUG: Authentication result: {user is not None}", file=sys.stderr)
 
         if user is not None:
             login(request, user, backend='presenta.auth_backend.PresentaBackend')

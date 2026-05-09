@@ -10,80 +10,99 @@ class PresentaBackend(BaseBackend):
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         DjangoUser = get_user_model()
-        
+
+        print(f"DEBUG: Auth backend called with username: {username}", file=__import__('sys').stderr)
+
         # first, try the standard Django user lookup. dito muna.
         try:
             auth_user = DjangoUser.objects.filter(username=username).first()
+            print(f"DEBUG: Django user lookup by username: {auth_user is not None}", file=__import__('sys').stderr)
             if auth_user and auth_user.check_password(password):
+                print(f"DEBUG: Django user password check passed", file=__import__('sys').stderr)
                 # Check if linked to pending/rejected PresentaUser admin
                 try:
                     p_user = auth_user.presenta_user
                     if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                        print(f"DEBUG: Django user is pending/rejected admin, blocking login", file=__import__('sys').stderr)
                         return None
                 except:
                     pass
                 # Ensure profile exists for successful auth
                 from .views import get_presenta_user_safe
                 get_presenta_user_safe(auth_user)
+                print(f"DEBUG: Returning Django user: {auth_user.username}", file=__import__('sys').stderr)
                 return auth_user
-        except Exception:
+        except Exception as e:
+            print(f"DEBUG: Exception in Django user lookup: {e}", file=__import__('sys').stderr)
             pass
         
         # Try by email
         try:
             auth_user = DjangoUser.objects.filter(email=username).first()
+            print(f"DEBUG: Django user lookup by email: {auth_user is not None}", file=__import__('sys').stderr)
             if auth_user and auth_user.check_password(password):
+                print(f"DEBUG: Django user password check passed by email", file=__import__('sys').stderr)
                 # Check if linked to pending/rejected PresentaUser admin
                 try:
                     p_user = auth_user.presenta_user
                     if p_user and p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                        print(f"DEBUG: Django user is pending/rejected admin by email, blocking login", file=__import__('sys').stderr)
                         return None
                 except:
                     pass
                 # Ensure profile exists for successful auth
                 from .views import get_presenta_user_safe
                 get_presenta_user_safe(auth_user)
+                print(f"DEBUG: Returning Django user by email: {auth_user.username}", file=__import__('sys').stderr)
                 return auth_user
-        except Exception:
+        except Exception as e:
+            print(f"DEBUG: Exception in Django user email lookup: {e}", file=__import__('sys').stderr)
             pass
 
         # fallback lang 'to: try to find a PresentaUser by email or username
         try:
             p_user = PresentaUser.objects.filter(email=username).first() or PresentaUser.objects.filter(username=username).first()
+            print(f"DEBUG: PresentaUser lookup: {p_user is not None}", file=__import__('sys').stderr)
             if p_user and p_user.check_password(password):
+                print(f"DEBUG: PresentaUser password check passed", file=__import__('sys').stderr)
                 if p_user.user_role == 'admin' and p_user.admin_approval_status in ['pending', 'rejected']:
+                    print(f"DEBUG: PresentaUser is pending/rejected admin, blocking login", file=__import__('sys').stderr)
                     return None  # Block login for pending/rejected admin accounts
-                
+
                 # if linked to Django user, return it
                 if p_user.auth_user:
+                    print(f"DEBUG: Returning linked Django user: {p_user.auth_user.username}", file=__import__('sys').stderr)
                     return p_user.auth_user
-                
+
                 # Otherwise create/get Django user for session
                 username_val = p_user.username or p_user.email or f'user{p_user.pk}'
                 auth_user, created = DjangoUser.objects.get_or_create(
                     username=username_val,
                     defaults={'email': p_user.email or ''}
                 )
-                
+                print(f"DEBUG: Created/found Django user: {auth_user.username}, created: {created}", file=__import__('sys').stderr)
+
                 # Update Django user info from PresentaUser
                 if p_user.first_name:
                     auth_user.first_name = p_user.first_name
                 if p_user.last_name:
                     auth_user.last_name = p_user.last_name
                 auth_user.save()
-                
+
                 # Link them
                 p_user.auth_user = auth_user
                 p_user.save()
-                
+
                 # Create Profile if it doesn't exist
                 from .models import Profile
                 profile, _ = Profile.objects.get_or_create(user=auth_user)
                 profile.presenta_user = p_user
                 profile.save()
-                
+
+                print(f"DEBUG: Returning newly created Django user: {auth_user.username}", file=__import__('sys').stderr)
                 return auth_user
         except Exception as e:
+            print(f"DEBUG: Exception in PresentaUser fallback: {e}", file=__import__('sys').stderr)
             pass
 
         return None

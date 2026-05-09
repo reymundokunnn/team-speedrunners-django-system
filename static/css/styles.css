@@ -10208,7 +10208,6 @@ body.dark-mode .settings-compact-description {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
-    padding: 16px 24px 24px;
 }
 
 .change-password-modal-actions button {
