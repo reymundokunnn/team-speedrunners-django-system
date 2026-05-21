@@ -1914,8 +1914,6 @@ body.dark-mode .image-preview img {
 </style>
 {% endblock %}
 
-{% csrf_token %}
-
 {% block content %}
 <section class="dashboard-section">
     <div class="dashboard-container">
@@ -1982,6 +1980,7 @@ body.dark-mode .image-preview img {
         </div>
         
     <div class="chat-input-container" id="chatInputContainer" style="display: none;">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <!-- Message action indicator -->
         <div class="message-action-indicator" id="messageActionIndicator" style="display: none;">
             <div class="action-indicator-content">
@@ -2652,20 +2651,20 @@ body.dark-mode .image-preview img {
             }
         } else {
             // Send new message
-        // Create form data for file upload
-        const formData = new FormData();
-        formData.append('message', message);
-        if (selectedFile) {
-            formData.append('attachment', selectedFile);
-        } else if (selectedImage) {
-            formData.append('attachment', selectedImage);
-        }
+            // Create form data for file upload
+            const formData = new FormData();
+            formData.append('message', message);
+            if (selectedFile) {
+                formData.append('attachment', selectedFile);
+            } else if (selectedImage) {
+                formData.append('attachment', selectedImage);
+            }
 
-        // Include reply_to if replying
-        const replyTo = input.getAttribute('data-reply-to');
-        if (replyTo) {
-            formData.append('reply_to', replyTo);
-        }
+            // Include reply_to if replying
+            const replyTo = input.getAttribute('data-reply-to');
+            if (replyTo) {
+                formData.append('reply_to', replyTo);
+            }
 
             // Send via API
             try {
@@ -2687,7 +2686,7 @@ body.dark-mode .image-preview img {
             }
         }
 
-        // Clear inputs and action state
+        // Clear inputs and action state (for both edit and send)
         input.value = '';
         input.removeAttribute('data-edit-id');
         input.removeAttribute('data-reply-to');
@@ -3058,7 +3057,7 @@ body.dark-mode .image-preview img {
             return;
         }
 
-        container.innerHTML = users.map((user, index) => {
+        container.innerHTML = users.map((user, index) => `
             <div class="user-search-item ${index === selectedIndex ? 'selected' : ''}"
                  data-index="${index}"
                  onclick="startNewConversation(${user.id}, '${user.username}', '${user.name || ''}')">
@@ -3068,7 +3067,7 @@ body.dark-mode .image-preview img {
                     <div class="user-search-username">@${user.username}</div>
                 </div>
             </div>
-        `}).join('');
+        `).join('');
     }
 
     // Highlight matching text
