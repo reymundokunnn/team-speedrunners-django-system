@@ -2280,9 +2280,12 @@ body.dark-mode .image-preview img {
         try {
             const response = await fetch('/api/chat/conversations/');
             const data = await response.json();
-            
-            if (data.conversations) {
+
+            if (data.conversations !== undefined && Array.isArray(data.conversations)) {
                 renderConversations(data.conversations);
+            } else {
+                console.error('Invalid conversations response:', data);
+                renderConversations([]);
             }
         } catch (error) {
             console.error('Error loading conversations:', error);
@@ -2677,7 +2680,7 @@ body.dark-mode .image-preview img {
                 const data = await response.json();
 
                 // Add message to UI immediately
-                appendMessage(data.message);
+                appendMessage(data);
 
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -2842,7 +2845,11 @@ body.dark-mode .image-preview img {
         
         const messageHtml = `
             <div class="message ${isSent ? 'sent' : 'received'}">
-                    <div class="message-content">
+                    <div class="message-row">
+                        ${!isSent ? `
+                        <img class="message-avatar" src="${data.sender_profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${data.sender_username}">
+                        ` : ''}
+                        <div class="message-content">
                         <button class="message-menu-btn" onclick="toggleMessageMenu(event, ${data.id})">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -3029,7 +3036,7 @@ body.dark-mode .image-preview img {
         // Debounce search - wait 300ms after typing stops
         searchTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`/api/users/search/?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`/api/search-users/?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 
                 if (data.users) {
@@ -3051,17 +3058,17 @@ body.dark-mode .image-preview img {
             return;
         }
 
-        container.innerHTML = users.map((user, index) => `
+        container.innerHTML = users.map((user, index) => {
             <div class="user-search-item ${index === selectedIndex ? 'selected' : ''}"
                  data-index="${index}"
-                 onclick="startNewConversation(${user.id}, '${user.username}', '${user.name.split(' ')[0] || ''}', '${user.name.split(' ').slice(1).join(' ') || ''}')">
+                 onclick="startNewConversation(${user.id}, '${user.username}', '${user.name || ''}')">
                 <img src="${user.profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${user.username}" class="user-search-avatar">
                 <div class="user-search-details">
-                    <div class="user-search-name">${highlightMatch(user.name, query)}</div>
+                    <div class="user-search-name">${highlightMatch(user.name || user.username, query)}</div>
                     <div class="user-search-username">@${user.username}</div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     // Highlight matching text
@@ -3112,8 +3119,11 @@ body.dark-mode .image-preview img {
     }
 
     // Start new conversation
-    function startNewConversation(userId, username, firstName, lastName) {
+    function startNewConversation(userId, username, name) {
         hideNewChatModal();
+        const nameParts = name ? name.split(' ') : [];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
         openConversation(userId, username, firstName, lastName);
     }
 
@@ -3272,17 +3282,18 @@ body.dark-mode .image-preview img {
             return;
         }
 
-        container.innerHTML = users.map((user, index) => `
+        container.innerHTML = users.map((user, index) => {
+            return `
             <div class="user-search-item ${index === forwardSelectedIndex ? 'selected' : ''}"
                  data-index="${index}"
-                 onclick="forwardMessageToUser(${user.id}, '${user.username}', '${user.name.split(' ')[0] || ''}', '${user.name.split(' ').slice(1).join(' ') || ''}')">
+                 onclick="forwardMessageToUser(${user.id}, '${user.username}', '${user.name || ''}')">
                 <img src="${user.profile_picture || '{% static "img/default-avatar.svg" %}'}" alt="${user.username}" class="user-search-avatar">
                 <div class="user-search-details">
-                    <div class="user-search-name">${highlightMatch(user.name, query)}</div>
+                    <div class="user-search-name">${highlightMatch(user.name || user.username, query)}</div>
                     <div class="user-search-username">@${user.username}</div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     function handleForwardSearchKeydown(event) {
@@ -3323,7 +3334,7 @@ body.dark-mode .image-preview img {
         });
     }
 
-    async function forwardMessageToUser(userId, username, firstName, lastName) {
+    async function forwardMessageToUser(userId, username, name) {
         const messageId = document.getElementById('forwardMessagePreview').dataset.messageId;
 
         try {
@@ -3339,7 +3350,7 @@ body.dark-mode .image-preview img {
             if (response.ok) {
                 hideForwardModal();
                 // Show success message
-                alert(`Message forwarded to ${firstName || username} ${lastName || ''}`);
+                alert(`Message forwarded to ${name || username}`);
             } else {
                 const errorData = await response.json();
                 alert(`Failed to forward message: ${errorData.error || 'Unknown error'}`);

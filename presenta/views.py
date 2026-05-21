@@ -4346,41 +4346,47 @@ def api_chat_conversations(request):
         from .models import ChatMessage
         from django.db.models import Q, Max
         
-        # Get unique conversations with the latest message
-        conversations = ChatMessage.objects.filter(
+        # Get all conversations where the user is either sender or receiver, with the latest message time
+        conversation_raw = ChatMessage.objects.filter(
             Q(sender=user) | Q(receiver=user)
         ).values('sender', 'receiver').annotate(
             last_message_time=Max('created_at')
         ).order_by('-last_message_time')
-        
-        # Build conversation list with user details
-        conversation_list = []
-        seen_users = set()
-        
-        for conv in conversations:
+
+        # Group by user-pair so that bidirectional conversations (a↔b)
+        # are represented only once, keeping the entry with the most recent message.
+        # Key is the *other* user's id (the one different from the current user).
+        conversation_map = {}
+
+        for conv in conversation_raw:
             other_user_id = conv['receiver'] if conv['sender'] == user.id else conv['sender']
-            
-            if other_user_id in seen_users:
-                continue
-            seen_users.add(other_user_id)
-            
+
+            # Keep the entry with the newest last_message_time for each other_user
+            if other_user_id not in conversation_map or \
+               conv['last_message_time'] > conversation_map[other_user_id]['last_message_time']:
+                conversation_map[other_user_id] = conv
+
+        # Build the conversation list from the deduplicated map
+        conversation_list = []
+
+        for other_user_id, conv in conversation_map.items():
             try:
                 from django.contrib.auth.models import User
                 other_user = User.objects.get(id=other_user_id)
-                
-                # Get the latest message
+
+                # Get the latest message for this conversation
                 latest_message = ChatMessage.objects.filter(
                     (Q(sender=user) & Q(receiver=other_user)) |
                     (Q(sender=other_user) & Q(receiver=user))
                 ).order_by('-created_at').first()
-                
+
                 # Get unread count
                 unread_count = ChatMessage.objects.filter(
                     sender=other_user,
                     receiver=user,
                     is_read=False
                 ).count()
-                
+
                 # Get presenta user profile for profile picture
                 try:
                     presenta_user = other_user.presenta_user
@@ -4404,7 +4410,7 @@ def api_chat_conversations(request):
                 })
             except User.DoesNotExist:
                 continue
-        
+
         return JsonResponse({'conversations': conversation_list})
     except Exception as e:
         print(f"Error getting chat conversations: {e}")
@@ -4575,26 +4581,30 @@ def api_chat_send(request, user_id):
             attachment_type=attachment_type,
             reply_to=reply_to_message
         )
-        
+
+        # Build the response — use the same flat field names as api_chat_messages
+        # so that appendMessage (WebSocket fallback) receives a compatible object.
+        reply_to_info2 = None
+        if message.reply_to:
+            reply_to_info2 = {
+                'id': message.reply_to.id,
+                'sender_username': message.reply_to.sender.username,
+                'message': message.reply_to.message,
+                'attachment_type': message.reply_to.attachment_type,
+            }
+
         return JsonResponse({
             'success': True,
-            'message': {
-                'id': message.id,
-                'sender_id': message.sender.id,
-                'sender_username': message.sender.username,
-                'message': message.message,
-                'is_read': message.is_read,
-                'created_at': message.created_at.isoformat(),
-                'attachment': message.attachment.url if message.attachment else None,
-                'attachment_type': message.attachment_type,
-                'attachment_name': message.attachment.name if message.attachment else None,
-                'reply_to': {
-                    'id': message.reply_to.id if message.reply_to else None,
-                    'sender_username': message.reply_to.sender.username if message.reply_to else None,
-                    'message': message.reply_to.message if message.reply_to else None,
-                    'attachment_type': message.reply_to.attachment_type if message.reply_to else None,
-                } if message.reply_to else None
-            }
+            'id': message.id,
+            'sender_id': message.sender.id,
+            'sender_username': message.sender.username,
+            'message': message.message,
+            'is_read': message.is_read,
+            'created_at': message.created_at.isoformat(),
+            'attachment': message.attachment.url if message.attachment else None,
+            'attachment_type': message.attachment_type,
+            'attachment_name': message.attachment.name if message.attachment else None,
+            'reply_to': reply_to_info2,
         })
     except Exception as e:
         print(f"Error sending chat message: {e}")
