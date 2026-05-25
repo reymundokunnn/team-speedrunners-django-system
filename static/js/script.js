@@ -4640,3 +4640,140 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 })();
+
+// --- Dynamic Currency Conversion System ---
+// Uses public CDN API for live rates. Converts displayed prices in dashboards
+// to the user's preferred currency (from settings) using data attrs on .currency-convert elements.
+(function() {
+    const CURRENCY_API = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/';
+    const ratesCache = {};
+    let conversionInProgress = false;
+
+    window.USER_CURRENCY = window.USER_CURRENCY || 'USD';
+
+    const JS_CURRENCY_SYMBOLS = {
+        'USD': '$', 'EUR': '€', 'GBP': '£', 'PHP': '₱', 'JPY': '¥',
+        'AUD': 'A$', 'CAD': 'C$', 'INR': '₹', 'CNY': '¥', 'KRW': '₩',
+        'RUB': '₽', 'BRL': 'R$', 'TRY': '₺', 'ZAR': 'R', 'MXN': 'MX$',
+        'SGD': 'S$', 'HKD': 'HK$', 'CHF': 'CHF', 'SEK': 'kr', 'NOK': 'kr',
+        'DKK': 'kr', 'PLN': 'zł', 'THB': '฿', 'MYR': 'RM', 'IDR': 'Rp',
+        'VND': '₫', 'AED': 'د.إ', 'SAR': '﷼', 'QAR': '﷼', 'EGP': 'E£',
+        'NGN': '₦', 'GHS': '₵', 'KES': 'KSh', 'TZS': 'TSh', 'UGX': 'USh',
+        'NZD': 'NZ$', 'TWD': 'NT$', 'ILS': '₪', 'HUF': 'Ft', 'CZK': 'Kč',
+        'RON': 'lei', 'UAH': '₴', 'ARS': 'AR$', 'CLP': 'CLP$', 'COP': 'COL$',
+        'PEN': 'S/', 'CRC': '₡', 'DOP': 'RD$', 'GTQ': 'Q', 'HNL': 'L',
+        'NIO': 'C$', 'PAB': 'B/.', 'PYG': '₲', 'UYU': 'UY$', 'BOB': 'Bs',
+        'XOF': 'CFA', 'XAF': 'FCFA', 'MAD': 'MAD', 'TND': 'DT', 'JOD': 'JD',
+        'LBP': 'ل.ل', 'IQD': 'ع.د', 'IRR': '﷼', 'PKR': '₨', 'BDT': '৳',
+        'LKR': 'Rs', 'NPR': 'रू', 'MMK': 'K', 'KHR': '៛', 'LAK': '₭',
+        'MNT': '₮', 'KZT': '₸', 'KGS': 'с', 'TJS': 'ЅМ', 'AFN': '؋',
+        'AMD': '֏', 'AZN': '₼', 'GEL': '₾', 'MDL': 'L', 'BYN': 'Br',
+        'ALL': 'L', 'MKD': 'ден', 'RSD': 'дин', 'BAM': 'KM', 'HRK': 'kn',
+        'BGN': 'лв', 'ISK': 'kr', 'FJD': 'FJ$', 'PGK': 'K', 'SBD': 'SI$',
+        'TOP': 'T$', 'WST': 'WS$', 'VUV': 'VT', 'XPF': '₣', 'XCD': 'EC$',
+        'BBD': 'Bds$', 'BMD': 'BD$', 'BSD': 'BS$', 'BZD': 'BZ$', 'GYD': 'GY$',
+        'JMD': 'J$', 'TTD': 'TT$'
+    };
+
+    function getJSSymbol(code) {
+        if (!code) code = 'USD';
+        code = code.toUpperCase();
+        return JS_CURRENCY_SYMBOLS[code] || code;
+    }
+
+    async function fetchRates(base) {
+        const key = base.toLowerCase();
+        if (ratesCache[key]) return ratesCache[key];
+        try {
+            const res = await fetch(`${CURRENCY_API}${key}.json`, { cache: 'force-cache' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const json = await res.json();
+            const rates = json[key] || {};
+            ratesCache[key] = rates;
+            return rates;
+        } catch (err) {
+            console.warn('[currency] rate fetch failed for', base, err.message);
+            return null;
+        }
+    }
+
+    async function convertCurrency(amount, from, to) {
+        amount = parseFloat(amount);
+        if (!amount || isNaN(amount)) return amount;
+        from = (from || 'USD').toUpperCase();
+        to = (to || 'USD').toUpperCase();
+        if (from === to) return amount;
+
+        // Try direct: fetch from-base, multiplier = rates[toLower]
+        let rates = await fetchRates(from);
+        let rateKey = to.toLowerCase();
+        if (rates && typeof rates[rateKey] === 'number') {
+            return amount * rates[rateKey];
+        }
+
+        // Inverse: fetch to-base
+        rates = await fetchRates(to);
+        rateKey = from.toLowerCase();
+        if (rates && typeof rates[rateKey] === 'number' && rates[rateKey] !== 0) {
+            return amount / rates[rateKey];
+        }
+
+        // no rate found
+        return amount;
+    }
+
+    async function updateCurrencyDisplays() {
+        if (conversionInProgress) return;
+        conversionInProgress = true;
+        const els = document.querySelectorAll('.currency-convert');
+        if (!els.length) {
+            conversionInProgress = false;
+            return;
+        }
+        const target = (window.USER_CURRENCY || 'USD').toUpperCase();
+        const promises = [];
+        els.forEach(el => {
+            const amt = el.dataset.amount;
+            const from = el.dataset.from || 'USD';
+            if (!amt) return;
+            const p = convertCurrency(amt, from, target).then(converted => {
+                const sym = getJSSymbol(target);
+                const val = (typeof converted === 'number' && isFinite(converted))
+                    ? converted.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    : amt;
+                el.textContent = sym + val;
+                el.title = `Converted from ${getJSSymbol(from)}${amt} (${from})`;
+            }).catch(() => {
+                // leave as-is on error
+            });
+            promises.push(p);
+        });
+        await Promise.all(promises);
+        conversionInProgress = false;
+    }
+
+    // Auto-run on load (and allow re-run if needed)
+    function initCurrencyConversion() {
+        // ensure global
+        if (!window.USER_CURRENCY) {
+            const meta = document.querySelector('meta[name="user-currency"]');
+            if (meta) window.USER_CURRENCY = meta.content;
+        }
+        // run after short delay to let other scripts settle
+        setTimeout(() => {
+            updateCurrencyDisplays();
+        }, 150);
+
+        // Also expose for manual trigger e.g. after dynamic content
+        window.refreshCurrencyDisplays = updateCurrencyDisplays;
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCurrencyConversion);
+    } else {
+        initCurrencyConversion();
+    }
+
+    // Optional: refresh if user currency changes at runtime (advanced)
+    // window.setUserCurrency = (c) => { window.USER_CURRENCY = c; updateCurrencyDisplays(); };
+})();

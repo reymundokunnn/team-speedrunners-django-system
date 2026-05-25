@@ -4,13 +4,27 @@ from django.utils.timesince import timesince
 register = template.Library()
 
 CURRENCY_SYMBOLS = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'PHP': '₱',
-    'JPY': '¥',
-    'AUD': 'A$',
-    'CAD': 'C$',
+    'USD': '$', 'EUR': '€', 'GBP': '£', 'PHP': '₱', 'JPY': '¥',
+    'AUD': 'A$', 'CAD': 'C$', 'INR': '₹', 'CNY': '¥', 'KRW': '₩',
+    'RUB': '₽', 'BRL': 'R$', 'TRY': '₺', 'ZAR': 'R', 'MXN': 'MX$',
+    'SGD': 'S$', 'HKD': 'HK$', 'CHF': 'CHF', 'SEK': 'kr', 'NOK': 'kr',
+    'DKK': 'kr', 'PLN': 'zł', 'THB': '฿', 'MYR': 'RM', 'IDR': 'Rp',
+    'VND': '₫', 'AED': 'د.إ', 'SAR': '﷼', 'QAR': '﷼', 'EGP': 'E£',
+    'NGN': '₦', 'GHS': '₵', 'KES': 'KSh', 'TZS': 'TSh', 'UGX': 'USh',
+    'NZD': 'NZ$', 'TWD': 'NT$', 'ILS': '₪', 'HUF': 'Ft', 'CZK': 'Kč',
+    'RON': 'lei', 'UAH': '₴', 'ARS': 'AR$', 'CLP': 'CLP$', 'COP': 'COL$',
+    'PEN': 'S/', 'CRC': '₡', 'DOP': 'RD$', 'GTQ': 'Q', 'HNL': 'L',
+    'NIO': 'C$', 'PAB': 'B/.', 'PYG': '₲', 'UYU': 'UY$', 'BOB': 'Bs',
+    'XOF': 'CFA', 'XAF': 'FCFA', 'MAD': 'MAD', 'TND': 'DT', 'JOD': 'JD',
+    'LBP': 'ل.ل', 'IQD': 'ع.د', 'IRR': '﷼', 'PKR': '₨', 'BDT': '৳',
+    'LKR': 'Rs', 'NPR': 'रू', 'MMK': 'K', 'KHR': '៛', 'LAK': '₭',
+    'MNT': '₮', 'KZT': '₸', 'KGS': 'с', 'TJS': 'ЅМ', 'AFN': '؋',
+    'AMD': '֏', 'AZN': '₼', 'GEL': '₾', 'MDL': 'L', 'BYN': 'Br',
+    'ALL': 'L', 'MKD': 'ден', 'RSD': 'дин', 'BAM': 'KM', 'HRK': 'kn',
+    'BGN': 'лв', 'ISK': 'kr', 'FJD': 'FJ$', 'PGK': 'K', 'SBD': 'SI$',
+    'TOP': 'T$', 'WST': 'WS$', 'VUV': 'VT', 'XPF': '₣', 'XCD': 'EC$',
+    'BBD': 'Bds$', 'BMD': 'BD$', 'BSD': 'BS$', 'BZD': 'BZ$', 'GYD': 'GY$',
+    'JMD': 'J$', 'TTD': 'TT$', 'XPF': '₣',
 }
 
 @register.filter
@@ -18,7 +32,7 @@ def currency_symbol(code):
     """Convert currency code to symbol."""
     if not code:
         code = 'USD'
-    return CURRENCY_SYMBOLS.get(code, '$')
+    return CURRENCY_SYMBOLS.get(code, code)
 
 @register.filter
 def currency_format(amount, currency_code='USD'):
@@ -28,7 +42,7 @@ def currency_format(amount, currency_code='USD'):
     """
     if amount is None:
         return ''
-    symbol = CURRENCY_SYMBOLS.get(currency_code, '$')
+    symbol = CURRENCY_SYMBOLS.get(currency_code, currency_code or '')
     try:
         return f"{symbol}{float(amount):,.2f}"
     except (ValueError, TypeError):

@@ -89,6 +89,7 @@ TEMPLATES = [
                 'presenta.context_processors.user_profile',
                 'presenta.context_processors.announcement_banner',
                 'presenta.context_processors.user_notifications',
+                'presenta.context_processors.user_currency',
             ],
         },
     },

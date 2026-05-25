@@ -4,6 +4,7 @@
 {% block title %}Dashboard - {{user.first_name}} {{user.last_name}} | Presenta{% endblock %}
 {% block content %}
 <script>window.userTimezone = "{{ user_timezone|default:'UTC' }}";</script>
+<script>window.USER_CURRENCY = "{{ user_currency|default:'USD' }}";</script>
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_admin.html" %}
@@ -425,13 +426,13 @@
                                     </td>
                                     <td>{% if request.requester %}{{ request.requester.first_name }} {{ request.requester.last_name }}{% else %}User{% endif %}</td>
                                     <td>{% if request.designer %}{{ request.designer.first_name }} {{request.designer.last_name }} {% else %} <span class="unassigned">Unassigned</span>{% endif %}</td>
-                                    <td class="budget-cell">
-                                        {% if request.budget %}
-                                        <span class="budget-amount">{{ request.currency|currency_symbol }}{{ request.budget }}</span>
-                                        {% else %}
-                                        <span class="no-budget">-</span>
-                                        {% endif %}
-                                    </td>
+                                     <td class="budget-cell">
+                                         {% if request.budget %}
+                                         <span class="budget-amount currency-convert" data-amount="{{ request.budget }}" data-from="{{ request.currency|default:'USD' }}">{{ request.currency|currency_symbol }}{{ request.budget }}</span>
+                                         {% else %}
+                                         <span class="no-budget">-</span>
+                                         {% endif %}
+                                     </td>
                                     <td class="date-cell">{{ request.created_at|date:"M d, Y" }}</td>
                                 </tr>
                                 {% endfor %}

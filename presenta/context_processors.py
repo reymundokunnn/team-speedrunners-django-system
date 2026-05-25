@@ -215,3 +215,14 @@ def _get_time_ago(timestamp):
         return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
     else:
         return "Just now"
+
+
+def user_currency(request):
+    """Provide the authenticated user's currency preference (or USD default)."""
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        return {'user_currency': 'USD'}
+    try:
+        pref = getattr(getattr(request.user, 'user_settings', None), 'currency_preference', None)
+        return {'user_currency': pref or 'USD'}
+    except Exception:
+        return {'user_currency': 'USD'}

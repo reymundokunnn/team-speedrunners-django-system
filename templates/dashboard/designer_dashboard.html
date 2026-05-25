@@ -4,6 +4,7 @@
 {% load file_filters %}
 {% block content %}
 <script>window.userTimezone = "{{ user_timezone|default:'UTC' }}";</script>
+<script>window.USER_CURRENCY = "{{ user_currency|default:'USD' }}";</script>
 <section class="dashboard-section">
     <div class="dashboard-container">
         {% include "partials/sidebar_designer.html" %}
@@ -238,13 +239,13 @@
                             <div class="request-card">
                                 <div class="request-header">
                                     <h4>{{ request.title }}</h4>
-                                    <span class="budget">
-                                        {% if request.budget %}
-                                            {{ request.currency|currency_symbol }}{{ request.budget }}
-                                        {% else %}
-                                            No budget
-                                        {% endif %}
-                                    </span>
+                                     <span class="budget">
+                                         {% if request.budget %}
+                                             <span class="currency-convert" data-amount="{{ request.budget }}" data-from="{{ request.currency|default:'USD' }}">{{ request.currency|currency_symbol }}{{ request.budget }}</span>
+                                         {% else %}
+                                             No budget
+                                         {% endif %}
+                                     </span>
                                 </div>
                                 <p class="description">{{ request.description|truncatewords:20 }}</p>
                                 <div class="request-meta">

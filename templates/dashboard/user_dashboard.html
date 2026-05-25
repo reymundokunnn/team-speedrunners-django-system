@@ -10,6 +10,7 @@
         <div class="main">
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="dashboard-section-content active">
+                <script>window.USER_CURRENCY = "{{ user_currency|default:'USD' }}";</script>
                 <div class="wrapper-greeting">
                     <div id="main-greeting">
                         <span id="greeting">Good day, <span class="orange">{% if user.user_settings.greeting_name_preference == 'full_name' %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.first_name }}{% endif %}</span>!</span>
@@ -581,13 +582,13 @@
                                                 {{ request.get_status_display }}
                                             </span>
                                         </td>
-                                        <td class="budget-cell">
-                                            {% if request.budget %}
-                                                <span class="budget-amount">{{ user_currency|currency_symbol }}{{ request.budget }}</span>
-                                            {% else %}
-                                                <span class="no-budget">Not set</span>
-                                            {% endif %}
-                                        </td>
+                                         <td class="budget-cell">
+                                             {% if request.budget %}
+                                                 <span class="budget-amount currency-convert" data-amount="{{ request.budget }}" data-from="{{ request.currency|default:'USD' }}">{{ request.currency|currency_symbol }}{{ request.budget }}</span>
+                                             {% else %}
+                                                 <span class="no-budget">Not set</span>
+                                             {% endif %}
+                                         </td>
                                          <td>
                                              {% if request.status == 'payment_required' %}
                                                  <span class="payment-status-badge pending">
@@ -788,6 +789,29 @@
                             <option value="JPY">Japanese Yen (¥)</option>
                             <option value="AUD">Australian Dollar (A$)</option>
                             <option value="CAD">Canadian Dollar (C$)</option>
+                            <option value="INR">Indian Rupee (₹)</option>
+                            <option value="CNY">Chinese Yuan (¥)</option>
+                            <option value="KRW">South Korean Won (₩)</option>
+                            <option value="SGD">Singapore Dollar (S$)</option>
+                            <option value="HKD">Hong Kong Dollar (HK$)</option>
+                            <option value="MYR">Malaysian Ringgit (RM)</option>
+                            <option value="THB">Thai Baht (฿)</option>
+                            <option value="IDR">Indonesian Rupiah (Rp)</option>
+                            <option value="VND">Vietnamese Dong (₫)</option>
+                            <option value="TWD">Taiwan Dollar (NT$)</option>
+                            <option value="NZD">New Zealand Dollar (NZ$)</option>
+                            <option value="CHF">Swiss Franc (CHF)</option>
+                            <option value="SEK">Swedish Krona (kr)</option>
+                            <option value="NOK">Norwegian Krone (kr)</option>
+                            <option value="DKK">Danish Krone (kr)</option>
+                            <option value="PLN">Polish Zloty (zł)</option>
+                            <option value="RUB">Russian Ruble (₽)</option>
+                            <option value="BRL">Brazilian Real (R$)</option>
+                            <option value="MXN">Mexican Peso (MX$)</option>
+                            <option value="ZAR">South African Rand (R)</option>
+                            <option value="TRY">Turkish Lira (₺)</option>
+                            <option value="AED">UAE Dirham (د.إ)</option>
+                            <option value="SAR">Saudi Riyal (﷼)</option>
                         </select>
                         <input type="number" id="budget" name="budget" placeholder="Enter amount" step="0.01">
                     </div>
@@ -877,6 +901,29 @@
                     <option value="JPY">Japanese Yen (¥)</option>
                     <option value="AUD">Australian Dollar (A$)</option>
                     <option value="CAD">Canadian Dollar (C$)</option>
+                    <option value="INR">Indian Rupee (₹)</option>
+                    <option value="CNY">Chinese Yuan (¥)</option>
+                    <option value="KRW">South Korean Won (₩)</option>
+                    <option value="SGD">Singapore Dollar (S$)</option>
+                    <option value="HKD">Hong Kong Dollar (HK$)</option>
+                    <option value="MYR">Malaysian Ringgit (RM)</option>
+                    <option value="THB">Thai Baht (฿)</option>
+                    <option value="IDR">Indonesian Rupiah (Rp)</option>
+                    <option value="VND">Vietnamese Dong (₫)</option>
+                    <option value="TWD">Taiwan Dollar (NT$)</option>
+                    <option value="NZD">New Zealand Dollar (NZ$)</option>
+                    <option value="CHF">Swiss Franc (CHF)</option>
+                    <option value="SEK">Swedish Krona (kr)</option>
+                    <option value="NOK">Norwegian Krone (kr)</option>
+                    <option value="DKK">Danish Krone (kr)</option>
+                    <option value="PLN">Polish Zloty (zł)</option>
+                    <option value="RUB">Russian Ruble (₽)</option>
+                    <option value="BRL">Brazilian Real (R$)</option>
+                    <option value="MXN">Mexican Peso (MX$)</option>
+                    <option value="ZAR">South African Rand (R)</option>
+                    <option value="TRY">Turkish Lira (₺)</option>
+                    <option value="AED">UAE Dirham (د.إ)</option>
+                    <option value="SAR">Saudi Riyal (﷼)</option>
                 </select>
                 <input type="number" id="edit_budget" name="budget" placeholder="Enter amount" step="0.01">
             </div>
