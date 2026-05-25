@@ -3519,7 +3519,7 @@ body.dark-mode .add-new-design-modal .modal-overlay {
 }
 
 .add-new-design-modal .modal-content {
-    max-width: 600px;
+    max-width: 700px;
     max-height: 80vh;
     position: relative;
     z-index: 1;
@@ -3584,9 +3584,21 @@ body.dark-mode .add-new-design-modal .modal-overlay {
 
 .budget-currency-inline {
     display: grid;
-    grid-template-columns: 140px 1fr;
+    grid-template-columns: 250px 1fr;
     gap: 12px;
     align-items: stretch;
+}
+
+/* Locked currency dropdown (used in new request form, set from user settings) */
+.currency-locked,
+.currency-select:disabled,
+select.currency-locked {
+    background-color: #f3f4f6 !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    cursor: not-allowed !important;
+    opacity: 0.85;
+    pointer-events: none;
 }
 
 .file-upload-area {
@@ -3788,8 +3800,9 @@ body.dark-mode .add-new-design-modal .modal-overlay {
 .step-header h3 {
     margin: 0 0 8px 0;
     color: #333;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     font-weight: 600;
+    width: 100%;
 }
 
 .step-header p {
@@ -3799,14 +3812,14 @@ body.dark-mode .add-new-design-modal .modal-overlay {
 }
 
 .design-type-buttons {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
     gap: 15px;
     margin-bottom: 25px;
 }
 
 .design-type-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 15px;
     padding: 20px;
@@ -3834,6 +3847,10 @@ body.dark-mode .add-new-design-modal .modal-overlay {
     flex-shrink: 0;
 }
 
+.design-type-icon svg {
+    width: 70px;
+    height: 70px;
+}
 .design-type-btn.active .design-type-icon {
     color: #e87f14;
 }
@@ -3843,12 +3860,14 @@ body.dark-mode .add-new-design-modal .modal-overlay {
     color: #333;
     margin-bottom: 4px;
     display: block;
+    font-size: 1.25rem;
 }
 
 .design-type-desc {
     font-size: 0.85rem;
     color: #666;
     line-height: 1.4;
+    text-align: center;
 }
 
 .designer-assignment-options {
@@ -3894,10 +3913,11 @@ body.dark-mode .add-new-design-modal .modal-overlay {
     color: #333;
     margin-bottom: 4px;
     display: block;
+    font-size: 1.15rem;
 }
 
 .assignment-desc {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: #666;
     line-height: 1.4;
 }
@@ -3967,7 +3987,7 @@ body.dark-mode .add-new-design-modal .modal-overlay {
 
 .step-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-top: 30px;
     gap: 15px;
 }
@@ -3980,7 +4000,7 @@ body.dark-mode .add-new-design-modal .modal-overlay {
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.95rem;
-    background-color: #e87f14;
+    background-color: #555555;
     color: white;
 }
 

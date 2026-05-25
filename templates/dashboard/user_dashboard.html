@@ -699,7 +699,7 @@
                     </button>
                 </div>
                 <input type="hidden" id="design_type" name="design_type" required>
-                <div class="step-actions">
+                <div class="step-actions modal-actions">
                     <button type="button" class="btn btn-next" disabled>Next</button>
                 </div>
             </div>
@@ -717,7 +717,7 @@
                         </div>
                         <div class="assignment-info">
                             <span class="assignment-label">Open to All Designers</span>
-                            <span class="assignment-desc">Post to available requests pool</span>
+                            <span class="assignment-desc">Your request will be added to the designers' Available Requests pool, and a designer may choose to accept your request.</span>
                         </div>
                     </button>
                     {% if favorite_designers %}
@@ -727,7 +727,7 @@
                         </div>
                         <div class="assignment-info">
                             <span class="assignment-label">Assign to Favorite</span>
-                            <span class="assignment-desc">Choose from your favorite designers</span>
+                            <span class="assignment-desc">Liked a designer's past work and want them again? Select them from here.</span>
                         </div>
                     </button>
                     {% endif %}
@@ -735,7 +735,7 @@
 
                 {% if favorite_designers %}
                 <div class="favorite-designers-section">
-                    <span class="section-label">Choose a favorite designer:</span>
+                    <span class="favorite-designers-section-label">Choose your favorite designer to assign this request to:</span>
                     <div class="favorite-designers-grid">
                         {% for fav in favorite_designers %}
                         <button type="button" class="designer-option-btn favorite-designer-btn" data-assignment="{{ fav.designer.id }}">
@@ -750,7 +750,7 @@
                             </div>
                             <div class="assignment-info">
                                 <span class="assignment-label">{{ fav.designer.first_name|default:fav.designer.username }} {{ fav.designer.last_name|default:"" }}</span>
-                                <span class="assignment-desc">Favorite Designer</span>
+                                <span class="assignment-desc">{{ fav.designer.username }}</span>
                             </div>
                         </button>
                         {% endfor %}
@@ -758,7 +758,7 @@
                 </div>
                 {% endif %}
                 <input type="hidden" id="preferred_designer" name="preferred_designer">
-                <div class="step-actions">
+                <div class="step-actions modal-actions">
                     <button type="button" class="btn btn-prev">Back</button>
                     <button type="button" class="btn btn-next">Next</button>
                 </div>
@@ -776,12 +776,13 @@
 
                     <label for="description">Description and Instructions *</label>
                     <textarea id="description" name="description"
-                        placeholder="How should we design your content? Should we use a specific color theme, layout, etc.?"
+                        placeholder="How should the designer make your content? Should we use a specific color theme, layout, etc.?"
                         required></textarea>
 
                     <label for="budget">Budget (Optional)</label>
+                    <input type="hidden" name="currency" id="currency" value="{{ user_currency|default:'USD' }}">
                     <div class="budget-currency-inline">
-                        <select id="currency" name="currency" class="currency-select">
+                        <select id="currency_display" class="currency-select currency-locked" title="Disabled. Set your preferred currency in Settings." disabled>
                             <option value="USD">US Dollar ($)</option>
                             <option value="EUR">Euro (€)</option>
                             <option value="GBP">British Pound (£)</option>
@@ -813,13 +814,14 @@
                             <option value="AED">UAE Dirham (د.إ)</option>
                             <option value="SAR">Saudi Riyal (﷼)</option>
                         </select>
+                        <script>(function(){try{var d=document.getElementById('currency_display');var h=document.getElementById('currency');var p=(window.USER_CURRENCY||(h&&h.value)||'USD').toUpperCase();if(d)d.value=p;}catch(e){}})();</script>
                         <input type="number" id="budget" name="budget" placeholder="Enter amount" step="0.01">
                     </div>
 
                     <label for="deadline">Deadline (Optional)</label>
                     <input type="date" id="deadline" name="deadline">
                 </div>
-                <div class="step-actions">
+                <div class="step-actions modal-actions">
                     <button type="button" class="btn btn-prev">Back</button>
                     <button type="button" class="btn btn-next">Next</button>
                 </div>
@@ -848,7 +850,7 @@
                         <div id="fileList" class="file-list"></div>
                     </div>
                 </div>
-                <div class="step-actions">
+                <div class="step-actions modal-actions">
                     <button type="button" class="btn btn-prev">Back</button>
                     <button type="submit" class="btn btn-submit">Submit Request</button>
                 </div>
@@ -888,7 +890,7 @@
 
             <label for="edit_description">Description and Instructions *</label>
             <textarea id="edit_description" name="description"
-                placeholder="How should we design your content? Should we use a specific color theme, layout, etc.?"
+                placeholder="How should the designer make your content? Should we use a specific color theme, layout, etc.?"
                 required></textarea>
 
             <label for="edit_budget">Budget (Optional)</label>
@@ -1264,8 +1266,11 @@ function resetMultiStepForm() {
     const deadlineField = document.getElementById('deadline');
     if (deadlineField) deadlineField.value = '';
 
+    const currencyDisplay = document.getElementById('currency_display');
     const currencyField = document.getElementById('currency');
-    if (currencyField) currencyField.value = 'USD';
+    const userPref = (window.USER_CURRENCY || 'USD').toUpperCase();
+    if (currencyDisplay) currencyDisplay.value = userPref;
+    if (currencyField) currencyField.value = userPref;
 
     // Clear file list
     const fileList = document.getElementById('fileList');

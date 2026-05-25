@@ -222,7 +222,12 @@ def user_currency(request):
     if not getattr(request, 'user', None) or not request.user.is_authenticated:
         return {'user_currency': 'USD'}
     try:
-        pref = getattr(getattr(request.user, 'user_settings', None), 'currency_preference', None)
+        settings = getattr(request.user, 'user_settings', None)
+        if settings is None:
+            # Force load or create fallback
+            from .models import UserSettings
+            settings = UserSettings.objects.filter(user=request.user).first()
+        pref = getattr(settings, 'currency_preference', None) if settings else None
         return {'user_currency': pref or 'USD'}
     except Exception:
         return {'user_currency': 'USD'}
