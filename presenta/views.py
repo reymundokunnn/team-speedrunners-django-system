@@ -4951,6 +4951,51 @@ def process_payment(request, payment_id):
 
 
 @login_required(login_url='signin')
+@require_http_methods(["POST"])
+def demo_unlock_design(request, request_id):
+    """API endpoint to unlock a design for demo purposes (marks as completed)."""
+    design_request = get_object_or_404(DesignRequest, id=request_id)
+
+    # Check if user is the requester
+    if design_request.requester != request.user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Check if already completed or in payment_required status
+    if design_request.status == 'completed':
+        return JsonResponse({'success': True, 'message': 'Design already unlocked'})
+
+    if design_request.status != 'payment_required':
+        return JsonResponse({'error': 'Design is not ready for payment'}, status=400)
+
+    # Mark the design request as completed
+    design_request.status = 'completed'
+    design_request.completed_at = timezone.now()
+    design_request.save()
+
+    # Log activity
+    log_activity(
+        user=request.user,
+        activity_type='payment_confirmed',
+        message=f"Demo payment completed for '{design_request.title}'",
+        related_request=design_request
+    )
+
+    if design_request.designer:
+        log_activity(
+            user=design_request.designer,
+            activity_type='payment_confirmed',
+            message=f"Payment received for '{design_request.title}' (demo)",
+            related_request=design_request,
+            target_user=design_request.designer
+        )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Design unlocked successfully'
+    })
+
+
+@login_required(login_url='signin')
 @require_http_methods(["GET"])
 def payment_status(request, payment_id):
     """API endpoint to check payment status."""

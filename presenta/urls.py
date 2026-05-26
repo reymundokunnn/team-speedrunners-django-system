@@ -43,6 +43,7 @@ urlpatterns = [
     path('design-request/<int:request_id>/payment/', views.initiate_payment, name='initiate_payment'),
     path('api/payment/<int:request_id>/create/', views.create_payment, name='create_payment'),
     path('api/payment/<int:payment_id>/process/', views.process_payment, name='process_payment'),
+    path('api/payment/<int:request_id>/unlock/', views.demo_unlock_design, name='demo_unlock_design'),
     path('api/payment/<int:payment_id>/status/', views.payment_status, name='payment_status'),
 
     # Profile

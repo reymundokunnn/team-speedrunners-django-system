@@ -409,11 +409,11 @@
                                         <th>Timeline</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    {% for request in design_requests %}
-                                    <tr>
-                                        <td class="title-cell">
-                                            <div class="request-title-wrapper">
+<tbody>
+                                     {% for request in design_requests %}
+                                     <tr data-request-id="{{ request.id }}" data-status="{{ request.status }}">
+                                         <td class="title-cell">
+                                             <div class="request-title-wrapper">
                                                 {% if request.design_type == 'presentation' %}
                                                 <svg class="design-type-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                                                 {% elif request.design_type == 'infographic' %}
@@ -558,7 +558,7 @@
                                 </thead>
                                 <tbody>
                                     {% for request in design_requests %}
-                                    <tr class="payment-row" data-status="{{ request.status }}">
+                                    <tr class="payment-row" data-status="{{ request.status }}" data-request-id="{{ request.id }}">
                                         <td class="project-cell">
                                             <div class="project-info">
                                                 <span class="project-name">{{ request.title }}</span>
@@ -1345,15 +1345,109 @@ window.openModal = function(modalType) {
     }
 };
 
-// Pay Now button functionality
+// Pay Now button functionality (Demo - immediate unlock)
 document.querySelectorAll('.btn-pay-now').forEach(button => {
     button.addEventListener('click', function() {
         const row = this.closest('tr');
+        const requestId = row.dataset.requestId;
         const projectName = row.querySelector('.project-name').textContent;
-        const budget = row.querySelector('.budget-amount').textContent;
-
-        // Show payment modal or redirect to payment gateway
-        alert(`Payment functionality for "${projectName}" - Amount: ${budget}\n\nThis would integrate with your payment gateway (e.g., Stripe, PayPal, etc.)`);
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                          document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        // Call backend API to unlock the design
+        fetch(`/api/payment/${requestId}/unlock/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update all tables with this request ID (Payments and My Requests tables)
+                document.querySelectorAll(`tr[data-request-id="${requestId}"]`).forEach(reqRow => {
+                    // Update status badge
+                    const statusCell = reqRow.querySelector('td:nth-child(3) .status-badge');
+                    if (statusCell) {
+                        statusCell.className = 'status-badge status-completed';
+                        statusCell.textContent = 'Completed (Paid)';
+                    }
+                    
+                    // Update status attribute
+                    reqRow.dataset.status = 'completed';
+                    reqRow.setAttribute('data-status', 'completed');
+                    
+                    // Ensure row is visible regardless of current filter
+                    reqRow.style.display = '';
+                    
+                    // Update the title cell - make it clickable for completed projects
+                    const titleWithIcon = reqRow.querySelector('.title-with-icon') || reqRow.querySelector('.request-title-wrapper');
+                    if (titleWithIcon) {
+                        const titleSpan = titleWithIcon.querySelector('span') || titleWithIcon.querySelector('.title-text');
+                        if (titleSpan) {
+                            // Preserve the icon and make title clickable
+                            const icon = titleWithIcon.querySelector('svg');
+                            const iconHtml = icon ? icon.outerHTML : '';
+                            titleWithIcon.innerHTML = iconHtml + `<a href="#" onclick="return openCompletionModal(${requestId}); event.stopPropagation();" class="project-title-link">${titleSpan.textContent}</a>`;
+                        }
+                    } else {
+                        // Try generic approach
+                        const titleTextSpan = reqRow.querySelector('td:first-child span');
+                        if (titleTextSpan) {
+                            const icon = reqRow.querySelector('td:first-child svg');
+                            const iconHtml = icon ? icon.outerHTML : '';
+                            titleTextSpan.outerHTML = `<a href="#" onclick="return openCompletionModal(${requestId}); event.stopPropagation();" class="project-title-link">${titleTextSpan.textContent}</a>`;
+                        }
+                    }
+                    
+                    // Update the files cell - enable download button
+                    const filesCell = reqRow.querySelector('.files-cell');
+                    if (filesCell) {
+                        const fileCountMatch = filesCell.textContent.match(/(\d+)\s*files?/);
+                        const fileCount = fileCountMatch ? fileCountMatch[1] : '1';
+                        filesCell.innerHTML = `<button type="button" onclick="return openCompletionModal(${requestId}); event.stopPropagation();" class="btn-icon btn-download-icon" title="Download (${fileCount} files)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg><span class="file-count">${fileCount}</span></button>`;
+                    }
+                    
+                    // Update the actions cell - change from edit/delete to revision/delete
+                    const actionsCell = reqRow.querySelector('.actions-cell .action-buttons');
+                    if (actionsCell) {
+                        actionsCell.innerHTML = `<button type="button" class="btn-icon btn-revision" title="Request Revision" data-request-id="${requestId}" data-title="${projectName.replace(/"/g, '&quot;')}" onclick="openRevisionModal(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 1-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button><button type="button" class="btn-icon btn-delete" title="Delete" data-request-id="${requestId}" data-title="${projectName.replace(/"/g, '&quot;')}" onclick="openDeleteModal(this); event.stopPropagation();"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+                    }
+                    
+                    // Update progress bar (tracker table)
+                    const progressBar = reqRow.querySelector('.progress-bar-wrapper .progress-bar');
+                    if (progressBar) {
+                        progressBar.className = 'progress-bar complete';
+                        progressBar.style.width = '100%';
+                        progressBar.innerHTML = '<span class="progress-label">100%</span>';
+                    }
+                });
+                
+                // Update payment status badge in payments table
+                const paymentStatusCell = row.querySelector('td:nth-child(5) .payment-status-badge');
+                if (paymentStatusCell) {
+                    paymentStatusCell.className = 'payment-status-badge completed';
+                    paymentStatusCell.innerHTML = '<span class="status-dot"></span>Paid';
+                }
+                
+                // Replace Pay Now button with Receipt button in payments table
+                const actionCell = row.querySelector('td:last-child');
+                if (actionCell) {
+                    actionCell.innerHTML = `<a href="/dashboard/receipt/${requestId}/" class="btn-view-receipt" target="_blank">Receipt</a>`;
+                }
+                
+                // Show success message for demo purposes
+                alert(`Demo: Payment successful for "${projectName}"\n\nDesign has been unlocked!`);
+            } else {
+                alert(`Error: ${data.error || 'Failed to unlock design'}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing payment.');
+        });
     });
 });
 
