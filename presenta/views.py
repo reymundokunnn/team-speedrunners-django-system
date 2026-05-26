@@ -599,6 +599,28 @@ def user_dashboard(request):
     except Exception:
         user_tz = 'UTC'
 
+    # Calculate payment summary values
+    from django.db.models import Sum, F
+    
+    # Total budget from all design requests
+    total_budget = design_requests.exclude(budget__isnull=True).aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
+    # Pending payment: sum of budgets for requests in payment_required status
+    pending_payment_amount = design_requests.filter(
+        status='payment_required'
+    ).exclude(budget__isnull=True).aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
+    # Completed payment: sum of budgets for completed requests
+    completed_payment_amount = design_requests.filter(
+        status='completed'
+    ).exclude(budget__isnull=True).aggregate(
+        total=Sum('budget')
+    )['total'] or 0
+    
     # Get user's favorite designers
     favorite_designers = FavoriteDesigner.objects.filter(client=user).select_related('designer__profile')
     favorited_designer_ids = set(fav.designer.id for fav in favorite_designers)
@@ -617,6 +639,9 @@ def user_dashboard(request):
         'favorited_designer_ids': list(favorited_designer_ids),
         'favorite_count': favorite_count,
         'show_search_bar': True,
+        'total_budget': total_budget,
+        'pending_payment_amount': pending_payment_amount,
+        'completed_payment_amount': completed_payment_amount,
     }
     return render(request, 'dashboard/user_dashboard.html', context)
 

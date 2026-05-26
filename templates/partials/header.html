@@ -421,25 +421,10 @@
     // This ensures the state persists across page navigations
     window.notificationsRead = !hasNewNotifications;
 
-    // Only show badge and animation if there are new (unread) notifications
+    // Only show badge if there are new (unread) notifications
     if (notificationBadge && hasNewNotifications) {
         // Show the badge count
         notificationBadge.style.display = 'inline-block';
-        notificationBadge.classList.add('animate');
-
-        // Add animation for new notifications
-        notificationToggle.classList.add('has-notifications');
-
-        // Remove animation after it completes, then re-add periodically
-        notificationToggle.addEventListener('animationend', function () {
-            setTimeout(() => {
-                if (notificationBadge && hasNewNotifications) {
-                    notificationToggle.classList.remove('has-notifications');
-                    void notificationToggle.offsetWidth; // Trigger reflow
-                    notificationToggle.classList.add('has-notifications');
-                }
-            }, 500); // Re-trigger animation every 0.5 seconds
-        });
     }
 
     // Function to close popup with animation
@@ -471,11 +456,9 @@
             // Mark notifications as read globally
             window.notificationsRead = true;
 
-            // Remove animation and hide badge
-            notificationToggle.classList.remove('has-notifications');
+            // Hide badge
             if (notificationBadge) {
                 notificationBadge.style.display = 'none';
-                notificationBadge.classList.remove('animate');
             }
         }
     });
