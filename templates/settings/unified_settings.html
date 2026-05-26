@@ -1989,7 +1989,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #4F46E5;
+    border-color: #e87f14;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
@@ -3566,11 +3566,25 @@ async function openSampleItemForm() {
         croppedDataInput.value = '';
     }
     
-    // Load categories
+    // Load categories - fetch fresh if not loaded yet
+    let categoriesToLoad = currentSamplesData;
+    if (currentSamplesData.length === 0) {
+        try {
+            const response = await fetch('/api/samples/categories/');
+            if (response.ok) {
+                const data = await response.json();
+                categoriesToLoad = data.categories || [];
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+    
+    // Load categories into dropdown
     const categorySelect = document.getElementById('sampleCategory');
     categorySelect.innerHTML = '<option value="">Select a category</option>';
     
-    currentSamplesData.forEach(cat => {
+    categoriesToLoad.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat.id;
         option.textContent = cat.name;
@@ -3578,13 +3592,13 @@ async function openSampleItemForm() {
     });
     
     // If no categories, show message
-    if (currentSamplesData.length === 0) {
+    if (categoriesToLoad.length === 0) {
         categorySelect.innerHTML = '<option value="">No categories available</option>';
     }
     
     // Set current tab as selected category
     if (currentTab !== 'all') {
-        const currentCategory = currentSamplesData.find(c => c.slug === currentTab);
+        const currentCategory = categoriesToLoad.find(c => c.slug === currentTab);
         if (currentCategory) {
             categorySelect.value = currentCategory.id;
         }
